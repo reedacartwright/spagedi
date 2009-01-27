@@ -1,7 +1,0 @@
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/manual.pdf
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/copying.txt
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/readme.txt
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/examples/data1.txt
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/examples/data2.txt
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/share/examples/data3.txt
-/home/reed/Projects/spagedi/_CPack_Packages/FreeBSD/TGZ/SPAGeDi-1.2i-FreeBSD/bin/spagedi
