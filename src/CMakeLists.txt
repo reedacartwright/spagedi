@@ -1,3 +1,7 @@
+INCLUDE(CheckIncludeFile)
+INCLUDE(CheckFunctionExists)
+INCLUDE(CheckLibraryExists)
+
 SET(MY_C_FLAGS)
 SET(MY_EXE_LINKER_FLAGS)
 
