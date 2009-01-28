@@ -109,8 +109,10 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		printf("\n\n  Data file: %s",inputfile);
 		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]=='\0') {printf("%s",outputfile);} 
-		else strncpy(outputfile,smess,PATH_MAX-1);
+		if(smess[0]=='\0') {
+			printf("%s",outputfile);
+		} else
+			strncpy(outputfile,smess,PATH_MAX-1);
 	}
 	if(argc == 3) {
 		strncpy(inputfile,argv[1],PATH_MAX);
@@ -143,15 +145,20 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			strncpy(inputfile, smess, PATH_MAX);
 			inputfile[PATH_MAX-1] = '\0';
 		}
+		strncpy(outputfile, inputfile, PATH_MAX);
+		ptr = outputfile;
+		// Find last directory mark
+		while((ptrt = strpbrk(ptr, "/\\")) != NULL)
+			ptr = ptrt+1;
+		// Replace file with "out.txt"
+		strncpy(ptr, "out.txt", PATH_MAX-1-(ptr-outputfile));
 
-		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"out.txt\"\n\n  Results file: ");
+		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
-			strncpy(outputfile,"out.txt", PATH_MAX);
 			printf("\t\t%s",outputfile);
 		} else {
-			strncpy(outputfile,smess,PATH_MAX); 
-			outputfile[PATH_MAX-1] = '\0';
+			strncpy(outputfile,smess,PATH_MAX-1); 
 		}
 	}
  
