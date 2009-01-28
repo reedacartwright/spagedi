@@ -24,16 +24,6 @@ char wait_a_char(); // defined in Autocio.c
 	#define MISSVAL HUGE_VAL
 #endif
 
-#if defined(CURSES_HAVE_CURSES_H)
-#	include <curses.h>
-#elif defined(CURSES_HAVE_NCURSES_H)
-#	include <ncurses.h>
-#elif defined(CURSES_HAVE_NCURSES_NCURSES_H)
-#	include <ncurses/ncurses.h>
-#elif defined(CURSES_HAVE_NCURSES_CURSES_H)
-#	include <ncurses/curses.h>
-#endif
-
 // write can be found in unistd and conflicts with the write in this file
 #define write write_string
 

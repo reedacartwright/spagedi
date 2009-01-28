@@ -8,9 +8,6 @@
 #ifdef HAVE_DIRECT_H
 #	include <direct.h>
 #endif
-#ifdef HAVE_CONIO_H
-#	include <conio.h>
-#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -22,14 +19,19 @@
 #include "Autocio.h" 
 #include "Xatools.h"
 
-#if defined(CURSES_HAVE_CURSES_H)
-#	include <curses.h>
-#elif defined(CURSES_HAVE_NCURSES_H)
-#	include <ncurses.h>
-#elif defined(CURSES_HAVE_NCURSES_NCURSES_H)
-#	include <ncurses/ncurses.h>
-#elif defined(CURSES_HAVE_NCURSES_CURSES_H)
-#	include <ncurses/curses.h>
+#ifdef USE_GETCH
+#	if defined(CURSES_HAVE_CURSES_H)
+#		include <curses.h>
+#	elif defined(CURSES_HAVE_NCURSES_H)
+#		include <ncurses.h>
+#	elif defined(CURSES_HAVE_NCURSES_NCURSES_H)
+#		include <ncurses/ncurses.h>
+#	elif defined(CURSES_HAVE_NCURSES_CURSES_H)
+#		include <ncurses/curses.h>
+#	endif
+#	ifdef HAVE_CONIO_H
+#		include <conio.h>
+#	endif
 #endif
 
 #define write write_string
@@ -86,34 +88,29 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[SMAX],ch,*ptr;
+	char smess[SMAX],ch,*ptr, *ptrt;
 	int check;
 	FILE *fp;
 
-	
-
-/*	printf("\n%s",argv[0]);
-	if(argc>1)printf("\n%s",argv[1]);
-	if(argc>2)printf("\n%s",argv[2]);	 */  
-	
+	// printf("\n%s",argv[0]);
+	// if(argc>1)printf("\n%s",argv[1]);
+	// if(argc>2)printf("\n%s",argv[2]);
 	
 	if(argc == 2) {
-		strcpy(smess,argv[1]);
-		ptr=strrchr(smess,92);
-		ptr=NULL;
-		chdir(smess);
-		strcpy(smess,argv[1]);
-		if((ptr=strrchr(smess,92))) {
-			ptr++;
-			strcpy(inputfile,ptr);
-			printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-			printf("\n\n  Data file: %s",inputfile);
-			printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"out.txt\"\n\n  Results file: ");
-			fgets_chomp(smess, sizeof(smess), stdin);
-			if(smess[0]=='\0') {strcpy(outputfile,"out.txt");printf("%s",outputfile);} 
-			else strncpy(outputfile,smess,MAXNOM-1);
-		}
-		else argc=1;
+		strcpy(inputfile, argv[1]);
+		strcpy(outputfile, inputfile);
+		ptr = outputfile;
+		// Find last directory mark
+		while((ptrt = strpbrk(ptr, "/\\")) != NULL)
+			ptr = ptrt+1;
+		// Replace file with "out.txt"
+		strcpy(ptr, "out.txt");
+		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
+		printf("\n\n  Data file: %s",inputfile);
+		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
+		fgets_chomp(smess, sizeof(smess), stdin);
+		if(smess[0]=='\0') {printf("%s",outputfile);} 
+		else strncpy(outputfile,smess,MAXNOM-1);
 	}
 	if(argc == 3) {
 		strcpy(inputfile,argv[1]);
@@ -3747,5 +3744,15 @@ void readdoublefromstring(char *ins, double *outf, char *inputfile, int line)
 
 char wait_a_char()
 {
+#ifdef NO_MESSAGE_PAUSE
+	return 'x';
+#endif
+#ifdef USE_GETCH
 	return (char)getch();
+#else
+	char ch = 'x';
+	scanf("%c", &ch);
+	return ch;
+#endif
 }
+
