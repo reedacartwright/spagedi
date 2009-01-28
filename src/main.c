@@ -8,18 +8,17 @@
 #include "Autocio.h"
 #include "Xatools.h"
 
-
 long seed;
 
 
 int main(int argc,char *argv[])
 {
-	char inputfile[50];			//name of datafile
-	char outputfile[50];		//name of outputfile
-	char instrfile[50];			//name of instruction file (for command line)
-	char distfile[50];			//name of the file with spatial pairwise distances
-	char alleledistfile[50];	//name of the file with distances btw alleles
-	char freqfile[50];			//name of file with reference allele frequencies
+	char inputfile[PATH_MAX];			//name of datafile
+	char outputfile[PATH_MAX];		//name of outputfile
+	char instrfile[PATH_MAX];			//name of instruction file (for command line)
+	char distfile[PATH_MAX];			//name of the file with spatial pairwise distances
+	char alleledistfile[PATH_MAX];	//name of the file with distances btw alleles
+	char freqfile[PATH_MAX];			//name of file with reference allele frequencies
 	char smess[SMAX];
 	int n,ntot;					//number of individuals
  	int Ncat;				//# of different categories of ind

@@ -21,7 +21,15 @@
 #define  SMAX 100000	/*max number of characters for strings*/
 #define  ERRORFILE "error.txt"	/*name of file for error messages*/
 #define  MISSVAL HUGE_VAL	/*value given for missing value*/
-#define MISSING 999.99F        /*missing value for avestd and ttest routines*/
+#define  MISSING 999.99F        /*missing value for avestd and ttest routines*/
+
+#include <limits.h>
+#include <stdlib.h>
+
+#ifndef PATH_MAX
+#	define PATH_MAX _MAX_PATH
+#endif
+
 
 #include "Xatools.h"
 

@@ -45,7 +45,6 @@ void commom_errors()
 		wait_a_char();
 	}
 
-
 	fprintf(fp,"COMMON ERRORS IN DATA FILES");
 	fprintf(fp,"\n- Be careful that the numbers of individuals and categories given (format numbers) are correct.");
 	fprintf(fp,"\n- Use a point, not a coma, for decimal separator when defining distances or spatial coordinates.");
@@ -97,24 +96,26 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// if(argc>2)printf("\n%s",argv[2]);
 	
 	if(argc == 2) {
-		strcpy(inputfile, argv[1]);
-		strcpy(outputfile, inputfile);
+		strncpy(inputfile, argv[1], PATH_MAX);
+		inputfile[PATH_MAX-1] = '\0';  // Ensure null-termination
+		strncpy(outputfile, inputfile, PATH_MAX);
 		ptr = outputfile;
 		// Find last directory mark
 		while((ptrt = strpbrk(ptr, "/\\")) != NULL)
 			ptr = ptrt+1;
 		// Replace file with "out.txt"
-		strcpy(ptr, "out.txt");
+		strncpy(ptr, "out.txt", PATH_MAX-1-(ptr-outputfile));
 		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 		printf("\n\n  Data file: %s",inputfile);
 		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {printf("%s",outputfile);} 
-		else strncpy(outputfile,smess,MAXNOM-1);
+		else strncpy(outputfile,smess,PATH_MAX-1);
 	}
 	if(argc == 3) {
-		strcpy(inputfile,argv[1]);
-		strcpy(outputfile,argv[2]);
+		strncpy(inputfile,argv[1],PATH_MAX);
+		strncpy(outputfile,argv[2],PATH_MAX);
+		inputfile[PATH_MAX-1] = outputfile[PATH_MAX-1] = '\0';
 		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 		printf("\n\n  Data file: %s\n  Results file: %s",inputfile,outputfile);
 	} 
@@ -133,41 +134,66 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 		printf("\n\nEnter the name of the data file (with ext)\n  or press RETURN for the default data file \"in.txt\"\n  or enter a SPACE for importing a data file from FSTAT or GENEPOP format\n\n  Data file: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]=='\0'){strcpy(inputfile,"in.txt"); printf("\t\t%s",inputfile);}
-		else if(smess[0]==' ') import_data_file(inputfile);
-		else strncpy(inputfile,smess,MAXNOM-1); 
+		if(smess[0]=='\0') {
+			strncpy(inputfile, "in.txt", PATH_MAX);
+			printf("\t\t%s",inputfile);
+		} else if(smess[0]==' ')
+			import_data_file(inputfile);
+		else {
+			strncpy(inputfile, smess, PATH_MAX);
+			inputfile[PATH_MAX-1] = '\0';
+		}
 
 		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"out.txt\"\n\n  Results file: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]=='\0')  {strcpy(outputfile,"out.txt"); printf("\t\t%s",outputfile);} 
-		else strncpy(outputfile,smess,MAXNOM-1); 
+		if(smess[0]=='\0') {
+			strncpy(outputfile,"out.txt", PATH_MAX);
+			printf("\t\t%s",outputfile);
+		} else {
+			strncpy(outputfile,smess,PATH_MAX); 
+			outputfile[PATH_MAX-1] = '\0';
+		}
 	}
  
 	while((fp=fopen(inputfile,"rt"))==NULL){
 		printf("\n\nWARNING: Cannot open data file \"%s\"\n  If it is being used by another application, close it first, then press RETURN\n  Otherwise enter a new name for the data file\n  Press ctrl+c if you wish to stop the program now\n",inputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\0') strncpy(inputfile,smess,MAXNOM-1);
+		if(smess[0]!='\0') {
+			strncpy(inputfile, smess, PATH_MAX);
+			inputfile[PATH_MAX-1] = '\0';
+		}
 	}
 	fclose(fp);
 	
-	if(argc<4)do{
+	if(argc<4) do{
 		check=0;
 		if((fp=fopen(outputfile,"r"))){
 			fclose(fp);
 			printf("\n\n\nWARNING: The results file \"%s\" already exists.\n  Enter 'a' or press RETURN to add the new results to the end of the file\n  Enter 'e' to erase the present content of the file\n  Otherwise, enter a new name for the results file\n",outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
-			if(smess[0]!='\0'){
-				if(!strcmp(smess,"e") || !strcmp(smess,"E")) {if((fp=fopen(outputfile,"wt"))!=NULL) fclose(fp);}
-				else if(strcmp(smess,"a") && strcmp(smess,"A")) {strcpy(outputfile,smess);check=1;}
+			if(smess[0] != '\0') {
+				if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
+					if((fp=fopen(outputfile,"wt"))!=NULL) 
+						fclose(fp);
+				}
+				else if(strcmp(smess,"a") && strcmp(smess,"A")) {
+					strncpy(outputfile,smess,PATH_MAX); 
+					outputfile[PATH_MAX-1] = '\0';
+					check=1;
+				}
 			}
 		}
  		while(check==0 && (fp=fopen(outputfile,"a"))==NULL){
 			printf("\nWARNING: Cannot open results file \"%s\".\nIf it is being used by another application, close it first. Then press RETURN.\n  Otherwise, enter a new name for the results file\n",outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
-			if(smess[0]!='\0'){strncpy(outputfile,smess,MAXNOM-1);check=1;}
+			if(smess[0]!='\0'){
+				strncpy(outputfile,smess,PATH_MAX); 
+				outputfile[PATH_MAX-1] = '\0';
+				check=1;
+			}
 		}
 		fclose(fp);
-	}while(check);
+	} while(check);
 
 
 }/*end of get_input_output_file_names*/
