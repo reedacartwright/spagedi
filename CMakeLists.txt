@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
 PROJECT(SPAGeDi)
 
-SET(SPAGEDI_VERSION "1.2i")
+SET(SPAGEDI_VERSION "1.3a")
 
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckFunctionExists)
@@ -49,6 +49,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "_CPACK_PACKAGES"
 )
 
+SET(CPACK_SHARE "share")
 IF(WIN32 AND NOT UNIX)
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
@@ -59,20 +60,22 @@ IF(WIN32 AND NOT UNIX)
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.ulb.ac.be\\\\sciences\\\\ecoevol\\\\spagedi.html")
   SET(CPACK_NSIS_CONTACT "ohardy@ulb.ac.be")
   SET(CPACK_NSIS_MODIFY_PATH ON)
+ELSEIF(APPLE)
+  SET(CPACK_GENERATOR "PackageMaker")
 ELSE(WIN32 AND NOT UNIX)
   SET(CPACK_GENERATOR "TGZ")
   SET(CPACK_SOURCE_GENERATOR "TGZ") 
   SET(CPACK_STRIP_FILES "bin/spagedi")
+  SET(CPACK_SHARE "${CPACK_SHARE}/${CPACK_PACKAGE_INSTALL_DIRECTORY}")
 ENDIF(WIN32 AND NOT UNIX)
 
 SET(CPACK_PACKAGE_EXECUTABLES "spagedi" "SPAGeDi")
 INCLUDE(CPack)
 
-INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION share)
-INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION share/examples)
-
+INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION "${CPACK_SHARE}")
+INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${CPACK_SHARE}/examples")
 
 ADD_SUBDIRECTORY(src)
 
 INCLUDE(InstallRequiredSystemLibraries)
- 
+
