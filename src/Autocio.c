@@ -123,9 +123,9 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	} 
 
 /*	if(argc >= 4) {
-		strcpy(inputfile,argv[1]);
-		strcpy(outputfile,argv[2]);
-		strcpy(instrfile,argv[3]);
+		strncpy(inputfile,argv[1],PATH_MAX);
+		strncpy(outputfile,argv[2],PATH_MAX);
+		strncpy(instrfile,argv[3],PATH_MAX);
 		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 		printf("\n\n  Data file: %s\n  Results file: %s",inputfile,outputfile);
 		printf("\n\nINSTRUCTION FILE: %s",instrfile);
@@ -1110,9 +1110,9 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 /**************************************************************************************/
 
 void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m,int Ncat,int Nsg,int Nskg,int ncoord,
-					  int *StatType,int *NS,int Stat[12],int *TypeComp,int *cat1,int *cat2,
+					  int *StatType,int *NS,int Stat[],int *TypeComp,int *cat1,int *cat2,
 					  struct name *namecat,int *FreqRef,float *givenF,int *writeallelefreq,int *JKest,int *distmatrix,int Npermut[],
-					  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,
+					  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,float *dwidth,
 					  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,int *definealleledist,char *alleledistfilename,
 					  int *export,long *seed)
 {
@@ -1124,7 +1124,7 @@ void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m
 	FILE *stream;
 
 	// Reassign "stdin" (=console) to the instruction file (instrfile) to read options from that file 
-	if(argc>=4) stream = freopen(instrfile, "r", stdin);
+//	if(argc>=4) stream = freopen(instrfile, "r", stdin);
 
 
 startagain:
@@ -1167,11 +1167,11 @@ startagain:
 					printf("\n   8- FRATERNITY coefficient ('delta' in Lynch & Ritland, 1999)");
 					printf("\n   9- FRATERNITY coefficient ('delta' in Wang, 2002)");
 				}
-				if(ploidy>1) printf("\n   A- Rousset's distance ('a' in Rousset, 2000)");
+				if(ploidy>1) printf("\n   A- Aij: Rousset's distance ('a' in Rousset, 2000)");
 				printf("\n\n Statistic based on allele size (cf. microsatellites) :");
-				printf("\n   B- Allele size correlation coefficient (I' in Streiff et al., 1998)");
+				printf("\n   R- Rij: Allele size correlation coefficient (I' in Streiff et al., 1998)");
 				printf("\n\n Statistics based on distances between alleles (matrix to define) :");
-				printf("\n   C- Nij: kinship coefficient for ordered alleles (OJ Hardy, unpublished)");
+				printf("\n   N- Nij: kinship coefficient for ordered alleles (OJ Hardy, unpublished)");
 			}
 			else{//dominant marker
 				printf("\n\n 1- KINSHIP coefficient for dominant marker in diploids (Hardy, 2003)");
@@ -1197,8 +1197,8 @@ startagain:
 				else if(smess[k-1]=='8') Stat[k]=7;
 				else if(smess[k-1]=='9') Stat[k]=10;
 				else if(smess[k-1]=='A' || smess[k]=='a') Stat[k]=4;
-				else if(smess[k-1]=='B' || smess[k]=='b') Stat[k]=5;
-				else if(smess[k-1]=='C' || smess[k]=='c') {Stat[k]=14; *definealleledist=1;}
+				else if(smess[k-1]=='R' || smess[k]=='r') Stat[k]=5;
+				else if(smess[k-1]=='N' || smess[k]=='n') {Stat[k]=14; *definealleledist=1;}
 				else Stat[k]=0;
 				if(ndigit<=0){
 					if(Stat[k]==1) Stat[k]=11;
@@ -1548,12 +1548,15 @@ startagain:
 	if(*StatType>=2) printf("\n\n 1- Report allele freq and diversity coef per pop (or only averages reported)");
 	printf("\n\n 2- Report all stat of regression analyses (or only slopes reported)");
 	printf("\n\n 3- Report matrices with pairwise spatial distances and genetic coefficients");
-	if(m>1){
-		printf("\n\n 4- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
-		printf("\n\n 5- Report inter-locus correlation for pairwise genetic coefficients");
+	if(ploidy==2) printf("\n\n 4- Convert data file into GENEPOP or FSTAT format");
+	if(*StatType==1 && *TypeComp==0){
+		for(k=1;k<=(*NS);k++) if(Stat[k]==1 || Stat[k]==2 || Stat[k]==4 || Stat[k]==11) (*sigmaest)=1.0f;
+		if((*sigmaest)){ printf("\n\n 5- Estimate gene dispersal sigma"); (*sigmaest)=0.0f;}
 	}
-	if(ploidy==2) printf("\n\n 6- Convert data file into GENEPOP or FSTAT format");
-	if((ploidy==2 || ndigit<=0) && *StatType==1 && *TypeComp==0 && (permutgenes || ndigit<=0)) printf("\n\n 7- Estimate gene dispersal sigma");
+	if(m>1){
+		printf("\n\n 6- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
+//		printf("\n\n 7- Report inter-locus correlation for pairwise genetic coefficients");
+	}
 
 	printf("\n\nEnter 'R' to return to the first menu\n\n");
 
@@ -1568,21 +1571,27 @@ startagain:
 			if(stats%10==1) (*writeallelefreq)=1;
 			if(stats%10==2) (*regdetails)=1;
 			if(stats%10==3) (*distmatrix)=1;
-			if(stats%10==4) (*varcoef)=1;
-			if(stats%10==5) (*Rbtwloc)=1;
-			if(stats%10==6) (*export)=1;
-			if(stats%10==7) (*sigmaest)=1.;
+			if(stats%10==4) (*export)=1;
+			if(stats%10==5) (*sigmaest)=1.;
+			if(stats%10==6) (*varcoef)=1;
+			if(stats%10==7) (*Rbtwloc)=1;
 			stats=(int)(stats/10);
 		}
 	}
 
 
 	if(*sigmaest!=0.){
-		printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(in # individuals per squared distance unit, using same unit as for coordinates): ");
+		printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared distance unit, using same distance unit \nas for the spatial coordinates or the distance matrix): ");
 		do{
 			fgets_chomp(smess, sizeof(smess), stdin);
 			ok=sscanf(smess,"%f",density);
 		}while (ok!=1 || (*density)<=0.);
+		printf("\nDefine X of the distance range sigma to X.sigma to compute regression slope\n or press RETURN for the default value X=20 : ");
+		do{
+			fgets_chomp(smess, sizeof(smess), stdin);
+			if(smess[0]!='\0') 	ok=sscanf(smess,"%f",dwidth);
+			else {(*dwidth)=20.0f; ok=1;}
+		}while (ok!=1 || (*dwidth)<=1.);
 	}
 
 
@@ -2243,7 +2252,7 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 
 void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus[][MAXNOM],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,
-		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSlc[],float density,
+		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSlc[],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12])
 {
 	int c,l,S,a;
@@ -2346,18 +2355,39 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 				else fprintf(fp,"\t%G",corrSlc[S][l][c]);				
 			}
 		}/*end of loop l*/
-		if(m>1) l=0;
-		else l=1;
-		if(corrSlc[S][l][-11]!=0.) fprintf(fp,"\nEstimated gene dispersal sigma =\t%G\tassuming an effective pop density =\t%G",corrSlc[S][l][-11],density);
 
+		if(density!=0. && (Stat[S]==1 || Stat[S]==2 || Stat[S]==11 || Stat[S]==4) ){ //estimates of gene dispersal distances
+			if(m>1) l=0;
+			else l=1;
+			fprintf(fp,"\nEstimated gene dispersal parameters for an assumed effective pop density = %G  (#individuals per square distance unit) in a 2-dimensional population at drift-dispersal equilibrium under isotropic dispersal. Estimation based on the regression slope between sigma and %.1fsigma following an iterative procedure.",density,dwidth);
+			fprintf(fp,"\n\tNeighbourhood size Nb:");
+			if(corrSlc[S][l][-21]==(float)MISSVAL) fprintf(fp,"\t\tNo convergence");
+			else  fprintf(fp,"\t\t%G",corrSlc[S][l][-21]);
+			if(corrSlc[S][l][-22]!=corrSlc[S][l][-23]) fprintf(fp,"\t(mean over iterations cycling in the range %G to %G)",corrSlc[S][l][-22],corrSlc[S][l][-23]);
+			else fprintf(fp,"\t");
+			if(JKest){
+				fprintf(fp,"\tSE (standard error by jackknifying over loci):");
+				if(corrSlc[S][m+2][-21]!=(float)MISSVAL) fprintf(fp,"\t%G",corrSlc[S][m+2][-21]);
+				else fprintf(fp,"\tConvergence not achieved when removing some loci");
+			}
+			fprintf(fp,"\n\tSigma (half the mean square parent-offspring distance):");
+			if(corrSlc[S][l][-25]==(float)MISSVAL) fprintf(fp,"\t\tNo convergence");
+			else  fprintf(fp,"\t\t%G",corrSlc[S][l][-25]);
+			if(corrSlc[S][l][-26]!=corrSlc[S][l][-27]) fprintf(fp,"\t(mean over iterations cycling in the range %G to %G)",corrSlc[S][l][-26],corrSlc[S][l][-27]);
+			else fprintf(fp,"\t");
+			if(JKest){
+				fprintf(fp,"\tSE (standard error by jackknifying over loci):");
+				if(corrSlc[S][m+2][-25]!=(float)MISSVAL) fprintf(fp,"\t%G",corrSlc[S][m+2][-25]);
+				else fprintf(fp,"\tConvergence not achieved when removing some loci");
+			}
+		}
 
 		if(Rbtwloc){
 			fprintf(fp,"\n\n\t\tMean inter-locus correlation coefficient for pairwise coefficients (Pairon & Hardy, unpublished)\n\t\t%G\tSE (Jackknife over loci)=\t%G\t\tVp1=\t%G\tSE(Vp1)=\t%G\tRl1=\t%G\tSE(Rl1)=\t%G\t\tVp2=\t%G\tSE(Vp2)=\t%G\tRl2=\t%G\tSE(Rl2)=\t%G\tVl=\t%G\tSE(Vl)=\t%G",RSll[S][0][0][0],RSll[S][0][2][0],V[S][0][0][0],V[S][0][0][2],V[S][0][1][0],V[S][0][1][2],V[S][0][2][0],V[S][0][2][2],V[S][0][3][0],V[S][0][3][2],V[S][0][4][0],V[S][0][4][2]);			
 			fprintf(fp,"\n\t\tMean inter-locus correlation coefficient for residuals of pairwise coefficients after accounting for means per class (Pairon & Hardy, unpublished)\n\t\t%G\tSE (Jackknife over loci)=\t%G\t\tVp1=\t%G\tSE(Vp1)=\t%G\tRl1=\t%G\tSE(Rl1)=\t%G\t\tVp2=\t%G\tSE(Vp2)=\t%G\tRl2=\t%G\tSE(Rl2)=\t%G\tVl=\t%G\tSE(Vl)=\t%G",RSll[S][1][0][0],RSll[S][1][2][0],V[S][1][0][0],V[S][1][0][2],V[S][1][1][0],V[S][1][1][2],V[S][1][2][0],V[S][1][2][2],V[S][1][3][0],V[S][1][3][2],V[S][1][4][0],V[S][1][4][2]);			
 
 			fprintf(fp,"\n\n\t\tMean correlation coefficient between 2 random pool of loci for pairwise coefficients (Pairon & Hardy, unpublished)\n\t\t%G\tSE (Jackknife over loci)=\t%G",R2pl[S][0][0],R2pl[S][0][2]);			
-			fprintf(fp,"\n\t\tMean correlation coefficient between 2 random pool of loci for residuals of pairwise coefficients after accounting for means per class (Pairon & Hardy, unpublished)\n\t\t%G\tSE (Jackknife over loci)=\t%G",R2pl[S][1][0],R2pl[S][1][2]);			
-			
+			fprintf(fp,"\n\t\tMean correlation coefficient between 2 random pool of loci for residuals of pairwise coefficients after accounting for means per class (Pairon & Hardy, unpublished)\n\t\t%G\tSE (Jackknife over loci)=\t%G",R2pl[S][1][0],R2pl[S][1][2]);						
 		}
 		
 	}/*end of loop S*/

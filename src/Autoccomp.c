@@ -791,7 +791,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						NcompNij[l]=(int)(Ncomp*DivN[k][l]);
 					}
 					else Nij=(float)MISSVAL;
-					if(ENij) corrSlij[ENij][l][i][i]=Nij;//allele size correlation
+					if(ENij) corrSlij[ENij][l][i][i]=Nij;//inbreeding based on allele distances
 				
 				}/*end of loop l*/
 
@@ -3271,6 +3271,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 	/*transfer results*/
 	for(l=1;l<=m;l++)for(c=-20;c<=nc+1;c++) corrlc[l][c]=(float)statlc[l][c];
 	if(m>1)for(c=-20;c<=nc+1;c++) corrlc[0][c]=(float)statlc[0][c]; 
+	if(JKl) for(l=1;l<=m;l++)for(c=-20;c<=nc+1;c++) corrlc[-l][c]=(float)statlc[-l][c];
 
 	/*Jackknife over loci*/
 	if(JKl && m>1){
@@ -3717,96 +3718,169 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 /*************************************************************************************/
 
 void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,double **Mdij,
-		int *sgi,float ***corrlij,float **corrlc,float density)
+		int *sgi,float ***corrlij,float **corrlc,int ploidy,int Stat,int JKest,float density,float dwidth)
 {
-	int i,j,l,c,niter=0; 		
+	int i,j,l,cneighb,niter,backiter,linit,lterm; 		
 	double dij,logd;
 	double SPvdlog,Sdlog,SSdlog,Svlog,SSvlog,val;
 	int npairslog;
-	double SSDvlog,SSDdlog,SPDvdlog,b,Nb;
-	float dijmin, sigmaestold, sigmaestnew;
-	int converge=0;
+	double SSDvlog,SSDdlog,SPDvdlog,b,Nb[101];
+	double dijmin, sigmaest[101],meansigma,meanNb,sigmasq,minNb,maxNb,minsigma,maxsigma;
+	int converge=0,nJK;
 
-	printf("\n\nEstimating sigma for a 2D population at drift-dispersal equilibrium with effective density = %G",density);
-	printf("\nIteration\tsigma");
+	printf("\n\nEstimating dispersal distance for a 2D population at drift-dispersal equilibrium assuming an effective density = %G",density);
+	printf("\nIter\t#pairs\tNb\tsigma");
 
-	l=0;
-	if(m==1) l=1;
+	linit=lterm=0;
+	if(JKest) linit=-m;
+	if(m==1) linit=lterm=1;
 
-	c=1;
 
-	dijmin=sigmaestold=0.;
+	cneighb=1;
 
-	do{
-		npairslog=0;
-		Sdlog=Svlog=SSdlog=SSvlog=SPvdlog=0.;
-		niter++;
 
-		for(i=1;i<=n;i++){
+	for(l=linit;l<=lterm;l++){
 
-			for(j=i+1;j<=n;j++)if(corrlij[l][i][j]!=(float)MISSVAL) {
+		dijmin=sigmaest[0]=0.;
+		niter=0;
 
-				val=corrlij[l][i][j];
+		do{
+			npairslog=0;
+			Sdlog=Svlog=SSdlog=SSvlog=SPvdlog=0.;
+			niter++;
 
-				if(Mdij[0][0]){
-					if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
-					else continue;
+			for(i=1;i<=n;i++){
+
+				for(j=i+1;j<=n;j++)if(corrlij[l][i][j]!=(float)MISSVAL) {
+
+					val=corrlij[l][i][j];
+
+					if(Mdij[0][0]){
+						if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
+						else continue;
+					}
+					else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+				
+ 					if(Mdij[0][0]==0 && (sgi[i]==sgi[j])){ dij=-1.; cneighb=2;}	/*intra-group class*/
+
+					/*compute correlation/regression btw pairwise autocorrelation coef & dist*/
+					if(dij>0. && dij>=dijmin && (dij<=(dwidth*dijmin) || dijmin==0)){
+
+						logd=log(dij);
+						npairslog++;
+						Svlog+=val;
+						SSvlog+=val*val;
+						Sdlog+=logd;
+						SSdlog+=logd*logd;
+						SPvdlog+=logd*val;
+					}
+				} //end loop j
+
+			}/*end loop i*/
+
+			/*reg with log d*/
+			if(npairslog){
+
+				SSDvlog=SSvlog-Svlog*Svlog/npairslog;
+				if(SSDvlog<0.000000001) SSDvlog=0.;/*when val is constant, Vv might however take some value due to error of round*/
+				SSDdlog=SSdlog-Sdlog*Sdlog/npairslog;
+				if(SSDdlog<0.000000001) SSDdlog=0.;/*when val is constant, Vd might however take some value due to error of round*/
+
+				if(SSDdlog && SSDvlog){
+					SPDvdlog=SPvdlog-Svlog*Sdlog/npairslog;
+					b=SPDvdlog/SSDdlog;
 				}
-				else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
-			
- 				if(Mdij[0][0]==0 && (sgi[i]==sgi[j])){ dij=-1.; c=2;}	/*intra-group class*/
-
-				/*compute correlation/regression btw pairwise autocorrelation coef & dist*/
-				if(dij>0. && dij>=dijmin && (dij<=(20*dijmin) || dijmin==0)){
-
-					logd=log(dij);
-					npairslog++;
-					Svlog+=val;
-					SSvlog+=val*val;
-					Sdlog+=logd;
-					SSdlog+=logd*logd;
-					SPvdlog+=logd*val;
-				}
-			} //end loop j
-
-		}/*end loop i*/
-
-		/*reg with log d*/
-		if(npairslog){
-
-			SSDvlog=SSvlog-Svlog*Svlog/npairslog;
-			if(SSDvlog<0.000000001) SSDvlog=0.;/*when val is constant, Vv might however take some value due to error of round*/
-			SSDdlog=SSdlog-Sdlog*Sdlog/npairslog;
-			if(SSDdlog<0.000000001) SSDdlog=0.;/*when val is constant, Vd might however take some value due to error of round*/
-
-			if(SSDdlog && SSDvlog){
-				SPDvdlog=SPvdlog-Svlog*Sdlog/npairslog;
-				b=SPDvdlog/SSDdlog;
+				else b=MISSVAL;
 			}
-			else b=(float)MISSVAL;
+			else b=MISSVAL;
+
+			if(Stat==1 || Stat==2 || Stat==11){ //for kinship estimators
+				if(b<0. && b!=MISSVAL){
+				//	Nb[niter]=1./(  (corrlc[l][cneighb]-1.)/b  );
+				//	sigmasq=(1./Nb[niter])/(2*ploidy*3.1415*(double)density);
+					Nb[niter]=(corrlc[l][cneighb]-1.)/b  ;
+					sigmasq=Nb[niter]/(2*ploidy*3.1415*(double)density);
+					
+					sigmaest[niter]=sqrt(sigmasq);
+					dijmin=sigmaest[niter];
+				}
+				else sigmaest[niter]=Nb[niter]=MISSVAL;
+			}
+			if(Stat==4){ //for Rousset estimators
+				if(b>0. && b!=MISSVAL){
+				//	Nb[niter]=1./(  1./b  );
+				//	sigmasq=(1./Nb[niter])/(2*ploidy*3.1415*(double)density);
+					Nb[niter]=1./b;
+					sigmasq=Nb[niter]/(2*ploidy*3.1415*(double)density);
+					sigmaest[niter]=sqrt(sigmasq);
+					dijmin=sigmaest[niter];
+				}
+				else sigmaest[niter]=Nb[niter]=MISSVAL;
+			}
+
+			if(l>=0) printf("\n%i\t%i\t%G\t%G",niter,npairslog,Nb[niter],sigmaest[niter]);
+
+			if(sigmaest[niter]!=MISSVAL){
+				if(fabs((sigmaest[niter]-sigmaest[niter-1])/sigmaest[niter])<0.01) converge=1;
+				else converge=0;
+			}
+
+		}while(sigmaest[niter]!=MISSVAL && converge==0 && niter<100);
+
+
+		corrlc[l][-21]=corrlc[l][-22]=corrlc[l][-23]=Nb[niter];
+		corrlc[l][-25]=corrlc[l][-26]=corrlc[l][-27]=sigmaest[niter];
+		corrlc[l][-24]=npairslog;
+
+		if(niter==100){ //to get average over a cycle
+			backiter=1;
+			meansigma=minsigma=maxsigma=sigmaest[niter];
+			meanNb=minNb=maxNb=Nb[niter];
+			while((sigmaest[niter]!=sigmaest[niter-backiter]) && backiter<100){
+				meansigma+=sigmaest[niter-backiter];
+				meanNb+=Nb[niter-backiter];
+				if(sigmaest[niter-backiter]<minsigma) minsigma=sigmaest[niter-backiter];
+				if(sigmaest[niter-backiter]>maxsigma) maxsigma=sigmaest[niter-backiter];
+				if(Nb[niter-backiter]<minNb) minNb=Nb[niter-backiter];
+				if(Nb[niter-backiter]>maxNb) maxNb=Nb[niter-backiter];
+				backiter++;
+			}					
+			corrlc[l][-21]=meanNb/backiter;
+			corrlc[l][-22]=minNb;
+			corrlc[l][-23]=maxNb;
+			corrlc[l][-25]=meansigma/backiter;
+			corrlc[l][-26]=minsigma;
+			corrlc[l][-27]=maxsigma;
 		}
-		else b=(float)MISSVAL;
+	}
 
-		if(b<0. && b!=(float)MISSVAL){
-			Nb=(corrlc[l][c]-1.)/b;
-			sigmaestnew=sqrt(Nb/(4*3.1415*density));
-			dijmin=sigmaestnew;
+	//Jacknife estimates
+	if(JKest){
+		converge=1;
+		for(l=1;l<=m;l++) if(corrlc[-l][-21]==(float)MISSVAL) converge==0;
+
+		if(converge){
+			nJK=m;
+			corrlc[m+1][-21]=corrlc[m+2][-21]=corrlc[m+1][-25]=corrlc[m+2][-25]=0.;
+			for(l=1;l<=m;l++)if(corrlc[-l][-21]!=(float)MISSVAL){ //compute pseudovalues
+				corrlc[l][-21]=(float)(nJK*fabs((double)corrlc[0][-21])-(nJK-1)*fabs((double)corrlc[-l][-21]));
+				corrlc[m+1][-21]+=corrlc[l][-21];
+				corrlc[l][-25]=(float)(nJK*fabs((double)corrlc[0][-25])-(nJK-1)*fabs((double)corrlc[-l][-25]));
+				corrlc[m+1][-25]+=corrlc[l][-25];
+			}
+			corrlc[m+1][-21]/=nJK;   //mean JK estimate
+			corrlc[m+1][-25]/=nJK;   //mean JK estimate
+			for(l=1;l<=m;l++)if(corrlc[-l][-21]!=(float)MISSVAL){ //compute variance of pseudoval
+				corrlc[m+2][-21]+=(corrlc[l][-21]-corrlc[m+1][-21])*(corrlc[l][-21]-corrlc[m+1][-21]);
+				corrlc[m+2][-25]+=(corrlc[l][-25]-corrlc[m+1][-25])*(corrlc[l][-25]-corrlc[m+1][-25]);
+			}
+			corrlc[m+2][-21]=sqrt((corrlc[m+2][-21]/(nJK-1))/nJK); //standard error JK estimate
+			corrlc[m+2][-25]=sqrt((corrlc[m+2][-25]/(nJK-1))/nJK); //standard error JK estimate
 		}
-		else sigmaestnew=(float)MISSVAL;
+		else corrlc[m+1][-21]=corrlc[m+2][-21]=corrlc[m+1][-25]=corrlc[m+2][-25]=(float)MISSVAL;
+	}
+	else corrlc[m+1][-21]=corrlc[m+2][-21]=corrlc[m+1][-25]=corrlc[m+2][-25]=(float)MISSVAL;
 
-		printf("\n%i\t%G",niter,sigmaestnew);
-
-		if(sigmaestnew!=(float)MISSVAL){
-			if(fabs((sigmaestnew-sigmaestold)/sigmaestnew)<0.01) converge=1;
-			else converge=0;
-		}
-		sigmaestold=sigmaestnew;
-
-	}while(sigmaestnew!=(float)MISSVAL && converge==0 && niter<100);
-
-
-	corrlc[l][-11]=sigmaestnew;
-	if(niter==100) corrlc[l][-11]=-1.*sigmaestnew; 
 
 }	/*end procedure estimate_sigma_2D_kinship*/
 

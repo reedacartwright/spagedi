@@ -26,7 +26,7 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m,int Ncat,int Nsg,int Nskg,int ncoord,
 	  int *StatType,int *NS,int Stat[12],int *TypeComp,int *cat1,int *cat2,
 	  struct name *namecat,int *FreqRef,float *givenF,int *writeallelefreq,int *JKest,int *distmatrix,int Npermut[],
-	  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,
+	  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,float *dwidth,
 	  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,
 	  int *definealleledist,char *alleledistfilename,int *export,long *seed);
 void read_pairwise_spatial_distances(char *inputfile,char *distfile,int n,
@@ -43,7 +43,7 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 				 int *npc,float **indexpartic);
 void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus[][MAXNOM],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,
-		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSvc[10],float density,
+		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSvc[10],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12]);
 void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MAXNOM],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,

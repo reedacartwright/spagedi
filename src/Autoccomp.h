@@ -5,13 +5,13 @@
 #ifdef PACKAGE_STRING
 #	define VERSION PACKAGE_STRING
 #else
-#	define  VERSION "SPAGeDi 1.2i"
+#	define  VERSION "SPAGeDi 1.3a"
 #endif
 
 #define  VARTYPE 0  /*0 for locus with genotypes, 1 for quantitative variable*/
-#define  NMAX 20000	/*max number of individuals*/
+#define  NMAX 100000	/*max number of individuals*/
 #define  NCOORDMAX 3    /*max number of spatial coordinates*/
-#define  MMAX 2000    /*max number of loci or variables*/
+#define  MMAX 10000    /*max number of loci or variables*/
 #define  NDIGITMAX 3    /*max number of digits per allele*/
 #define  PLOIDYMAX 8    /*max number of digits per allele*/
 #define  MAXALLID 999 /*max number of alleles per locus*/
@@ -44,7 +44,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	float ***Pkla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,
 	struct name namei[],char namelocus[][MAXNOM],struct name namecat[],
 	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,
-	int NS,int Stat[],int printdistmatrix,float sigmaest,float density,
+	int NS,int Stat[],int printdistmatrix,float sigmaest,float density,float dwidth,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,
 	int permutdetails,char outputfile[]);
 void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double *zp,double **dij,int *popi,int Npop,
@@ -93,7 +93,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 		long *seed,int JKl);
 void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *R2pl,long *seed);
 void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,double **Mdij,
-		int *sgi,float ***corrlij,float **corrlc,float density);
+		int *sgi,float ***corrlij,float **corrlc,int ploidy,int Stat,int JKl,float density,float dwidth);
 void analyse_resampling(int m,int cinit,int nc,int Npermut,float ***corrlcs,
 		struct resample_stat_type **r_statlc);
 

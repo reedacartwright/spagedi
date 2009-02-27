@@ -50,7 +50,7 @@ int main(int argc,char *argv[])
 	int maxnal=0;			//max # of alleles
 	float missdat;			//value attributed for missing data
 	int **Nmissinggenotpl,**Nincompletegenotpl;		//number of missing / incomplete genotypes per locus 
-	float dijmin,dijmax,sigmaest,density;			//minimal/max distance to take into account for spatial regression
+	float dijmin,dijmax,sigmaest,density,dwidth;			//minimal/max distance to take into account for spatial regression
 	int nc;				//number of classes of distance intervals (does not include class=0 which is for Fis),class
 	double maxc[MAXINTERVALS];//max value for each distance interval
 	float givenF;
@@ -132,7 +132,7 @@ strcpy(instrfile,"instruction.txt");
 	define_groups(n,namei,xi,yi,zi,Ncat,namecat,namecati,cati,Nik,&Nsg,namesg,sgi,Nig,&Nskg,nameskg,skgi,catskg,Niskg,1);
 	displaybasicinfoF(argc,inputfile,outputfile,n,Ncat,Nik,ncoord,m,ndigit,ploidy,ploidyi,Niploidy,namelocus,namecoord,namecat,nc,maxc,Nsg,Nig,Nskg,Niskg);	
 	
-	define_analysisF(argc,instrfile,n,ploidy,ndigit,m,Ncat,Nsg,Nskg,ncoord,&StatType,&NS,Stat,&TypeComp,&cat1,&cat2,namecat,&FreqRef,&givenF,&printallelefreq,&JKest,&printdistmatrix,Npermut,&dijmin,&dijmax,&writeresampdistr,&regdetails,&varcoef,&Rbtwloc,&sigmaest,&density,&permutdetails,&distm,inputfile,distfile,freqfile,&alleledist,alleledistfile,&export,&seed);
+	define_analysisF(argc,instrfile,n,ploidy,ndigit,m,Ncat,Nsg,Nskg,ncoord,&StatType,&NS,Stat,&TypeComp,&cat1,&cat2,namecat,&FreqRef,&givenF,&printallelefreq,&JKest,&printdistmatrix,Npermut,&dijmin,&dijmax,&writeresampdistr,&regdetails,&varcoef,&Rbtwloc,&sigmaest,&density,&dwidth,&permutdetails,&distm,inputfile,distfile,freqfile,&alleledist,alleledistfile,&export,&seed);
 	
 	
 	
@@ -222,13 +222,13 @@ strcpy(instrfile,"instruction.txt");
 	if(cat1 && !cat2) { n=Nik[cat1]; for(p=1;p<=Npop;p++) if(catp[p]>1) Npop=p-1; }
 	if(cat1 && cat2) { n=Nik[cat1]+Nik[cat2];	for(p=1;p<=Npop;p++) if(catp[p]>2) Npop=p-1; }
 
-	if(StatType==1) mainAnalysisBtwInd(argc,n,ntot,xi,yi,zi,Mdij,sgi,Nsg,skgi,Nskg,catskg,cati,Ncat,Nik,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nallelepl,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,givenF,namei,namelocus,namecat,TypeComp,cat1,cat2,FreqRef,givenPla,Ngivenallelel,JKest,NS,Stat,printdistmatrix,sigmaest,density,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
+	if(StatType==1) mainAnalysisBtwInd(argc,n,ntot,xi,yi,zi,Mdij,sgi,Nsg,skgi,Nskg,catskg,cati,Ncat,Nik,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nallelepl,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,givenF,namei,namelocus,namecat,TypeComp,cat1,cat2,FreqRef,givenPla,Ngivenallelel,JKest,NS,Stat,printdistmatrix,sigmaest,density,dwidth,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
 	if(StatType>=2) mainAnalysisBtwPop(argc,StatType,n,xp,yp,zp,Mdij,popi,Npop,catp,cati,Ncat,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,namepop,namelocus,namecat,PWstat,TypeComp,cat1,cat2,FreqRef,JKest,NS,Stat,printdistmatrix,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
 
 	sprintf(smess,"\n\n ");
 	write_tofile_only(outputfile,smess);
 	printf("\n\nThe program has finished normally. \nLet's now open the file %c%s%c with a worksheet program\n... and digest SPAGeDi's results. \nPress any key to close this window.",'"',outputfile,'"');
-	if(argc<4) wait_a_char();			
+//	if(argc<4) wait_a_char();			
 	
 	return 0;
 }	//end of main
@@ -281,7 +281,8 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	if(m==1) linit=1;
 	for(S=1;S<=NS;S++){
 		corrSlij[S]=f3tensor(linit,m,0,Npop,0,Npop);
-		corrSlc[S]=matrix(0,m+4,-20,nc+2);
+		if(JKest) corrSlc[S]=matrix(-m,m+4,-20,nc+2);
+		else corrSlc[S]=matrix(0,m+4,-20,nc+2);
 		if(Rbtwloc) {RSll[S]=f3tensor(0,1,0,m,0,m); V[S]=f3tensor(0,1,0,5,0,2); R2pl[S]=matrix(0,1,-m,m);}
 		FstatSlr[S]=matrix(0,m+2,0,4);
 		for(l=0;l<=m+2;l++)for(r=0;r<=4;r++) FstatSlr[S][l][r]=(float)MISSVAL;
@@ -525,8 +526,8 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	if(m==1) linit=1;
 	for(S=1;S<=NS;S++){
 		free_f3tensor(corrSlij[S],linit,m,0,Npop,0,Npop);
-		free_matrix(corrSlc[S],0,m+4,-20,nc+2);
-		free_matrix(FstatSlr[S],0,m+2,0,4);
+//		free_matrix(corrSlc[S],0,m+4,-20,nc+2);
+//		free_matrix(FstatSlr[S],0,m+2,0,4);
 		if(Rbtwloc) {free_f3tensor(RSll[S],0,1,0,m,0,m); free_f3tensor(V[S],0,1,0,5,0,2);}
 	}
 
@@ -538,7 +539,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nallelekl,int **Nvalgenkl,int ***gilc,
 	float ***Ppla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,
 	struct name namei[],char namelocus[][MAXNOM],struct name namecat[],
-	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,int NS,int Stat[],int printdistmatrix,float sigmaest,float density,
+	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,int NS,int Stat[],int printdistmatrix,float sigmaest,float density,float dwidth,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[])
 {
 	int i,c,l,S,ni,nf;
@@ -596,7 +597,8 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 			for(l=linit;l<=m;l++) corrSlij[S][l][i]=vector(ni,nf);
 		}
 	}
-	for(S=1;S<=NS;S++) corrSlc[S]=matrix(0,m+4,-20,abs(nc)+2);
+	if(JKest) for(S=1;S<=NS;S++) corrSlc[S]=matrix(-m,m+4,-28,abs(nc)+2);
+	else for(S=1;S<=NS;S++) corrSlc[S]=matrix(0,m+4,-28,abs(nc)+2);
 	if(Rbtwloc)for(S=1;S<=NS;S++) {RSll[S]=f3tensor(0,1,0,m,0,m); V[S]=f3tensor(0,1,0,5,0,2); R2pl[S]=matrix(0,1,-m,m);}
 	estinbreeding=0;
 	for(S=1;S<=NS;S++) if(ploidy>1 && (Stat[S]==1 || Stat[S]==2 || Stat[S]==5)) estinbreeding=1; 
@@ -606,9 +608,9 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	compute_pairwise_corr_F(n,ntot,Ncat,cati,m,ndigit,ploidy,missdat,gilc,Nallelel,allelesizela,Mgdlaa,corrSlij,NS,Stat,FreqRef,givenPla,Ngivenallelel,TypeComp,givenF,0,JKest);
 	for(S=1;S<=NS;S++) compute_corr_per_dist_class (n,m,nc,maxc,Ncat,cati,1,TypeComp,FreqRef,varcoef,xi,yi,zi,Mdij,sgi,dijmin,dijmax,corrSlij[S],corrSlc[S],RSll[S],Rbtwloc,V[S],R2pl[S],&seed,JKest);
 	if(sigmaest)for(S=1;S<=NS;S++){
-		if(Stat[S]==1 || Stat[S]==2 || Stat[S]==11) estimate_sigma_2D_kinship (n,m,xi,yi,zi,Mdij,sgi,corrSlij[S],corrSlc[S],density);
+		if(Stat[S]==1 || Stat[S]==2 || Stat[S]==11 || Stat[S]==4) estimate_sigma_2D_kinship (n,m,xi,yi,zi,Mdij,sgi,corrSlij[S],corrSlc[S],ploidy,Stat[S],JKest,density,dwidth);
 	}
-	writeIndStatresults(outputfile,n,Nsg,m,namelocus,nc,maxc,npc,indexpartic,mdc,mlndc,dijmin,dijmax,givenF,TypeComp,cat1,cat2,namecat,FreqRef,NS,Stat,corrSlc,density,JKest,regdetails,varcoef,Rbtwloc,RSll,V,R2pl);
+	writeIndStatresults(outputfile,n,Nsg,m,namelocus,nc,maxc,npc,indexpartic,mdc,mlndc,dijmin,dijmax,givenF,TypeComp,cat1,cat2,namecat,FreqRef,NS,Stat,corrSlc,density,dwidth,JKest,regdetails,varcoef,Rbtwloc,RSll,V,R2pl);
 	if(printdistmatrix && !Npermut[0]) writedistmatrices(outputfile,n,m,givenF,TypeComp,cati,printdistmatrix,xi,yi,zi,Mdij,sgi,1,NS,Stat,corrSlij,namei,namelocus);
 
 	//PERMUTATIONS
@@ -755,7 +757,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	if(JKest) linit=-m;
 	if(m==1) linit=1;
 	if(TypeComp!=1) for(S=1;S<=NS;S++) free_f3tensor(corrSlij[S],linit,m,0,n,0,n);
-	for(S=1;S<=NS;S++) free_matrix(corrSlc[S],0,m+4,-20,abs(nc)+2);
+//	for(S=1;S<=NS;S++) free_matrix(corrSlc[S],0,m+4,-20,abs(nc)+2);
 	if(Rbtwloc)for(S=1;S<=NS;S++) {free_f3tensor(RSll[S],0,1,0,m,0,m); free_f3tensor(V[S],0,1,0,5,0,2);}
 }
 
