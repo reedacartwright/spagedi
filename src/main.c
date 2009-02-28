@@ -227,7 +227,7 @@ strcpy(instrfile,"instruction.txt");
 
 	sprintf(smess,"\n\n ");
 	write_tofile_only(outputfile,smess);
-	printf("\n\nThe program has finished normally. \nLet's now open the file %c%s%c with a worksheet program\n... and digest SPAGeDi's results. \nPress any key to close this program.\n",'"',outputfile,'"');
+	printf("\n\nThe program has finished normally. \nLet's now open the file %c%s%c with a worksheet program\n... and digest SPAGeDi's results. \nPress any key to exit this program.\n",'"',outputfile,'"');
 	if(argc<4) wait_a_char();			
 	
 	return 0;
