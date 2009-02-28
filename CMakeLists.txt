@@ -28,21 +28,15 @@ SET(CMAKE_MAN_DIR "man" CACHE STRING
 MARK_AS_ADVANCED(CMAKE_DATA_DIR CMAKE_DOC_DIR CMAKE_MAN_DIR)
 
 SET(CPACK_SOURCE_IGNORE_FILES
-  "/CVS/"
-  "/\\\\.svn/"
-  "\\\\.swp$"
-  "\\\\.#"
-  "/#"
-  ".*~$"
-  "SPAGeDi[-]"
-  "spagedi[-]"
-  "spagedi\\\\.exe$"
-  "spagedi$"
-  "/CMakeFiles/"
-  "CMakeCache\\\\.txt"
-  "CPack.*Config\\\\.cmake"
-  "cmake_install\\\\.cmake"
-  "_CPACK_PACKAGES"
+  "/CVS/" "/\\\\.svn/"  "\\\\.swp$"  "\\\\.#"  "/#"  ".*~$"
+  "SPAGeDi[-]1"  "spagedi[-]1"
+  "spagedi\\\\.exe"  "spagedi$"
+  "/CMakeFiles/"  "CMakeCache\\\\.txt"
+  "CPack.*Config\\\\.cmake"  "cmake_install\\\\.cmake"
+  "install_manifest\\\\.txt$"
+  "_CPACK_PACKAGES"  "_CPack_Packages"
+  "\\\\.vcproj"  "\\\\.dir"  "\\\\.ncb$"  "\\\\.sln$"  "\\\\.suo$"
+  "Makefile$" "\\\\.ilk"  "\\\\.pdb"
 )
 
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${SPAGEDI_NAME})
@@ -110,9 +104,10 @@ ENDIF(WIN32 AND NOT UNIX)
 INCLUDE(CPack)
 
 INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
-INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${CMAKE_DATA_DIR}/examples")
+#INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${CMAKE_DATA_DIR}/examples")
 
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(examples)
 
 INCLUDE(InstallRequiredSystemLibraries)
 
