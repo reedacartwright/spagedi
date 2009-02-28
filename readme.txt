@@ -30,17 +30,18 @@ misinterpretation of the results given by SPAGeDi.
 
 INSTALLATION
 
-SPAGeDi requires CMake (http://www.cmake.org/) in order for it to be build from
-sources.  Many Unix-like operating systems can install CMake through their
-package systems.  Extract SPAGeDi and issue the following commands in the ex-
-tracted directory:
+See SPAGeDi's website for binary packages for Windows, Mac OSX, and other systems.
+Alternatively, you can compile SPAGeDi from the source.  SPAGeDi requires
+CMake 2.6 (http://www.cmake.org/) to build it from sources.  Many Unix-like opera-
+ting systems can install CMake through their package systems.  Extract the SPAGeDi
+source code and issue the following commands in the extracted directory:
 
 cmake -g "Unix Makefiles" .
-gmake
-gmake install
+make
+make install
 
 The '-g' option to cmake can be changed provide different build system options.
-See the cmake manual for information.
+See CMake's manual for information.
 
 MANUAL
 
@@ -54,5 +55,4 @@ Molecular Ecology Notes 2: 618-620.
 
 PORTABLE/UNIX PORT
 
-Portable source code (Unix port) created by Reed A. Cartwright <reed@scit.us>
-
+Portable source code (Unix/OSX Port) created by Reed A. Cartwright <reed@scit.us>

@@ -109,4 +109,3 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples)
 
 INCLUDE(InstallRequiredSystemLibraries)
-
