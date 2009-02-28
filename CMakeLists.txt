@@ -8,7 +8,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 IF(APPLE)
-  # Create Universal Binary
+  # Create 32-bit Universal Binary
   SET(CMAKE_OSX_ARCHITECTURES "ppc;i386")
   SET(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-universal")
 ENDIF(APPLE)
@@ -104,7 +104,6 @@ ENDIF(WIN32 AND NOT UNIX)
 INCLUDE(CPack)
 
 INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
-#INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${CMAKE_DATA_DIR}/examples")
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples)
