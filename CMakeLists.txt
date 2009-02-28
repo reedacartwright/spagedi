@@ -17,6 +17,20 @@ IF(APPLE)
   SET(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-universal")
 ENDIF(APPLE)
 
+IF(WIN32 AND NOT UNIX)
+	SET(SPAGEDI_DIR)
+ELSE(WIN32 AND NOT UNIX)
+	SET(SPAGEDI_DIR "/spagedi-${SPAGEDI_VERSION}")
+ENDIF(WIN32 AND NOT UNIX)
+
+SET(CMAKE_DATA_DIR "share${SPAGEDI_DIR}" CACHE STRING
+  "Install location for data (relative to prefix).")
+SET(CMAKE_DOC_DIR "doc${SPAGEDI_DIR}" CACHE STRING
+  "Install location for documentation (relative to prefix).")
+SET(CMAKE_MAN_DIR "man" CACHE STRING
+  "Install location for man pages (relative to prefix).")
+MARK_AS_ADVANCED(CMAKE_DATA_DIR CMAKE_DOC_DIR CMAKE_MAN_DIR)
+
 SET(CPACK_SOURCE_IGNORE_FILES
   "/CVS/"
   "/\\\\.svn/"
@@ -75,7 +89,6 @@ ENDIF(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY ${SPAGEDI_NAME})
 
-SET(SHARE_DIR "share/${CPACK_PACKAGE_INSTALL_DIRECTORY}")
 IF(WIN32 AND NOT UNIX)
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
@@ -86,7 +99,6 @@ IF(WIN32 AND NOT UNIX)
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.ulb.ac.be\\\\sciences\\\\ecoevol\\\\spagedi.html")
   SET(CPACK_NSIS_CONTACT "ohardy@ulb.ac.be")
   SET(CPACK_NSIS_MODIFY_PATH ON)
-  SET(SHARE_DIR "share")
 ELSEIF(APPLE)
   SET(CPACK_GENERATOR "PackageMaker")
   SET(CPACK_PACKAGE_DEFAULT_LOCATION "/Applications")
@@ -109,8 +121,8 @@ ENDIF(WIN32 AND NOT UNIX)
 
 INCLUDE(CPack)
 
-INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${SHARE_DIR})
-INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${SHARE_DIR}/examples")
+INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
+INSTALL(FILES examples/data1.txt examples/data2.txt examples/data3.txt DESTINATION "${CMAKE_DATA_DIR}/examples")
 
 ADD_SUBDIRECTORY(src)
 
