@@ -3873,7 +3873,7 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 	//Jacknife estimates
 	if(JKest){
 		converge=1;
-		for(l=1;l<=m;l++) if(corrlc[-l][-21]==(float)MISSVAL) converge==0;
+		for(l=1;l<=m;l++) if(corrlc[-l][-21]==(float)MISSVAL) { converge=0; break; }
 
 		if(converge){
 			nJK=m;
