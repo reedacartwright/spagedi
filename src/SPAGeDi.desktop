@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=SPAGeDi
+Comment=Spatial Pattern Analysis of Genetic Diversity
+Exec=spagedi %f
+Icon=SPAGeDi.png
+Terminal=True
+X-MultipleArgs=false
+Type=Application
+Categories=Application;Education;Science;Biology
+
+
