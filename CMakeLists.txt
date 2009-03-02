@@ -121,7 +121,7 @@ ELSEIF(APPLE)
     ENDIF(NOT "${ENDCH}" STREQUAL "/")
     SET(CMAKE_INSTALL_PREFIX 
       "${CMAKE_INSTALL_PREFIX}${CMAKE_BUNDLE_NAME}.app/Contents")
-    SET(CMAKE_POSTFLIGHT_SCRIPT "postflight.sh")
+    SET(CPACK_POSTFLIGHT_SCRIPT "postflight.sh")
     CONFIGURE_FILE("postflight.sh.in" "postflight.sh")	  
   ELSE(APPLE_BUNDLE)
   ENDIF(APPLE_BUNDLE)
