@@ -43,7 +43,7 @@ CHECK_FUNCTION_EXISTS("chdir" HAVE_CHDIR)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-ADD_EXECUTABLE(spagedi main.c Autoccomp.c Autoccomp.h Xatools.c Xatools.h Autocio.c Autocio.h)
+ADD_EXECUTABLE(spagedi MACOSX_BUNDLE main.c Autoccomp.c Autoccomp.h Xatools.c Xatools.h Autocio.c Autocio.h)
 
 TARGET_LINK_LIBRARIES(spagedi ${CMAKE_REQUIRED_LIBRARIES} ${CURSES_LIBRARIES})
 
