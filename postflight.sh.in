@@ -1,3 +1,9 @@
 #!/bin/bash
-ln -s "$2/@SPAGEDI_BUNDLE_NAME@.app/Contents/MacOS/@SPAGEDI_BUNDLE_NAME@" /usr/bin/spagedi
+app1="$2/@SPAGEDI_BUNDLE_NAME@.app/Contents/MacOS/@SPAGEDI_BUNDLE_NAME@"
+app2="$2/@SPAGEDI_BUNDLE_NAME@/bin/spagedi"
+if [ -x "$app1" ]; then
+  ln -s  "$app1" /usr/bin/spagedi
+elif [ -x "$app2" ]; then
+  ln -s "$app2" /usr/bin/spagedi
+fi
 exit 0
