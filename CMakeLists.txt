@@ -105,7 +105,7 @@ ENDIF(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
 IF(WIN32 AND NOT UNIX)
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
-  #SET(CPACK_PACKAGE_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
+  #SET(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
   SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\spagedi.exe")
   SET(CPACK_NSIS_DISPLAY_NAME "${SPAGEDI_NAME} ${SPAGEDI_VERSION}")
   SET(CPACK_NSIS_HELP_LINK "http:\\\\\\\\www.ulb.ac.be\\\\sciences\\\\ecoevol\\\\spagedi.html")
