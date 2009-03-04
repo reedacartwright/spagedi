@@ -103,6 +103,24 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 	return ret;
 }
 
+void copy_file_name(char *to, const char *from) {
+	const char sps[] = " \"\'";
+	size_t len,len2;
+	len = strspn(from,sps); // some drag-n-drop strings can be quoted
+	from += len;
+	strncpy(to,from,PATH_MAX-1);
+	to[PATH_MAX-1] = '\0';  // Ensure null-termination
+	len = strcspn(to,sps);  // skip non-sps chars
+	while(to[len] != '\0') {
+		len2 = len+strspn(to+len,sps); // skip sps chars
+		if(to[len2] == '\0') {
+			to[len] = '\0'; // shorten string
+			break;
+		}
+		len = len2+strcspn(to+len2,sps);
+	}
+}
+
 /****************************************************************************************/
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
@@ -132,7 +150,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		if(smess[0]=='\0') {
 			printf("%s",outputfile);
 		} else
-			strncpy(outputfile,smess,PATH_MAX-1);
+			copy_file_name(outputfile,smess);
 	}
 	if(argc == 3) {
 		strncpy(inputfile,argv[1],PATH_MAX);
@@ -162,8 +180,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		} else if(smess[0]==' ')
 			import_data_file(inputfile);
 		else {
-			strncpy(inputfile, smess, PATH_MAX);
-			inputfile[PATH_MAX-1] = '\0';
+			copy_file_name(inputfile,smess);
 		}
 		strncpy(outputfile, inputfile, PATH_MAX);
 		ptr = outputfile;
@@ -178,7 +195,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		if(smess[0]=='\0') {
 			printf("\t\t%s",outputfile);
 		} else {
-			strncpy(outputfile,smess,PATH_MAX-1); 
+			copy_file_name(outputfile,smess);
 		}
 	}
  
@@ -186,8 +203,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		printf("\n\nWARNING: Cannot open data file \"%s\"\n  If it is being used by another application, close it first, then press RETURN\n  Otherwise enter a new name for the data file\n  Press ctrl+c if you wish to stop the program now\n",inputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0') {
-			strncpy(inputfile, smess, PATH_MAX);
-			inputfile[PATH_MAX-1] = '\0';
+			copy_file_name(inputfile,smess);
 		}
 	}
 	fclose(fp);
@@ -204,8 +220,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 						fclose(fp);
 				}
 				else if(strcmp(smess,"a") && strcmp(smess,"A")) {
-					strncpy(outputfile,smess,PATH_MAX); 
-					outputfile[PATH_MAX-1] = '\0';
+					copy_file_name(outputfile,smess);
 					check=1;
 				}
 			}
@@ -214,8 +229,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			printf("\nWARNING: Cannot open results file \"%s\".\nIf it is being used by another application, close it first. Then press RETURN.\n  Otherwise, enter a new name for the results file\n",outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
 			if(smess[0]!='\0'){
-				strncpy(outputfile,smess,PATH_MAX); 
-				outputfile[PATH_MAX-1] = '\0';
+				copy_file_name(outputfile,smess);
 				check=1;
 			}
 		}
@@ -227,7 +241,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// Find last directory mark
 	while((ptrt = strpbrk(ptr, "/\\")) != NULL)
 		ptr = ptrt+1;
-	// Replace file with "out.txt"
+	// Replace file with "error.txt"
 	strncpy(ptr, ERRORTXT, PATH_MAX-1-(ptr-errorfile));
 
 }/*end of get_input_output_file_names*/
