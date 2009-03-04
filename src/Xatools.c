@@ -25,14 +25,12 @@
 #include <string.h>
 #include <time.h>
 #include "Xatools.h"
+#include "Autoccomp.h"
 
 char wait_a_char(); // defined in Autocio.c
 
 #define NR_END 1
 #define FREE_ARG char* 
-#ifndef ERRORFILE
-	#define ERRORFILE "error.txt"
-#endif
 #ifndef MISSING
 	#define MISSING -999.99F
 #endif

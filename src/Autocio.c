@@ -24,6 +24,7 @@
 #endif
 #ifdef HAVE_DIRECT_H
 #	include <direct.h>
+#	define chdir _chdir
 #endif
 
 #include <stdio.h>
@@ -52,6 +53,8 @@
 #endif
 
 #define write write_string
+
+char errorfile[PATH_MAX] = ERRORTXT;
 
 void commom_errors()
 {
@@ -218,7 +221,14 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		}
 		fclose(fp);
 	} while(check);
-
+	
+	strncpy(errorfile, outputfile, PATH_MAX);
+	ptr = errorfile;
+	// Find last directory mark
+	while((ptrt = strpbrk(ptr, "/\\")) != NULL)
+		ptr = ptrt+1;
+	// Replace file with "out.txt"
+	strncpy(ptr, ERRORTXT, PATH_MAX-1-(ptr-errorfile));
 
 }/*end of get_input_output_file_names*/
 

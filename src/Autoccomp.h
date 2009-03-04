@@ -22,7 +22,7 @@
 #ifdef PACKAGE_STRING
 #	define VERSION PACKAGE_STRING
 #else
-#	define  VERSION "SPAGeDi 1.3a"
+#	define  VERSION "SPAGeDi 1.3-STABLE"
 #endif
 
 #define  VARTYPE 0  /*0 for locus with genotypes, 1 for quantitative variable*/
@@ -36,7 +36,7 @@
 #define  MAXINTERVALS 102	/*max number of classes of intervals*/
 #define  NRESAMPLE 20001 	/*max number of resamplings*/
 #define  SMAX 100000	/*max number of characters for strings*/
-#define  ERRORFILE "error.txt"	/*name of file for error messages*/
+#define  ERRORTXT "error.txt"	/*name of file for error messages*/
 #define  MISSVAL HUGE_VAL	/*value given for missing value*/
 #define  MISSING 999.99F        /*missing value for avestd and ttest routines*/
 
@@ -47,8 +47,10 @@
 #	define PATH_MAX _MAX_PATH
 #endif
 
-
 #include "Xatools.h"
+
+extern char errorfile[PATH_MAX];
+#define  ERRORFILE errorfile /* name of variable that contains errorfile */
 
 struct name{
 	char n[MAXNOM];
