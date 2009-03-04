@@ -104,7 +104,7 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 }
 
 void copy_file_name(char *to, const char *from) {
-	const char sps[] = " \"\'";
+	const char sps[] = " \n\r\"\'";
 	size_t len,len2;
 	len = strspn(from,sps); // some drag-n-drop strings can be quoted
 	from += len;
