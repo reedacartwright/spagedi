@@ -44,6 +44,66 @@
 
 char errorfile[PATH_BUF_SIZE] = ERRORTXT;
 
+#ifdef WIN32
+#	define DIRSEP "\\"
+#else
+#	define DIRSEP "/"
+#endif
+
+#ifndef HAVE_STRLCPY
+size_t strlcpy(char *dst, const char *src, size_t size) {
+	size_t slen = strlen(src);
+	if(size == 0 )
+		return slen;
+	strncpy(dst, src, size-1);
+	dst[size-1] = '\0';
+	return slen;
+}
+#endif
+
+#ifndef HAVE_STRLCAT
+size_t strlcat(char *dst, const char *src, size_t size) {
+	size_t slen = strlen(src), dlen, n;
+	if(size == 0)
+		return slen;
+	dlen = strlen(dst);
+	if(dlen >= size)
+		return dlen+slen;
+	n = size-dlen;
+	strncat(dst, src, n-1);
+	dst[size-1] = '\0';
+	return dlen+slen;
+}
+#endif
+
+#ifndef HAVE_BASENAME
+#ifdef HAVE__SPLITPATH
+char _basename_buf[PATH_BUF_SIZE];
+char * basename(const char *path) {
+	char drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
+	_splitpath(path, drive, dir, fname, ext);
+	strlcpy(_basename_buf, fname, PATH_BUF_SIZE);
+	strlcat(_basename_buf, ext, PATH_BUF_SIZE);
+	return _basename_buf;
+}
+#endif
+#endif
+
+#ifndef HAVE_DIRNAME
+#ifdef HAVE__SPLITPATH
+char _dirname_buf[PATH_BUF_SIZE];
+char * dirname(const char *path) {
+	char drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
+	_splitpath(path, drive, dir, fname, ext);
+	if(dir[0] != '\0')
+		dir[strlen(dir)-1] = '\0';
+	strlcpy(_dirname_buf, drive, PATH_BUF_SIZE);
+	strlcat(_dirname_buf, dir, PATH_BUF_SIZE);
+	return _dirname_buf;	
+}
+#endif
+#endif
+
 void commom_errors()
 {
 	FILE *fp;
@@ -111,7 +171,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 	if(outdir != NULL && to[0] != '/') {
 		// Relative filename, so make it relative to outdir
 		strlcpy(filename, outdir, PATH_BUF_SIZE);
-		strlcat(filename, "/", PATH_BUF_SIZE);
+		strlcat(filename, DIRSEP, PATH_BUF_SIZE);
 		strlcat(filename, to, PATH_BUF_SIZE);
 		strlcpy(to, filename, PATH_BUF_SIZE);
 	}
@@ -185,7 +245,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		if(smess[0]=='\0') {
 			// Create default output filename: outdir+"out.txt"
 			strlcpy(outputfile, outdir, PATH_BUF_SIZE);
-			strlcat(outputfile, "/out.txt", PATH_BUF_SIZE);
+			strlcat(outputfile, DIRSEP "out.txt", PATH_BUF_SIZE);
 		} else {
 			copy_file_name(outputfile, smess, outdir);
 		}
@@ -232,8 +292,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	
 	// Create error.txt in outputdir
 	strlcpy(errorfile, outdir, PATH_BUF_SIZE);
-	strlcat(errorfile, "/", PATH_BUF_SIZE);
-	strlcat(errorfile, ERRORTXT, PATH_BUF_SIZE);
+	strlcat(errorfile, DIRSEP ERRORTXT, PATH_BUF_SIZE);
 }
 /*end of get_input_output_file_names*/
 
@@ -3841,7 +3900,7 @@ void readdoublefromstring(char *ins, double *outf, char *inputfile, int line)
 		exit(1);
 	}
 	*outf = temp;
-}	/*end of readfloatfromstring*/	
+}	/*end of readfloatfromstring*/
 
 
 
@@ -3856,7 +3915,7 @@ char wait_a_char()
 {
 #ifdef NO_MESSAGE_PAUSE
 	return 'x';
-#endif
+#else
 	char ch = 'x';
 	scanf("%c", &ch);
 	return ch;

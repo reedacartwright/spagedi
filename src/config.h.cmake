@@ -10,3 +10,6 @@
 #cmakedefine HAVE_CHDIR 1
 #cmakedefine HAVE_STRLCPY 1
 #cmakedefine HAVE_STRLCAT 1
+#cmakedefine HAVE_BASENAME 1
+#cmakedefine HAVE_DIRNAME 1
+#cmakedefine HAVE__SPLITPATH 1
