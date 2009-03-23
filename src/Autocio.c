@@ -80,8 +80,8 @@ size_t strlcat(char *dst, const char *src, size_t size) {
 #ifdef HAVE__SPLITPATH
 char _basename_buf[PATH_BUF_SIZE];
 char * basename(const char *path) {
-	char drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
-	_splitpath(path, drive, dir, fname, ext);
+	char fname[_MAX_FNAME], ext[_MAX_EXT];
+	_splitpath(path, NULL, NULL, fname, ext);
 	strlcpy(_basename_buf, fname, PATH_BUF_SIZE);
 	strlcat(_basename_buf, ext, PATH_BUF_SIZE);
 	return _basename_buf;
@@ -93,8 +93,8 @@ char * basename(const char *path) {
 #ifdef HAVE__SPLITPATH
 char _dirname_buf[PATH_BUF_SIZE];
 char * dirname(const char *path) {
-	char drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
-	_splitpath(path, drive, dir, fname, ext);
+	char drive[_MAX_DRIVE], dir[_MAX_DIR];
+	_splitpath(path, drive, dir, NULL, NULL);
 	if(dir[0] != '\0')
 		dir[strlen(dir)-1] = '\0';
 	strlcpy(_dirname_buf, drive, PATH_BUF_SIZE);
