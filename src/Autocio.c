@@ -146,6 +146,8 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	
 	printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 	
+	getcwd(outdir, PATH_BUF_SIZE);
+	
 	// Determine Inputfile
 	if( argc > 1 ) {
 		strlcpy(inputfile, argv[1], PATH_BUF_SIZE);
@@ -190,7 +192,6 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// Determine Outputfile
 	if( argc > 2) {
 		strlcpy(outputfile, argv[2], PATH_BUF_SIZE);
-		strlcpy(outdir, dirname(outputfile), PATH_BUF_SIZE);	
 	} else { // Filename not specifed on command line
 		printf("\n\nEnter the name of the results file (with ext)\n"
 		       "or press RETURN for the default results file \"%s\"\n\n"
@@ -251,12 +252,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 }
 /*end of get_input_output_file_names*/
 
-
-
 /***************************************************************************************/
-
-
-
 
 void import_data_file(char *inputfile)
 {
