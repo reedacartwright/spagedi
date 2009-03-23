@@ -1121,7 +1121,9 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 
 
 
-	sprintf(smess,"\n%s - a program for Spatial Pattern Analysis of Genetic Diversity\n             Written by Olivier Hardy & Xavier Vekemans\n",VERSION);
+	sprintf(smess, "\n%s - a program for Spatial Pattern Analysis of Genetic Diversity\n"
+	               "               Written by Olivier Hardy & Xavier Vekemans\n" 
+				   "               Contributions by Reed Cartwright\n", VERSION);
 	write_tofile_only(outputfilename,smess);
 	printf("\n\n\n\n\n\nBASIC INFORMATION\n\nCheck the following informations from the data file \"%s\"\n",inputfilename);
 	sprintf(smess,"\nInput file : \"%s\"",inputfilename);
