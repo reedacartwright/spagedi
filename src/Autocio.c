@@ -106,9 +106,11 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 	return ret;
 }
 
-void copy_file_name(char *to, const char *from) {
+void copy_file_name(char *to, const char *from, const char *outdir) {
 	const char sps[] = " \n\r\"\'";
+	char filename[PATH_MAX];
 	size_t len,len2;
+	
 	len = strspn(from,sps); // some drag-n-drop strings can be quoted
 	from += len;
 	strlcpy(to,from,PATH_MAX);
@@ -121,6 +123,13 @@ void copy_file_name(char *to, const char *from) {
 		}
 		len = len2+strcspn(to+len2,sps);
 	}
+	if(outdir != NULL && to[0] != '/') {
+		// Relative filename, so make it relative to outdir
+		strlcpy(filename, outdir, PATH_MAX);
+		strlcat(filename, "/", PATH_MAX);
+		strlcat(filename, to, PATH_MAX);
+		strlcpy(to, filename, PATH_MAX);
+	}
 }
 
 /****************************************************************************************/
@@ -128,7 +137,7 @@ void copy_file_name(char *to, const char *from) {
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
 	char smess[SMAX], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
-	int check;
+	int check=1;
 	FILE *fp;
 
 	// printf("\n%s",argv[0]);
@@ -153,7 +162,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		} else if(smess[0]==' ')
 			import_data_file(inputfile);
 		else {
-			copy_file_name(inputfile, smess);
+			copy_file_name(inputfile, smess, NULL);
 		}
 	}
 	// Check inputfile
@@ -164,7 +173,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		       "  Press ctrl+c if you wish to stop the program now\n", inputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0') {
-			copy_file_name(inputfile,smess);
+			copy_file_name(inputfile, smess, NULL);
 		}
 	}
 	fclose(fp);
@@ -191,65 +200,49 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			// Create default output filename: outdir+"out.txt"
 			strlcpy(outputfile, outdir, PATH_MAX);
 			strlcat(outputfile, "/out.txt", PATH_MAX);
-			printf("%s\n    full path:", outputfile);
 		} else {
-			copy_file_name(filename, smess);
-			// Relative or absolute filename?
-			if(filename[0] == '/') {
-				// It is an absolute filename, so use it as is and update outdir
-				strlcpy(outputfile, filename, PATH_MAX);
-				strlcpy(outdir, dirname(filename), PATH_MAX);
-			} else {
-				// Relative filename, so make it relative to outdir
-				strlcpy(outputfile, outdir, PATH_MAX);
-				strlcat(outputfile, "/", PATH_MAX);
-				strlcat(outputfile, filename, PATH_MAX);				
-			}
+			copy_file_name(filename, smess, outdir);
 		}
 	}
-	// Find base name
-	strlcpy(filename, basename(outputfile), PATH_MAX);
-	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);
-		
-	if(argc<4) do{
-		check=0;
-		if((fp=fopen(outputfile,"r"))){
+	while(check != 0) {
+		check = 0;
+		if((fp=fopen(outputfile,"r"))) {
 			fclose(fp);
-			printf("\n\n\nWARNING: The results file \"%s\" already exists.\n  Enter 'a' or press RETURN to add the new results to the end of the file\n  Enter 'e' to erase the present content of the file\n  Otherwise, enter a new name for the results file\n",outputfile);
+			printf("\n\nWARNING: The results file \"%s\" already exists.\n"
+			       "  Enter 'a' or press RETURN to add the new results to the end of the file\n"
+			       "  Enter 'e' to erase the present content of the file\n"
+			       "  Otherwise, enter a new name for the results file\n", outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
-			if(smess[0] != '\0') {
-				if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
-					if((fp=fopen(outputfile,"wt"))!=NULL) 
-						fclose(fp);
-				}
-				else if(strcmp(smess,"a") && strcmp(smess,"A")) {
-					copy_file_name(filename,smess);
-					if(strpbrk(filename, "/\\")==NULL){
-						strncpy(outputfile, inputfile, PATH_MAX);
-						ptr = outputfile;
-						while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
-						strncpy(ptr, filename, PATH_MAX-1-(ptr-outputfile));
-					} else strncpy(outputfile, filename, PATH_MAX);
-					check=1;
-				}
+			// Clear file
+			if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
+				if((fp=fopen(outputfile,"wt"))!=NULL) 
+					fclose(fp);
+			}
+			// New file specified?
+			else if(strcmp(smess,"") && strcmp(smess,"a") && strcmp(smess,"A")) {
+				check=1;
+				copy_file_name(outputfile, smess, outdir);
 			}
 		}
- 		while(check==0 && (fp=fopen(outputfile,"a"))==NULL){
-			printf("\nWARNING: Cannot open results file \"%s\".\nIf it is being used by another application, close it first. Then press RETURN.\n  Otherwise, enter a new name for the results file\n",outputfile);
+ 		while(check==0 && (fp=fopen(outputfile,"a"))==NULL ){
+			printf("\nWARNING: Cannot open results file \"%s\".\n"
+			       "If it is being used by another application, close it first. Then press RETURN.\n"
+			       "  Otherwise, enter a new name for the results file\n", outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
 			if(smess[0]!='\0'){
-				copy_file_name(filename,smess);
-				if(strpbrk(filename, "/\\")==NULL){
-					strncpy(outputfile, inputfile, PATH_MAX);
-					ptr = outputfile;
-					while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
-					strncpy(ptr, filename, PATH_MAX-1-(ptr-outputfile));
-				} else strncpy(outputfile, filename, PATH_MAX);
+				copy_file_name(filename,smess,outdir);
 				check=1;
 			}
 		}
 		fclose(fp);
-	} while(check);
+	}
+	
+	// Find base name
+	strlcpy(filename, basename(outputfile), PATH_MAX);
+	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
+	
+	// Use outdir of output
+	strlcpy(outdir, dirname(outputfile), PATH_MAX);
 	
 	// Create error.txt in outputdir
 	strlcpy(errorfile, outdir, PATH_MAX);
