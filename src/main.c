@@ -108,7 +108,7 @@ strcpy(inputfile,"in.txt");
 strcpy(outputfile,"out.txt");
 strcpy(instrfile,"instruction.txt");
 */
-
+	
 	printf("\n%s - a program for Spatial Pattern Analysis of Genetic Diversity\n"
 	       "               Written by Olivier Hardy & Xavier Vekemans\n" 
 	       "               Contributions by Reed Cartwright\n", VERSION);

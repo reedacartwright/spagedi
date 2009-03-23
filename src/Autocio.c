@@ -81,9 +81,24 @@ size_t strlcat(char *dst, const char *src, size_t size) {
 char _basename_buf[PATH_BUF_SIZE];
 char * basename(const char *path) {
 	char fname[_MAX_FNAME], ext[_MAX_EXT];
-	_splitpath(path, NULL, NULL, fname, ext);
+	size_t n;
+	if(path == NULL || path[0] == '\0') {
+		strlcpy(_basename_buf, ".", PATH_BUF_SIZE);
+		return _basename_buf;
+	}
+	n = strlcpy(_basename_buf, path, PATH_BUF_SIZE);
+	// remove trailing slashes from path
+	for(; n > 0 && _basename_buf[n-1] == '\\' || _basename_buf[n-1] == '/'; --n)
+		;
+	_basename_buf[n] = '\0';
+	
+	_splitpath(_basename_buf, NULL, NULL, fname, ext);
 	strlcpy(_basename_buf, fname, PATH_BUF_SIZE);
 	strlcat(_basename_buf, ext, PATH_BUF_SIZE);
+	if(_basename_buf[0] == '\0') {
+		strlcpy(_basename_buf, DIRSEP, PATH_BUF_SIZE);
+	}
+	
 	return _basename_buf;
 }
 #endif
@@ -94,11 +109,27 @@ char * basename(const char *path) {
 char _dirname_buf[PATH_BUF_SIZE];
 char * dirname(const char *path) {
 	char drive[_MAX_DRIVE], dir[_MAX_DIR];
-	_splitpath(path, drive, dir, NULL, NULL);
+	size_t n;
+	if(path == NULL || path[0] == '\0' || strpbrk(path, "\\/") == NULL) {
+		strlcpy(_dirname_buf, ".", PATH_BUF_SIZE);
+		return _dirname_buf;
+	}
+	n = strlcpy(_dirname_buf, path, PATH_BUF_SIZE);
+	// remove trailing slashes from path
+	for(; n > 0 && _dirname_buf[n-1] == '\\' || _dirname_buf[n-1] == '/'; --n)
+		;
+	_dirname_buf[n] = '\0';
+	
+	_splitpath(_dirname_buf, drive, dir, NULL, NULL);
 	if(dir[0] != '\0')
 		dir[strlen(dir)-1] = '\0';
 	strlcpy(_dirname_buf, drive, PATH_BUF_SIZE);
-	strlcat(_dirname_buf, dir, PATH_BUF_SIZE);
+	
+	if(dir[0] == '\0') {
+		strlcat(_dirname_buf, DIRSEP, PATH_BUF_SIZE);
+	} else {
+		strlcat(_dirname_buf, dir, PATH_BUF_SIZE);
+	}
 	return _dirname_buf;	
 }
 #endif
