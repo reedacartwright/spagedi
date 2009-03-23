@@ -111,8 +111,7 @@ void copy_file_name(char *to, const char *from) {
 	size_t len,len2;
 	len = strspn(from,sps); // some drag-n-drop strings can be quoted
 	from += len;
-	strncpy(to,from,PATH_MAX-1);
-	to[PATH_MAX-1] = '\0';  // Ensure null-termination
+	strlcpy(to,from,PATH_MAX);
 	len = strcspn(to,sps);  // skip non-sps chars
 	while(to[len] != '\0') {
 		len2 = len+strspn(to+len,sps); // skip sps chars
@@ -136,102 +135,82 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// if(argc>1)printf("\n%s",argv[1]);
 	// if(argc>2)printf("\n%s",argv[2]);
 	
-	if(argc == 2) {
-		strncpy(inputfile, argv[1], PATH_MAX);
-		inputfile[PATH_MAX-1] = '\0';  // Ensure null-termination
-		// find directory of input file name, will be used as initial outdir
-		// use filename as initial buffer in case dirname modifies it
-		strncpy(filename, inputfile, PATH_MAX);
-		strncpy(outdir, dirname(filename), PATH_MAX);
-				
-		// Find base name
-		strncpy(filename, basename(inputfile), PATH_MAX-1);
-		
-		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-		printf("\n\n  Data file: %s", filename);
-		printf("\n    full path: %s", inputfile);
-		printf("\n\n\nEnter the name of the results file (with ext)\n"
-		       "or press RETURN for the default results file \"%s\"\n\n"
-		       "  Results file: ", "out.txt");
-		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]=='\0') {
-			// Create default output filename: outdir+"out.txt"
-			strncpy(outputfile, outdir, PATH_MAX);
-			ptr = outputfile+strlen(outdir);
-			strncpy(ptr, "/out.txt", PATH_MAX-1-(strlen(outdir)));
-			printf("%s", outputfile);
-		} else {
-			copy_file_name(filename, smess);
-			// Relative or absolute filename?
-			if(filename[0] == '/') {
-				// It is an absolute filename, so use it as is and update outdir
-				strncpy(outputfile, filename, PATH_MAX);
-				strncpy(outdir, dirname(filename), PATH_MAX);
-			} else {
-				// Relative filename, so make it relative to outdir
-				strncpy(outputfile, outdir, PATH_MAX);
-				ptr = outputfile+strlen(outdir);
-				strncpy(ptr, "/out.txt", PATH_MAX-1-(strlen(outdir)));				
-			}
-		}
-
-	}
-	if(argc == 3) {
-		strncpy(inputfile,argv[1],PATH_MAX);
-		strncpy(outputfile,argv[2],PATH_MAX);
-		inputfile[PATH_MAX-1] = outputfile[PATH_MAX-1] = '\0';
-		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-		printf("\n\n  Data file: %s\n  Results file: %s",inputfile,outputfile);
-	} 
-
-/*	if(argc >= 4) {
-		strncpy(inputfile,argv[1],PATH_MAX);
-		strncpy(outputfile,argv[2],PATH_MAX);
-		strncpy(instrfile,argv[3],PATH_MAX);
-		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-		printf("\n\n  Data file: %s\n  Results file: %s",inputfile,outputfile);
-		printf("\n\nINSTRUCTION FILE: %s",instrfile);
-	} 
-*/
+	printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 	
-	if(argc == 1) {	//if no names of input output files are given then take the defaults
-		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-		printf("\n\nEnter the name of the data file (with ext)\n  or press RETURN for the default data file \"in.txt\"\n  or enter a SPACE for importing a data file from FSTAT or GENEPOP format\n\n  Data file: ");
+	// Determine Inputfile
+	if( argc > 1 ) {
+		strlcpy(inputfile, argv[1], PATH_MAX);
+		// Find base name
+	} else { // Filename not specified on command line
+		printf("\n\nEnter the name of the data file (with ext)\n"
+		       "  or press RETURN for the default data file \"in.txt\"\n"
+		       "  or enter a SPACE for importing a data file from FSTAT or GENEPOP format\n\n"
+		       "  Data file: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
-			strncpy(inputfile, "in.txt", PATH_MAX);
-			printf("\t\t%s",inputfile);
+			strlcpy(inputfile, "in.txt", PATH_MAX);
+			printf("%s\n",inputfile);
 		} else if(smess[0]==' ')
 			import_data_file(inputfile);
 		else {
-			copy_file_name(inputfile,smess);
-		}
-		strncpy(outputfile, inputfile, PATH_MAX);
-		ptr = outputfile;
-		// Find last directory mark
-		while((ptrt = strpbrk(ptr, "/\\")) != NULL)
-			ptr = ptrt+1;
-		// Replace file with "out.txt"
-		strncpy(ptr, "out.txt", PATH_MAX-1-(ptr-outputfile));
-
-		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
-		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]=='\0') {
-			printf("\t\t%s",outputfile);
-		} else {
-			copy_file_name(outputfile,smess);
+			copy_file_name(inputfile, smess);
 		}
 	}
- 
-	while((fp=fopen(inputfile,"rt"))==NULL){
-		printf("\n\nWARNING: Cannot open data file \"%s\"\n  If it is being used by another application, close it first, then press RETURN\n  Otherwise enter a new name for the data file\n  Press ctrl+c if you wish to stop the program now\n",inputfile);
+	// Check inputfile
+	while((fp=fopen(inputfile,"rt"))==NULL) {
+		printf("\n\nWARNING: Cannot open data file \"%s\"\n"
+		       "  If it is being used by another application, close it first, then press RETURN\n"
+		       "  Otherwise enter a new name for the data file\n"
+		       "  Press ctrl+c if you wish to stop the program now\n", inputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0') {
 			copy_file_name(inputfile,smess);
 		}
 	}
 	fclose(fp);
+
+	// Find base name
+	strlcpy(filename, basename(inputfile), PATH_MAX);
+	printf("\n\n  Data file: %s\n    full path: %s\n", filename, inputfile);
 	
+	// find directory of input file name, will be used as initial outdir
+	// use filename as initial buffer in case dirname modifies it
+	strlcpy(filename, inputfile, PATH_MAX);
+	strlcpy(outdir, dirname(filename), PATH_MAX);
+	
+	// Determine Outputfile
+	if( argc > 2) {
+		strlcpy(outputfile, argv[2], PATH_MAX);
+		strlcpy(outdir, dirname(outputfile), PATH_MAX);	
+	} else { // Filename not specifed on command line
+		printf("\n\nEnter the name of the results file (with ext)\n"
+		       "or press RETURN for the default results file \"%s\"\n\n"
+		       "  Results file: ", "out.txt");
+		fgets_chomp(smess, sizeof(smess), stdin);
+		if(smess[0]=='\0') {
+			// Create default output filename: outdir+"out.txt"
+			strlcpy(outputfile, outdir, PATH_MAX);
+			strlcat(outputfile, "/out.txt", PATH_MAX);
+			printf("%s\n    full path:", outputfile);
+		} else {
+			copy_file_name(filename, smess);
+			// Relative or absolute filename?
+			if(filename[0] == '/') {
+				// It is an absolute filename, so use it as is and update outdir
+				strlcpy(outputfile, filename, PATH_MAX);
+				strlcpy(outdir, dirname(filename), PATH_MAX);
+			} else {
+				// Relative filename, so make it relative to outdir
+				strlcpy(outputfile, outdir, PATH_MAX);
+				strlcat(outputfile, "/", PATH_MAX);
+				strlcat(outputfile, filename, PATH_MAX);				
+			}
+		}
+	}
+	// Find base name
+	strlcpy(filename, basename(outputfile), PATH_MAX);
+	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);
+		
 	if(argc<4) do{
 		check=0;
 		if((fp=fopen(outputfile,"r"))){
@@ -272,15 +251,12 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		fclose(fp);
 	} while(check);
 	
-	strncpy(errorfile, outputfile, PATH_MAX);
-	ptr = errorfile;
-	// Find last directory mark
-	while((ptrt = strpbrk(ptr, "/\\")) != NULL)
-		ptr = ptrt+1;
-	// Replace file with "error.txt"
-	strncpy(ptr, ERRORTXT, PATH_MAX-1-(ptr-errorfile));
-
-}/*end of get_input_output_file_names*/
+	// Create error.txt in outputdir
+	strlcpy(errorfile, outdir, PATH_MAX);
+	strlcat(errorfile, "/", PATH_MAX);
+	strlcat(errorfile, ERRORTXT, PATH_MAX);
+}
+/*end of get_input_output_file_names*/
 
 
 
