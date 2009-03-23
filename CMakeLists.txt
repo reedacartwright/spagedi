@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
 PROJECT(SPAGeDi)
 
+#cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
+
 SET(SPAGEDI_NAME "SPAGeDi")
 SET(SPAGEDI_VERSION "1.3a")
 SET(SPAGEDI_VERSION_MAJOR "1")
@@ -150,5 +152,5 @@ INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples)
 
-INCLUDE(InstallRequiredSystemLibraries)
+#INCLUDE(InstallRequiredSystemLibraries)
 

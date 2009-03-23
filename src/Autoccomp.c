@@ -762,7 +762,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 							
 							if(Easc && Vasizekl[k][l]){
 								asc=(allelesizela[l][gilc[i][l][ci]]-Masizekl[k][l])*(allelesizela[l][gilc[i][l][cj]]-Masizekl[k][l])/Vasizekl[k][l];
-								if(FreqRef!=-1) asc+=1./(Nvalgenkl[k][l]-1.0f);
+								if(FreqRef!=-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
 								ascor+=asc;
 								Sasc+=asc*Vasizekl[k][l];
 							}
@@ -778,7 +778,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(Elois && Ncomp && LoisD[k][l]){ 
 						LoisN/=Ncomp;
 						Lois=(LoisN/LoisD[k][l]);
-						if(FreqRef!=-1) Lois+=1./(Nvalgenkl[k][l]-1.0f); //sampling bias correction
+						if(FreqRef!=-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f); //sampling bias correction
 						LoisNt+=Lois*LoisD[k][l];
 						LoisDt+=LoisD[k][l];
 					}
@@ -844,12 +844,12 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 					if(Eritl){
 						if(corrSlij[Eritl][0][i][i]!=(float)MISSVAL && corrSlij[Eritl][l][i][i]!=(float)MISSVAL && (newNloci>1)){
-							RitlN=corrSlij[Eritl][0][i][i]*(newSumNall-newNloci)-corrSlij[Eritl][l][i][i]*(Nallelekl[k][l]-1.);
-							RitlD=(newSumNall-newNloci)-(Nallelekl[k][l]-1.);
+							RitlN=corrSlij[Eritl][0][i][i]*(newSumNall-newNloci)-corrSlij[Eritl][l][i][i]*(Nallelekl[k][l]-1.0f);
+							RitlD=(newSumNall-newNloci)-(Nallelekl[k][l]-1.0f);
 							Ritl=RitlN/RitlD;
 						}
 						if(corrSlij[Eritl][l][i][i]==(float)MISSVAL) Ritl=corrSlij[Eritl][0][i][i];
-						if((newSumNall-newNloci)==(Nallelekl[k][l]-1.)) Ritl=(float)MISSVAL;
+						if((newSumNall-newNloci)==(Nallelekl[k][l]-1.0f)) Ritl=(float)MISSVAL;
 						corrSlij[Eritl][-l][i][i]=Ritl;
 					}
 
@@ -896,10 +896,10 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 							Ncomp++; NcompRitl++;
 							//make the allele comparisons between i & j
 							if(gilc[i][l][ci]==gilc[j][l][cj]){ 
-								LoisN+=1.;
+								LoisN+=1.0f;
 								if(Eritl){
 
-									SoP+=1./Pkla[0][l][gilc[i][l][ci]];		 
+									SoP+=1.0f/Pkla[0][l][gilc[i][l][ci]];		 
 
 			/*						if(FreqRef==-1) SoP+=1./Pkla[0][l][gilc[i][l][ci]];
 									else{ //compute the corrected (elimination of the compared ind) allele freq
@@ -921,7 +921,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 							if(Easc && Vasizekl[k][l]){
 								asc=(allelesizela[l][gilc[i][l][ci]]-Masizekl[k][l])*(allelesizela[l][gilc[j][l][cj]]-Masizekl[k][l])/Vasizekl[k][l];
-								if(FreqRef!=-1) asc+=1./(Nvalgenkl[k][l]-1.);
+								if(FreqRef!=-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
 								ascor+=asc;
 								Sasc+=asc*Vasizekl[k][l];;
 							}
@@ -938,7 +938,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						if(Ncomp && LoisD[k][l]){ 
 							LoisN/=Ncomp;
 							Lois=(LoisN/LoisD[k][l]);
-							if(FreqRef!=-1) Lois+=1./(Nvalgenkl[k][l]-1.);
+							if(FreqRef!=-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f);
 							LoisNt+=Lois*LoisD[k][l];
 							LoisDt+=LoisD[k][l];
    							corrSlij[Elois][l][i][j]=Lois;//kinship of Loiselle
@@ -953,12 +953,12 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(Eritl){
 						if(NcompRitl && (Nallelekl[k][l]-1)){ 
 							SoP/=NcompRitl;
-							Ritl=(SoP-1.)/(Nallelekl[k][l]-1.);
+							Ritl=(SoP-1.0f)/(Nallelekl[k][l]-1.0f);
 							SoPt+=SoP;
 							newNloci++;
 							newSumNall+=Nallelekl[k][l];
    							corrSlij[Eritl][l][i][j]=Ritl;//kinship of Ritland
-   							corrSlij[Eritl][l][j][i]=(Nallelekl[k][l]-1.);//weight
+   							corrSlij[Eritl][l][j][i]=(Nallelekl[k][l]-1.0f);//weight
 						}
 						else{
    							corrSlij[Eritl][l][i][j]=(float)MISSVAL;//kinship of Ritland
@@ -1105,7 +1105,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 		//compute heritability of dominant markers
 		h2kl=matrix(0,FRef,0,m);
 		for(k=0;k<=FRef;k++)for(l=1;l<=m;l++){
-			if(Pkla[k][l][1] && (1.0f-Pkla[k][l][1])) h2kl[k][l]=2./(1.+givenF)*(sqrt(givenF*givenF+4.*(1.0f-Pkla[k][l][2])*(1.0f-givenF))+givenF)/(sqrt(givenF*givenF+4.*(1.0f-Pkla[k][l][2])*(1.0f-givenF))+2.-givenF);
+			if(Pkla[k][l][1] && (1.0f-Pkla[k][l][1])) h2kl[k][l]=(float)(2.0/(1.0+givenF)*(sqrt(givenF*givenF+4.0*(1.0-Pkla[k][l][2])*(1.0-givenF))+givenF)/(sqrt(givenF*givenF+4.*(1.0-Pkla[k][l][2])*(1.0-givenF))+2.0-givenF));
 			else h2kl[k][l]=0.;
 		}
 		
@@ -1131,15 +1131,15 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						//make the allele comparisons between i & j
 						if(gilc[i][l][0]==1 && gilc[j][l][0]==1) RdomN=Pkla[k][l][2]*Pkla[k][l][2];
 						else if(gilc[i][l][0]==2 && gilc[j][l][0]==2) RdomN=Pkla[k][l][1]*Pkla[k][l][1];
-						else RdomN=-1.*Pkla[k][l][1]*Pkla[k][l][2];
+						else RdomN=-1.0f*Pkla[k][l][1]*Pkla[k][l][2];
 
 						Rdom=(RdomN/RdomD[k][l]);
-						if(FreqRef!=-1) Rdom+=1./(Nvalgenkl[k][l]-1.);
+						if(FreqRef!=-1) Rdom+=1.0f/(Nvalgenkl[k][l]-1.0f);
 						RdomNt+=Rdom*RdomD[k][l];
 						RdomDt+=RdomD[k][l];
    						if(Erelatdom) corrSlij[Erelatdom][l][i][j]=Rdom;//relationship
    						if(Erelatdom) corrSlij[Erelatdom][l][j][i]=RdomD[k][l];//weight
-   						if(Ekinshipdom) corrSlij[Ekinshipdom][l][i][j]=Rdom*(1.+givenF)/2.;//kinship
+   						if(Ekinshipdom) corrSlij[Ekinshipdom][l][i][j]=Rdom*(1.0f+givenF)/2.0f;//kinship
    						if(Ekinshipdom) corrSlij[Ekinshipdom][l][j][i]=RdomD[k][l];//weight
 					}
 					else{
@@ -1155,7 +1155,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						Rdomt=RdomNt/RdomDt;
    						if(Erelatdom) corrSlij[Erelatdom][0][i][j]=Rdomt;//relationship
    						if(Erelatdom) corrSlij[Erelatdom][0][j][i]=RdomDt;//weight
-						if(Ekinshipdom) corrSlij[Ekinshipdom][0][i][j]=Rdomt*(1.+givenF)/2.;//kinship
+						if(Ekinshipdom) corrSlij[Ekinshipdom][0][i][j]=Rdomt*(1.0f+givenF)/2.0f;//kinship
 						if(Ekinshipdom) corrSlij[Ekinshipdom][0][j][i]=RdomDt;
 					}
 					else{
@@ -1256,10 +1256,10 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 					if(Ncomp && Hokl[k][l]!=(float)MISSVAL && corrSlij[Erous][l][i][i]!=(float)MISSVAL && corrSlij[Erous][l][j][j]!=(float)MISSVAL){ 
 						Hb/=Ncomp;
-						Hw=(corrSlij[Erous][l][i][i]+corrSlij[Erous][l][j][j])/2.;
+						Hw=(corrSlij[Erous][l][i][i]+corrSlij[Erous][l][j][j])/2.0f;
 					/*	Rous=(Hb-Hw)/Hokl[k][l];	*/				// estimator "a*" of Rousset
 					/*	Rous=(Hb-Hokl[k][l])/Hokl[k][l];*/			//estimator of Hardy
-						Rous=(Hb-0.5*Hw-0.5*Hokl[k][l])/Hokl[k][l]; //estimator "a" of Rousset
+						Rous=(Hb-0.5f*Hw-0.5f*Hokl[k][l])/Hokl[k][l]; //estimator "a" of Rousset
 						Hwt+=Hw;
 						Hbt+=Hb;
 						Hot+=Hokl[k][l];
@@ -1277,7 +1277,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(newNloci && Hot){
 					/*	Rous=(Hbt-Hwt)/Hot; */ 	   //estimator "a*" of Rousset
 					/*	Rous=(Hbt-Hot)/Hot;	*/	   //estimator of Hardy
-						Rous=(Hbt-0.5*Hwt-0.5*Hot)/Hot; //estimator "a" of Rousset
+						Rous=(Hbt-0.5f*Hwt-0.5f*Hot)/Hot; //estimator "a" of Rousset
 
 						corrSlij[Erous][0][i][j]=Rous;//Rousset's estimator
 						corrSlij[Erous][0][j][i]=Hot; //weight
@@ -1367,7 +1367,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						for(a=1;a<=Nallelel[l];a++){
 					//		cov+=(Plai[l][a][i]-Pkla[k][l][a])*(Plai[l][a][j]-Pkla[k][l][a]);
 							cov+=(Plai[l][a][i]-Plak[l][a][k])*(Plai[l][a][j]-Plak[l][a][k]);
-							if((nvalidkl[k][l]-1.)>0) cov+=varkla[k][l][a]/(nvalidkl[k][l]-1.); //bias correction
+							if((nvalidkl[k][l]-1.)>0) cov+=varkla[k][l][a]/(nvalidkl[k][l]-1.0f); //bias correction
 							var+=varkla[k][l][a];	 
 						}
 						covt+=cov;
@@ -1465,7 +1465,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 							if(WrLynch2!=0.) rLynch2=(Pc*(Sda+Sdb)+Pd*(Sca+Scb)-4*Pc*Pd)/((1+Scd)*(Pc+Pd)-4*Pc*Pd);
 							else rLynch2=(float)MISSVAL;
 							WrLynch=WrLynch1+WrLynch2;
-							rLynch=(rLynch1+rLynch2)/2.;  							 
+							rLynch=(rLynch1+rLynch2)/2.0f;  							 
 						/*	rLynch=(rLynch1*WrLynch1 + rLynch2*WrLynch2)/WrLynch;	 */
 							if(rLynch1==(float)MISSVAL && rLynch2!=(float)MISSVAL) rLynch=rLynch2;
 							if(rLynch2==(float)MISSVAL && rLynch1!=(float)MISSVAL) rLynch=rLynch1;
@@ -1486,25 +1486,25 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						}
 						if(Edlynch){
 							WdLynch1=((1+Sab)*(1-Pa-Pb)+2*Pa*Pb)/(2*Pa*Pb);
-							if(WdLynch1!=0.) dLynch1=(2.*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/((1+Sab)*(1-Pa-Pb)+2*Pa*Pb);
+							if(WdLynch1!=0.) dLynch1=(2.0f*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/((1+Sab)*(1-Pa-Pb)+2*Pa*Pb);
 							else dLynch1=(float)MISSVAL;
 							WdLynch2=((1+Scd)*(1-Pc-Pd)+2*Pc*Pd)/(2*Pc*Pd);
-							if(WdLynch2!=0.) dLynch2=(2.*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/((1+Scd)*(1-Pc-Pd)+2*Pc*Pd);
+							if(WdLynch2!=0.) dLynch2=(2.0f*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/((1+Scd)*(1-Pc-Pd)+2*Pc*Pd);
 							else dLynch2=(float)MISSVAL;
 							WdLynch=WdLynch1+WdLynch2;
-							dLynch=(dLynch1+dLynch2)/2.;   								 
+							dLynch=(dLynch1+dLynch2)/2.0f;   								 
 						/*	dLynch=(dLynch1*WdLynch1 + dLynch2*WdLynch2)/WdLynch;		 */
 							if(dLynch1==(float)MISSVAL && dLynch2!=(float)MISSVAL) dLynch=dLynch2;
 							if(dLynch2==(float)MISSVAL && dLynch1!=(float)MISSVAL) dLynch=dLynch1;
 						
-							SdLynch1+=(2.*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/(2*Pa*Pb);
+							SdLynch1+=(2.0f*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/(2*Pa*Pb);
 							SWdLynch1+=WdLynch1;
-							SdLynch2+=(2.*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/(2*Pc*Pd);
+							SdLynch2+=(2.0f*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/(2*Pc*Pd);
 							SWdLynch2+=WdLynch2;
 				/**/		if(JKl){
-								SdLynch1l[l]=(2.*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/(2*Pa*Pb);
+								SdLynch1l[l]=(2.0f*Pa*Pb-Pa*(Sbc+Sbd)-Pb*(Sac+Sad)+Sac*Sbd+Sad*Sbc)/(2*Pa*Pb);
 								SWdLynch1l[l]=((1+Sab)*(1-Pa-Pb)+2*Pa*Pb)/(2*Pa*Pb);
-								SdLynch2l[l]=(2.*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/(2*Pc*Pd);
+								SdLynch2l[l]=(2.0f*Pc*Pd-Pc*(Sda+Sdb)-Pd*(Sca+Scb)+Sca*Sdb+Scb*Sda)/(2*Pc*Pd);
 								SWdLynch2l[l]=((1+Scd)*(1-Pc-Pd)+2*Pc*Pd)/(2*Pc*Pd);
 							}
 				 
@@ -1524,7 +1524,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(Erlynch){
 						SWrLynch=SWrLynch1 + SWrLynch2;
 						if(/*SWrLynch1 + SWrLynch2*/SWrLynch1 && SWrLynch2){
-							rLynch=(SrLynch1/SWrLynch1 + SrLynch2/SWrLynch2)/2.;	 
+							rLynch=(SrLynch1/SWrLynch1 + SrLynch2/SWrLynch2)/2.0f;	 
 					/*		rLynch=(SrLynch1 + SrLynch2)/(SWrLynch1 + SWrLynch2);	 */
 						}
 						if(SWrLynch1 && !SWrLynch2) rLynch=SrLynch1/SWrLynch1;
@@ -1537,7 +1537,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(Edlynch){
 						SWdLynch=SWdLynch1 + SWdLynch2;
 						if(/*SWdLynch1+SWdLynch2*/ SWdLynch1 && SWdLynch2){
-							dLynch=(SdLynch1/SWdLynch1 + SdLynch2/SWdLynch2)/2.;	  
+							dLynch=(SdLynch1/SWdLynch1 + SdLynch2/SWdLynch2)/2.0f;	  
 					/*		dLynch=(SdLynch1 + SdLynch2)/(SWdLynch1 + SWdLynch2);	  */
 						}
 						if(SWdLynch1 && !SWdLynch2) dLynch=SdLynch1/SWdLynch1;
@@ -1549,11 +1549,11 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 				}/*end of if(m>1)*/
 
 		/**/	if(JKl && m>1)for(l=1;l<=m;l++){
-					if((SWrLynch1-SWrLynch1l[l]) && (SWrLynch2-SWrLynch2l[l])) rLynch=((SrLynch1-SrLynch1l[l])/(SWrLynch1-SWrLynch1l[l]) + (SrLynch2-SrLynch2l[l])/(SWrLynch2-SWrLynch2l[l]))/2.;
+					if((SWrLynch1-SWrLynch1l[l]) && (SWrLynch2-SWrLynch2l[l])) rLynch=((SrLynch1-SrLynch1l[l])/(SWrLynch1-SWrLynch1l[l]) + (SrLynch2-SrLynch2l[l])/(SWrLynch2-SWrLynch2l[l]))/2.0f;
 					if(Erlynch)if(corrSlij[Erlynch][l][i][j]==(float)MISSVAL) rLynch=corrSlij[Erlynch][0][i][j];
 					if((SWrLynch1==SWrLynch1l[l]) || (SWrLynch2==SWrLynch2l[l])) rLynch=(float)MISSVAL;
 
-					if((SWdLynch1-SWdLynch1l[l]) && (SWdLynch2-SWdLynch2l[l])) dLynch=((SdLynch1-SdLynch1l[l])/(SWdLynch1-SWdLynch1l[l]) + (SdLynch2-SdLynch2l[l])/(SWdLynch2-SWdLynch2l[l]))/2.;
+					if((SWdLynch1-SWdLynch1l[l]) && (SWdLynch2-SWdLynch2l[l])) dLynch=((SdLynch1-SdLynch1l[l])/(SWdLynch1-SWdLynch1l[l]) + (SdLynch2-SdLynch2l[l])/(SWdLynch2-SWdLynch2l[l]))/2.0f;
 					if(Edlynch)if(corrSlij[Edlynch][l][i][j]==(float)MISSVAL) dLynch=corrSlij[Edlynch][0][i][j];
 					if((SWdLynch1==SWdLynch1l[l]) || (SWdLynch2==SWdLynch2l[l])) dLynch=(float)MISSVAL;
 
@@ -1613,29 +1613,29 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 						WrQueller1=1+Sab-Pa-Pb;
 						if(Nallelekl[k][l]==2 && Sab==0.) WrQueller1=0.;
-						if(WrQueller1!=0.) rQueller1=(0.5*(Sbc+Sbd+Sac+Sad)-Pa-Pb)/WrQueller1;
+						if(WrQueller1!=0.) rQueller1=(0.5f*(Sbc+Sbd+Sac+Sad)-Pa-Pb)/WrQueller1;
 						else rQueller1=(float)MISSVAL;
 
 						WrQueller2=1+Scd-Pc-Pd;
 						if(Nallelekl[k][l]==2 && Scd==0.) WrQueller2=0.;
-						if(WrQueller2!=0.) rQueller2=(0.5*(Sda+Sdb+Sca+Scb)-Pc-Pd)/WrQueller2;
+						if(WrQueller2!=0.) rQueller2=(0.5f*(Sda+Sdb+Sca+Scb)-Pc-Pd)/WrQueller2;
 						else rQueller2=(float)MISSVAL;
 
 						WrQueller=WrQueller1+WrQueller2;
-						rQueller=(rQueller1+rQueller2)/2.;								  
+						rQueller=(rQueller1+rQueller2)/2.0f;								  
 					/*	rQueller=(rQueller1*WrQueller1 + rQueller2*WrQueller2)/WrQueller; */
 
 						if(rQueller1==(float)MISSVAL && rQueller2!=(float)MISSVAL) rQueller=rQueller2;
 						if(rQueller2==(float)MISSVAL && rQueller1!=(float)MISSVAL) rQueller=rQueller1;
 
-						SrQueller1+=(0.5*(Sbc+Sbd+Sac+Sad)-Pa-Pb);
+						SrQueller1+=(0.5f*(Sbc+Sbd+Sac+Sad)-Pa-Pb);
 						SWrQueller1+=WrQueller1;
-						SrQueller2+=(0.5*(Sda+Sdb+Sca+Scb)-Pc-Pd);
+						SrQueller2+=(0.5f*(Sda+Sdb+Sca+Scb)-Pc-Pd);
 						SWrQueller2+=WrQueller2;
 			/**/		if(JKl){
-							SrQueller1l[l]=(0.5*(Sbc+Sbd+Sac+Sad)-Pa-Pb);
+							SrQueller1l[l]=(0.5f*(Sbc+Sbd+Sac+Sad)-Pa-Pb);
 							SWrQueller1l[l]=(1+Sab-Pa-Pb);
-							SrQueller2l[l]=(0.5*(Sda+Sdb+Sca+Scb)-Pc-Pd);
+							SrQueller2l[l]=(0.5f*(Sda+Sdb+Sca+Scb)-Pc-Pd);
 							SWrQueller2l[l]=(1+Scd-Pc-Pd);
 						}
 			
@@ -1652,7 +1652,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					WrQueller=SWrQueller1 + SWrQueller2;
 
 					if(/*SWrQueller1 + SWrQueller2*/ SWrQueller1 && SWrQueller2){
-						rQueller=(SrQueller1/SWrQueller1 + SrQueller2/SWrQueller2)/2.;	 
+						rQueller=(SrQueller1/SWrQueller1 + SrQueller2/SWrQueller2)/2.0f;	 
 				/*		rQueller=(SrQueller1 + SrQueller2)/(SWrQueller1 + SWrQueller2);	 */
 					}
 					if(SWrQueller1 && !SWrQueller2) rQueller=SrQueller1/SWrQueller1;	 
@@ -1664,7 +1664,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 				}/*end of if(m>1)*/
 
 				if(JKl && m>1)for(l=1;l<=m;l++){
-					if((SWrQueller1-SWrQueller1l[l]) && (SWrQueller2-SWrQueller2l[l])) rQueller=((SrQueller1-SrQueller1l[l])/(SWrQueller1-SWrQueller1l[l]) + (SrQueller2-SrQueller2l[l])/(SWrQueller2-SWrQueller2l[l]))/2.;
+					if((SWrQueller1-SWrQueller1l[l]) && (SWrQueller2-SWrQueller2l[l])) rQueller=((SrQueller1-SrQueller1l[l])/(SWrQueller1-SWrQueller1l[l]) + (SrQueller2-SrQueller2l[l])/(SWrQueller2-SWrQueller2l[l]))/2.0f;
 					if(corrSlij[Erqueller][l][i][j]==(float)MISSVAL) rQueller=corrSlij[Erqueller][0][i][j];
 					if((SWrQueller1==SWrQueller1l[l]) || (SWrQueller2==SWrQueller2l[l])) rQueller=(float)MISSVAL;
 
@@ -1726,7 +1726,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						else if(gilc[i][l][0]==gilc[j][l][0] || gilc[i][l][0]==gilc[j][l][1] || gilc[i][l][1]==gilc[j][l][0] || gilc[i][l][1]==gilc[j][l][1]) Sij=0.5;
 						else Sij=0.;
 
-						rli=(Sij-Sokl[k][l])/(1.0f-Sokl[k][l]);
+						rli=(float)((Sij-Sokl[k][l])/(1.0-Sokl[k][l]));
 			
 						corrSlij[Erli][l][i][j]=rli;
 
@@ -1748,8 +1748,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 			//empirically derived weights
 			for(l=1;l<=m;l++) {
 				if(Nrli[l]>1){
-					Var=(SSrli[l] - Srli[l]*Srli[l]/Nrli[l])/(Nrli[l]-1.);
-					if(Var) corrSlij[Erli][l][0][0]=1./Var;
+					Var=(SSrli[l] - Srli[l]*Srli[l]/Nrli[l])/(Nrli[l]-1.0f);
+					if(Var) corrSlij[Erli][l][0][0]=1.0f/Var;
 					else corrSlij[Erli][l][0][0]=0.;
 				}
 				else corrSlij[Erli][l][0][0]=0.;
@@ -1880,8 +1880,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 
 		/*weight per locus*/
-		if(Erwang) for(l=1;l<=m;l++) corrSlij[Erwang][l][0][0]=Wkl[0][l];
-		if(Edwang) for(l=1;l<=m;l++) corrSlij[Edwang][l][0][0]=Wkl[0][l];
+		if(Erwang) for(l=1;l<=m;l++) corrSlij[Erwang][l][0][0]=(float)Wkl[0][l];
+		if(Edwang) for(l=1;l<=m;l++) corrSlij[Edwang][l][0][0]=(float)Wkl[0][l];
 
 		/*compute kinship for each pair of different indiv */
 		k=0;
@@ -1921,8 +1921,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					}
 					else {rWang=dWang=(float)MISSVAL; WWang[l]=0.;}
 
-					if(Erwang){corrSlij[Erwang][l][i][j]=rWang;	corrSlij[Erwang][l][j][i]=WWang[l];}
-					if(Edwang){corrSlij[Edwang][l][i][j]=dWang;	corrSlij[Edwang][l][j][i]=WWang[l];}
+					if(Erwang){corrSlij[Erwang][l][i][j]=(float)rWang;	corrSlij[Erwang][l][j][i]=(float)WWang[l];}
+					if(Edwang){corrSlij[Edwang][l][i][j]=(float)dWang;	corrSlij[Edwang][l][j][i]=(float)WWang[l];}
 
 				}/*end of loop l*/
 
@@ -1968,8 +1968,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					}
 					else rWang=dWang=(float)MISSVAL;
 
-					if(Erwang){corrSlij[Erwang][0][i][j]=rWang;	corrSlij[Erwang][0][j][i]=WWang[0];}
-					if(Edwang){corrSlij[Edwang][0][i][j]=dWang;	corrSlij[Edwang][0][j][i]=WWang[0];}
+					if(Erwang){corrSlij[Erwang][0][i][j]=(float)rWang;	corrSlij[Erwang][0][j][i]=(float)WWang[0];}
+					if(Edwang){corrSlij[Edwang][0][i][j]=(float)dWang;	corrSlij[Edwang][0][j][i]=(float)WWang[0];}
 
 				}/*end of if(m>1)*/
 
@@ -2018,8 +2018,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						dWang=(float)MISSVAL;
 					}
 
-					if(Erwang) corrSlij[Erwang][-l][i][j]=rWang;
-					if(Edwang) corrSlij[Edwang][-l][i][j]=dWang;
+					if(Erwang) corrSlij[Erwang][-l][i][j]=(float)rWang;
+					if(Edwang) corrSlij[Edwang][-l][i][j]=(float)dWang;
 				}
 		 
 			}/*end of loop j*/
@@ -2340,12 +2340,12 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 		}//end loop over alleles
 		for(r=1;r<=4;r++){
 			if(DenFlr[l][r] && DenFlr[l][r]!=(float)MISSVAL){
-				Flr[l][r]=NumFlr[l][r]/DenFlr[l][r];
+				Flr[l][r]=(float)(NumFlr[l][r]/DenFlr[l][r]);
 			}
 			else Flr[l][r]=(float)MISSVAL;
 
 			if(DenRlr[l][r] && DenRlr[l][r]!=(float)MISSVAL){
-				Rlr[l][r]=NumRlr[l][r]/DenRlr[l][r];
+				Rlr[l][r]=(float)(NumRlr[l][r]/DenRlr[l][r]);
 			}
 			else Rlr[l][r]=(float)MISSVAL;
 
@@ -2366,7 +2366,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				}
 				J1[l]=(Nlpa[l][1][0]*J1[l]-1.)/(Nlpa[l][1][0]-1.);
 				J2[l]=(Nlpa[l][2][0]*J2[l]-1.)/(Nlpa[l][2][0]-1.);
-				Neil[l]=-log(J12[l]/sqrt(J1[l]*J2[l]));
+				Neil[l]=(float)-log(J12[l]/sqrt(J1[l]*J2[l]));
 				SJ1+=J1[l];
 				SJ2+=J2[l];
 				SJ12+=J12[l];
@@ -2383,7 +2383,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				V2=Nlpa[l][2][0]/(Nlpa[l][2][0]-1.)*( (SS2/Nlpa[l][2][0])-(S2/Nlpa[l][2][0])*(S2/Nlpa[l][2][0]) );
 				D1=0.;
 				for(a1=1;a1<=Nallelel[l];a1++) for(a2=1;a2<=Nallelel[l];a2++) D1+=(allelesizela[l][a1]-allelesizela[l][a2])*(allelesizela[l][a1]-allelesizela[l][a2])*(1.*Nlpa[l][1][a1]/Nlpa[l][1][0])*(1.*Nlpa[l][2][a2]/Nlpa[l][2][0]);
-				dm2l[l]=D1-V1-V2;
+				dm2l[l]=(float)(D1-V1-V2);
 
 			}
 			else Neil[l]=dm2l[l]=(float)MISSVAL;
@@ -2404,9 +2404,9 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 		}
 	}
 	for(r=1;r<=4;r++){
-		if(DenFlr[0][r]) Flr[0][r]=NumFlr[0][r]/DenFlr[0][r];	//multilocus average
+		if(DenFlr[0][r]) Flr[0][r]=(float)(NumFlr[0][r]/DenFlr[0][r]);	//multilocus average
 		else Flr[0][r]=(float)MISSVAL;
-		if(DenRlr[0][r]) Rlr[0][r]=NumRlr[0][r]/DenRlr[0][r];	//multilocus average
+		if(DenRlr[0][r]) Rlr[0][r]=(float)(NumRlr[0][r]/DenRlr[0][r]);	//multilocus average
 		else Rlr[0][r]=(float)MISSVAL;
 	}
 	if(pop1 && pop2){  //Nei and Goldstein dist
@@ -2424,7 +2424,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			nJK=0;
 			for(l=1;l<=m;l++){ //compute stat for all loci but locus l
 				if(Flr[l][r]!=(float)MISSVAL){
-					Flr[-l][r]=(NumFlr[0][r]-NumFlr[l][r])/(DenFlr[0][r]-DenFlr[l][r]);
+					Flr[-l][r]=(float)((NumFlr[0][r]-NumFlr[l][r])/(DenFlr[0][r]-DenFlr[l][r]));
 					nJK++;
 				}
 				else Flr[-l][r]=(float)MISSVAL;
@@ -2439,7 +2439,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				for(l=1;l<=m;l++)if(Flr[-l][r]!=(float)MISSVAL){ //compute variance of pseudoval
 					Flr[m+2][r]+=(Flr[-l][r]-Flr[m+1][r])*(Flr[-l][r]-Flr[m+1][r]);
 				}
-				Flr[m+2][r]=sqrt((Flr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
+				Flr[m+2][r]=(float)sqrt((Flr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
 			}
 			else Flr[m+1][r]=Flr[m+2][r]=(float)MISSVAL;
 		}
@@ -2449,7 +2449,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			nJK=0;
 			for(l=1;l<=m;l++){ //compute stat for all loci but locus l
 				if(Rlr[l][r]!=(float)MISSVAL){
-					Rlr[-l][r]=(NumRlr[0][r]-NumRlr[l][r])/(DenRlr[0][r]-DenRlr[l][r]);
+					Rlr[-l][r]=(float)((NumRlr[0][r]-NumRlr[l][r])/(DenRlr[0][r]-DenRlr[l][r]));
 					nJK++;
 				}
 				else Rlr[-l][r]=(float)MISSVAL;
@@ -2463,7 +2463,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				for(l=1;l<=m;l++)if(Rlr[-l][r]!=(float)MISSVAL){ //compute variance of pseudoval
 					Rlr[m+2][r]+=(Rlr[-l][r]-Rlr[m+1][r])*(Rlr[-l][r]-Rlr[m+1][r]);
 				}
-				Rlr[m+2][r]=sqrt((Rlr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
+				Rlr[m+2][r]=(float)sqrt((Rlr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
 			}
 			else Rlr[m+1][r]=Rlr[m+2][r]=(float)MISSVAL;
 		}
@@ -2473,17 +2473,17 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	//Multilocus estimates for all loci but one, for pairwise analysis
 	if(JKest && pop1 && pop2){
 		for(r=1;r<=4;r++)for(l=1;l<=m;l++){ //compute stat for all loci but locus l
-			if(Flr[l][r]!=(float)MISSVAL) Flr[-l][r]=(NumFlr[0][r]-NumFlr[l][r])/(DenFlr[0][r]-DenFlr[l][r]);
+			if(Flr[l][r]!=(float)MISSVAL) Flr[-l][r]=(float)((NumFlr[0][r]-NumFlr[l][r])/(DenFlr[0][r]-DenFlr[l][r]));
 			else Flr[-l][r]=Flr[0][r];	
-			if(Rlr[l][r]!=(float)MISSVAL) Rlr[-l][r]=(NumRlr[0][r]-NumRlr[l][r])/(DenRlr[0][r]-DenRlr[l][r]);
+			if(Rlr[l][r]!=(float)MISSVAL) Rlr[-l][r]=(float)((NumRlr[0][r]-NumRlr[l][r])/(DenRlr[0][r]-DenRlr[l][r]));
 			else Rlr[-l][r]=Rlr[0][r];	
 		}
 
 		for(l=1;l<=m;l++){
-			if(Neil[l]!=(float)MISSVAL) Neil[-l]=-log( (SJ12-J12[l])/sqrt((SJ1-J1[l])*(SJ2-J2[l])) );
+			if(Neil[l]!=(float)MISSVAL) Neil[-l]=(float)-log( (SJ12-J12[l])/sqrt((SJ1-J1[l])*(SJ2-J2[l])) );
 			else Neil[-l]=Neil[0];
 
-			if(dm2l[l]!=(float)MISSVAL) dm2l[-l]=(dm2l[0]*nvl-dm2l[l])/(nvl-1.);
+			if(dm2l[l]!=(float)MISSVAL) dm2l[-l]=(dm2l[0]*nvl-dm2l[l])/(nvl-1.0f);
 			else dm2l[-l]=dm2l[0];
 		}
 	}
@@ -2511,12 +2511,12 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			if(DenFlr[l][3]==(float)MISSVAL) DenFlr[l][3]=0.;
 			if(DenFlr[l][4]==(float)MISSVAL) DenFlr[l][4]=0.;
 			if(DenRlr[l][3]==(float)MISSVAL) DenRlr[l][3]=0.;
-			if(Stat[S]==1) corrSlij[S][l][pop2][pop1]=DenFlr[l][3];	//Fst
-			if(Stat[S]==2) corrSlij[S][l][pop2][pop1]=DenFlr[l][3];	//Fst/(1-Fst)
-			if(Stat[S]==3) corrSlij[S][l][pop2][pop1]=DenFlr[l][4];	//Rho
-			if(Stat[S]==4) corrSlij[S][l][pop2][pop1]=DenFlr[l][4];	//Rho/(1-Rho)
-			if(Stat[S]==5) corrSlij[S][l][pop2][pop1]=DenRlr[l][3];	//Rst
-			if(Stat[S]==6) corrSlij[S][l][pop2][pop1]=DenRlr[l][3];	//Rst/(1-Rst)
+			if(Stat[S]==1) corrSlij[S][l][pop2][pop1]=(float)DenFlr[l][3];	//Fst
+			if(Stat[S]==2) corrSlij[S][l][pop2][pop1]=(float)DenFlr[l][3];	//Fst/(1-Fst)
+			if(Stat[S]==3) corrSlij[S][l][pop2][pop1]=(float)DenFlr[l][4];	//Rho
+			if(Stat[S]==4) corrSlij[S][l][pop2][pop1]=(float)DenFlr[l][4];	//Rho/(1-Rho)
+			if(Stat[S]==5) corrSlij[S][l][pop2][pop1]=(float)DenRlr[l][3];	//Rst
+			if(Stat[S]==6) corrSlij[S][l][pop2][pop1]=(float)DenRlr[l][3];	//Rst/(1-Rst)
 		}
 	}
 
@@ -2744,10 +2744,10 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 
 		}
 		//global Nst and Gst
-		if(DivNwl[l]!=(float)MISSVAL) Nlr[l][3]=1.0f-DivNwl[l]/DivNtl[l];
+		if(DivNwl[l]!=(float)MISSVAL) Nlr[l][3]=(float)(1.0-DivNwl[l]/DivNtl[l]);
 		else Nlr[l][3]=(float)MISSVAL;
 
-		if(DivGwl[l]!=(float)MISSVAL) Glr[l][3]=1.0f-DivGwl[l]/DivGtl[l];
+		if(DivGwl[l]!=(float)MISSVAL) Glr[l][3]=(float)(1.0-DivGwl[l]/DivGtl[l]);
 		else Glr[l][3]=(float)MISSVAL;
 
 		NumGlr[l][3]=DivGtl[l]-DivGwl[l];
@@ -2764,7 +2764,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			nJK=0;
 			for(l=1;l<=m;l++){ //compute stat for all loci but locus l
 				if(Glr[l][r]!=(float)MISSVAL){
-					Glr[-l][r]=(NumGlr[0][r]-NumGlr[l][r])/(DenGlr[0][r]-DenGlr[l][r]);
+					Glr[-l][r]=(float)((NumGlr[0][r]-NumGlr[l][r])/(DenGlr[0][r]-DenGlr[l][r]));
 					nJK++;
 				}
 				else Glr[-l][r]=(float)MISSVAL;
@@ -2779,7 +2779,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				for(l=1;l<=m;l++)if(Glr[-l][r]!=(float)MISSVAL){ //compute variance of pseudoval
 					Glr[m+2][r]+=(Glr[-l][r]-Glr[m+1][r])*(Glr[-l][r]-Glr[m+1][r]);
 				}
-				Glr[m+2][r]=sqrt((Glr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
+				Glr[m+2][r]=(float)sqrt((Glr[m+2][r]/(nJK-1))/nJK); //standard error JK estimate
 			}
 			else Glr[m+1][r]=Glr[m+2][r]=(float)MISSVAL;
 		}
@@ -2789,7 +2789,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			nJK=0;
 			for(l=1;l<=m;l++){ //compute stat for all loci but locus l
 				if(Nlr[l][r]!=(float)MISSVAL){
-					Nlr[-l][r]=(NumNlr[0][r]-NumNlr[l][r])/(DenNlr[0][r]-DenNlr[l][r]);
+					Nlr[-l][r]=(float)((NumNlr[0][r]-NumNlr[l][r])/(DenNlr[0][r]-DenNlr[l][r]));
 					nJK++;
 				}
 				else Nlr[-l][r]=(float)MISSVAL;
@@ -2804,7 +2804,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				for(l=1;l<=m;l++)if(Glr[-l][r]!=(float)MISSVAL){ //compute variance of pseudoval
 					Nlr[m+2][r]+=(Nlr[-l][r]-Nlr[m+1][r])*(Nlr[-l][r]-Nlr[m+1][r]);
 				}
-				Nlr[m+2][r]=sqrt((Nlr[m+2][r]/(nJK-1))/nJK);
+				Nlr[m+2][r]=(float)sqrt((Nlr[m+2][r]/(nJK-1))/nJK);
 			}
 			else Nlr[m+1][r]=Nlr[m+2][r]=(float)MISSVAL;
 		}
@@ -2814,9 +2814,9 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	//Multilocus estimates for all loci but one, for pairwise Gst, Nst analysis
 	if(JKest && pop1 && pop2){
 		for(r=1;r<=3;r++)for(l=1;l<=m;l++){ //compute stat for all loci but locus l
-			if(Glr[l][r]!=(float)MISSVAL) Glr[-l][r]=(NumGlr[0][r]-NumGlr[l][r])/(DenGlr[0][r]-DenGlr[l][r]);
+			if(Glr[l][r]!=(float)MISSVAL) Glr[-l][r]=(float)((NumGlr[0][r]-NumGlr[l][r])/(DenGlr[0][r]-DenGlr[l][r]));
 			else Glr[-l][r]=Glr[0][r];	
-			if(Nlr[l][r]!=(float)MISSVAL) Nlr[-l][r]=(NumNlr[0][r]-NumNlr[l][r])/(DenNlr[0][r]-DenNlr[l][r]);
+			if(Nlr[l][r]!=(float)MISSVAL) Nlr[-l][r]=(float)((NumNlr[0][r]-NumNlr[l][r])/(DenNlr[0][r]-DenNlr[l][r]));
 			else Nlr[-l][r]=Nlr[0][r];	
 		}
 
@@ -2858,29 +2858,29 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 		if(l>=0){
 			if(DenGlr[l][3]==(float)MISSVAL) DenGlr[l][3]=0.;
 			if(DenNlr[l][3]==(float)MISSVAL) DenNlr[l][3]=0.;
-			if(Stat[S]==9) corrSlij[S][l][pop2][pop1]=DenGlr[l][3];	
-			if(Stat[S]==11) corrSlij[S][l][pop2][pop1]=DenNlr[l][3];	
+			if(Stat[S]==9) corrSlij[S][l][pop2][pop1]=(float)DenGlr[l][3];	
+			if(Stat[S]==11) corrSlij[S][l][pop2][pop1]=(float)DenNlr[l][3];	
 		}
 	}
 
 	//for pairwise Gij, Gst, Nij, Nst
 	if(pop1==0 && pop2==0)for(S=1;S<=NS;S++){
 		if(Stat[S]==9)for(l=linit;l<=m;l++)for(p1=1;p1<=Npop;p1++)for(p2=p1;p2<=Npop;p2++){
-			corrSlij[S][l][p1][p2]=Gstlp1p2[l][p1][p2];
+			corrSlij[S][l][p1][p2]=(float)Gstlp1p2[l][p1][p2];
 		}
 
 		if(Stat[S]==10)for(l=linit;l<=m;l++)for(p1=1;p1<=Npop;p1++)for(p2=p1;p2<=Npop;p2++){
-			corrSlij[S][l][p1][p2]=Glp1p2[l][p1][p2];
+			corrSlij[S][l][p1][p2]=(float)Glp1p2[l][p1][p2];
 	/*		if(p1!=p2 && l==0) corrSlij[S][l][p2][p1]=DivGrefp1p2[p1][p2];
 			if(p1!=p2 && l!=0) corrSlij[S][l][p2][p1]=DenGlr[l][3];			   */
 		}
 
 		if(Stat[S]==11)for(l=linit;l<=m;l++)for(p1=1;p1<=Npop;p1++)for(p2=p1;p2<=Npop;p2++){
-			corrSlij[S][l][p1][p2]=Nstlp1p2[l][p1][p2];
+			corrSlij[S][l][p1][p2]=(float)Nstlp1p2[l][p1][p2];
 		}
 
 		if(Stat[S]==12)for(l=linit;l<=m;l++)for(p1=1;p1<=Npop;p1++)for(p2=p1;p2<=Npop;p2++){
-			corrSlij[S][l][p1][p2]=Nlp1p2[l][p1][p2];
+			corrSlij[S][l][p1][p2]=(float)Nlp1p2[l][p1][p2];
 	/*		if(p1!=p2 && l==0) corrSlij[S][l][p2][p1]=DivNrefp1p2[p1][p2];
 			if(p1!=p2 && l!=0) corrSlij[S][l][p2][p1]=DenNlr[l][3];			   */
 		}
@@ -3260,7 +3260,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 	/*compute actual var of relatedness and standard error by jacknife*/
 	if(varcoef && m>=2){
 		for(c=0;c<=nc+1;c++){
-			if(npbiscl[c][0]) corrlc[m+3][c]=(Sdevcl[c][0]/npbiscl[c][0])-(SSwcorrcl[c][0]/npbiscl[c][0])*(SSwcorrcl[c][0]/npbiscl[c][0]);
+			if(npbiscl[c][0]) corrlc[m+3][c]=(float)((Sdevcl[c][0]/npbiscl[c][0])-(SSwcorrcl[c][0]/npbiscl[c][0])*(SSwcorrcl[c][0]/npbiscl[c][0]));
 			else corrlc[m+3][c]=(float)MISSVAL;
 	
 			if(m>=3){/*jackknife*/
@@ -3277,7 +3277,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 							mJK+=JK[l]/nJK;
 						}
 						for(l=1;l<=m;l++)if(npbiscl[c][l]) vJK+=(JK[l]-mJK)*(JK[l]-mJK)/(nJK-1);
-						corrlc[m+4][c]=sqrt(vJK/nJK);
+						corrlc[m+4][c]=(float)sqrt(vJK/nJK);
 					}
 					else corrlc[m+4][c]=(float)MISSVAL;
 				}
@@ -3418,7 +3418,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 				Cov=SP/Ncomp-(Sl1*Sl2/(Ncomp*Ncomp));
 				if(Vl1>0 && Vl2>0){
 					Nlcomp[0]++;
-					Rll[l1][l2]=Cov/(sqrt(Vl1)*sqrt(Vl2));		//correlation between loci 1 & 2				
+					Rll[l1][l2]=(float)(Cov/(sqrt(Vl1)*sqrt(Vl2)));		//correlation between loci 1 & 2				
 					Rll[0][0]+=Rll[l1][l2] /* *Rll[l1][l2] */ ;	//mean correlation between loci
 					//jackknife average
 					for(l=1;l<=m;l++){
@@ -3522,7 +3522,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 			}
 			else Cor=(float)MISSVAL;
 
-			if(Cor!=(float)MISSVAL){NRand++; R2pl[-ljk]+=Cor;}
+			if(Cor!=(float)MISSVAL){NRand++; R2pl[-ljk]+=(float)Cor;}
 		}
 		if(NRand) R2pl[-ljk]/=NRand;
 		else R2pl[-ljk]=(float)MISSVAL;
@@ -3544,12 +3544,12 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 				mean+=R2pl[-l];
 			}
 		}
-		R2pl[1]=mean/nJK;  /*mean JK estimate*/
+		R2pl[1]=(float)mean/nJK;  /*mean JK estimate*/
 		R2pl[2]=0.;
 		for(l=1;l<=m;l++)if(R2pl[-l]!=(float)MISSVAL){ /*compute variance JK estimate*/
-			R2pl[2]+=(R2pl[-l]-mean)*(R2pl[-l]-mean);
+			R2pl[2]+=(R2pl[-l]-(float)mean)*(R2pl[-l]-(float)mean);
 		}
-		R2pl[2]=sqrt((R2pl[2]/(nJK-1))/nJK); /*standard error JK estimate*/
+		R2pl[2]=(float)sqrt((R2pl[2]/(nJK-1))/nJK); /*standard error JK estimate*/
 	}
 	else R2pl[1]=R2pl[2]=(float)MISSVAL;
 
@@ -3705,9 +3705,9 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 	}
 	else Vp1[1]=Vp1[2]=Vp2[1]=Vp2[2]=Rl1[1]=Rl1[2]=Rl2[1]=Rl2[2]=(float)MISSVAL;
 
-	V[0][0]=Vp1[0]; V[1][0]=Rl1[0]; V[2][0]=Vp2[0]; V[3][0]=Vl[0]; V[4][0]=Rl2[0]; // estimates
-	V[0][1]=Vp1[1]; V[1][1]=Rl1[1]; V[2][1]=Vp2[1]; V[3][1]=Vl[1]; V[4][1]=Rl2[1]; //mean jackknife estimates
-	V[0][2]=Vp1[2]; V[1][2]=Rl1[2]; V[2][2]=Vp2[2]; V[3][2]=Vl[2]; V[4][2]=Rl2[2]; //jackknife SE
+	V[0][0]=(float)Vp1[0]; V[1][0]=(float)Rl1[0]; V[2][0]=(float)Vp2[0]; V[3][0]=(float)Vl[0]; V[4][0]=(float)Rl2[0]; // estimates
+	V[0][1]=(float)Vp1[1]; V[1][1]=(float)Rl1[1]; V[2][1]=(float)Vp2[1]; V[3][1]=(float)Vl[1]; V[4][1]=(float)Rl2[1]; //mean jackknife estimates
+	V[0][2]=(float)Vp1[2]; V[1][2]=(float)Rl1[2]; V[2][2]=(float)Vp2[2]; V[3][2]=(float)Vl[2]; V[4][2]=(float)Rl2[2]; //jackknife SE
 
 	free_d3tensor(Sl,0,n,0,n,-m,m);
 	free_dvector(Sp,-m,m);
@@ -3849,9 +3849,9 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 		}while(sigmaest[niter]!=MISSVAL && converge==0 && niter<100);
 
 
-		corrlc[l][-21]=corrlc[l][-22]=corrlc[l][-23]=Nb[niter];
-		corrlc[l][-25]=corrlc[l][-26]=corrlc[l][-27]=sigmaest[niter];
-		corrlc[l][-24]=npairslog;
+		corrlc[l][-21]=corrlc[l][-22]=corrlc[l][-23]=(float)Nb[niter];
+		corrlc[l][-25]=corrlc[l][-26]=corrlc[l][-27]=(float)sigmaest[niter];
+		corrlc[l][-24]=(float)npairslog;
 
 		if(niter==100){ //to get average over a cycle
 			backiter=1;
@@ -3866,12 +3866,12 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 				if(Nb[niter-backiter]>maxNb) maxNb=Nb[niter-backiter];
 				backiter++;
 			}					
-			corrlc[l][-21]=meanNb/backiter;
-			corrlc[l][-22]=minNb;
-			corrlc[l][-23]=maxNb;
-			corrlc[l][-25]=meansigma/backiter;
-			corrlc[l][-26]=minsigma;
-			corrlc[l][-27]=maxsigma;
+			corrlc[l][-21]=(float)meanNb/backiter;
+			corrlc[l][-22]=(float)minNb;
+			corrlc[l][-23]=(float)maxNb;
+			corrlc[l][-25]=(float)meansigma/backiter;
+			corrlc[l][-26]=(float)minsigma;
+			corrlc[l][-27]=(float)maxsigma;
 		}
 	}
 
@@ -3895,8 +3895,8 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 				corrlc[m+2][-21]+=(corrlc[l][-21]-corrlc[m+1][-21])*(corrlc[l][-21]-corrlc[m+1][-21]);
 				corrlc[m+2][-25]+=(corrlc[l][-25]-corrlc[m+1][-25])*(corrlc[l][-25]-corrlc[m+1][-25]);
 			}
-			corrlc[m+2][-21]=sqrt((corrlc[m+2][-21]/(nJK-1))/nJK); //standard error JK estimate
-			corrlc[m+2][-25]=sqrt((corrlc[m+2][-25]/(nJK-1))/nJK); //standard error JK estimate
+			corrlc[m+2][-21]=(float)sqrt((corrlc[m+2][-21]/(nJK-1))/nJK); //standard error JK estimate
+			corrlc[m+2][-25]=(float)sqrt((corrlc[m+2][-25]/(nJK-1))/nJK); //standard error JK estimate
 		}
 		else corrlc[m+1][-21]=corrlc[m+2][-21]=corrlc[m+1][-25]=corrlc[m+2][-25]=(float)MISSVAL;
 	}
