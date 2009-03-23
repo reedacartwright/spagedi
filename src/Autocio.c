@@ -40,21 +40,6 @@
 #include "Autocio.h" 
 #include "Xatools.h"
 
-#ifdef USE_GETCH
-#	if defined(CURSES_HAVE_CURSES_H)
-#		include <curses.h>
-#	elif defined(CURSES_HAVE_NCURSES_H)
-#		include <ncurses.h>
-#	elif defined(CURSES_HAVE_NCURSES_NCURSES_H)
-#		include <ncurses/ncurses.h>
-#	elif defined(CURSES_HAVE_NCURSES_CURSES_H)
-#		include <ncurses/curses.h>
-#	endif
-#	ifdef HAVE_CONIO_H
-#		include <conio.h>
-#	endif
-#endif
-
 #define write write_string
 
 char errorfile[PATH_BUF_SIZE] = ERRORTXT;
@@ -3872,9 +3857,6 @@ char wait_a_char()
 #ifdef NO_MESSAGE_PAUSE
 	return 'x';
 #endif
-#ifdef USE_GETCH
-	return (char)getch();
-#else
 	char ch = 'x';
 	scanf("%c", &ch);
 	return ch;
