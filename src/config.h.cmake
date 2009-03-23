@@ -8,4 +8,5 @@
 #cmakedefine  HAVE_CONIO_H 1
 
 #cmakedefine HAVE_CHDIR 1
-
+#cmakedefine HAVE_STRLCPY 1
+#cmakedefine HAVE_STRLCAT 1
