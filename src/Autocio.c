@@ -57,7 +57,7 @@
 
 #define write write_string
 
-char errorfile[PATH_MAX] = ERRORTXT;
+char errorfile[PATH_BUF_SIZE] = ERRORTXT;
 
 void commom_errors()
 {
@@ -108,12 +108,12 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 
 void copy_file_name(char *to, const char *from, const char *outdir) {
 	const char sps[] = " \n\r\"\'";
-	char filename[PATH_MAX];
+	char filename[PATH_BUF_SIZE];
 	size_t len,len2;
 	
 	len = strspn(from,sps); // some drag-n-drop strings can be quoted
 	from += len;
-	strlcpy(to,from,PATH_MAX);
+	strlcpy(to,from,PATH_BUF_SIZE);
 	len = strcspn(to,sps);  // skip non-sps chars
 	while(to[len] != '\0') {
 		len2 = len+strspn(to+len,sps); // skip sps chars
@@ -125,10 +125,10 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 	}
 	if(outdir != NULL && to[0] != '/') {
 		// Relative filename, so make it relative to outdir
-		strlcpy(filename, outdir, PATH_MAX);
-		strlcat(filename, "/", PATH_MAX);
-		strlcat(filename, to, PATH_MAX);
-		strlcpy(to, filename, PATH_MAX);
+		strlcpy(filename, outdir, PATH_BUF_SIZE);
+		strlcat(filename, "/", PATH_BUF_SIZE);
+		strlcat(filename, to, PATH_BUF_SIZE);
+		strlcpy(to, filename, PATH_BUF_SIZE);
 	}
 }
 
@@ -136,7 +136,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[SMAX], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
+	char smess[SMAX], filename[PATH_BUF_SIZE], outdir[PATH_BUF_SIZE], ch,*ptr, *ptrt;
 	int check=1;
 	FILE *fp;
 
@@ -148,7 +148,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	
 	// Determine Inputfile
 	if( argc > 1 ) {
-		strlcpy(inputfile, argv[1], PATH_MAX);
+		strlcpy(inputfile, argv[1], PATH_BUF_SIZE);
 		// Find base name
 	} else { // Filename not specified on command line
 		printf("\n\nEnter the name of the data file (with ext)\n"
@@ -157,7 +157,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		       "  Data file: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
-			strlcpy(inputfile, "in.txt", PATH_MAX);
+			strlcpy(inputfile, "in.txt", PATH_BUF_SIZE);
 			printf("%s\n",inputfile);
 		} else if(smess[0]==' ')
 			import_data_file(inputfile);
@@ -170,7 +170,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		printf("\n\nWARNING: Cannot open data file \"%s\"\n"
 		       "  If it is being used by another application, close it first, then press RETURN\n"
 		       "  Otherwise enter a new name for the data file\n"
-		       "  Press ctrl+c if you wish to stop the program now\n", inputfile);
+		       "  Press ctrl+c if you wish to stop the program now: ", inputfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0') {
 			copy_file_name(inputfile, smess, NULL);
@@ -179,18 +179,18 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	fclose(fp);
 
 	// Find base name
-	strlcpy(filename, basename(inputfile), PATH_MAX);
+	strlcpy(filename, basename(inputfile), PATH_BUF_SIZE);
 	printf("\n\n  Data file: %s\n    full path: %s\n", filename, inputfile);
 	
 	// find directory of input file name, will be used as initial outdir
 	// use filename as initial buffer in case dirname modifies it
-	strlcpy(filename, inputfile, PATH_MAX);
-	strlcpy(outdir, dirname(filename), PATH_MAX);
+	strlcpy(filename, inputfile, PATH_BUF_SIZE);
+	strlcpy(outdir, dirname(filename), PATH_BUF_SIZE);
 	
 	// Determine Outputfile
 	if( argc > 2) {
-		strlcpy(outputfile, argv[2], PATH_MAX);
-		strlcpy(outdir, dirname(outputfile), PATH_MAX);	
+		strlcpy(outputfile, argv[2], PATH_BUF_SIZE);
+		strlcpy(outdir, dirname(outputfile), PATH_BUF_SIZE);	
 	} else { // Filename not specifed on command line
 		printf("\n\nEnter the name of the results file (with ext)\n"
 		       "or press RETURN for the default results file \"%s\"\n\n"
@@ -198,10 +198,10 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
 			// Create default output filename: outdir+"out.txt"
-			strlcpy(outputfile, outdir, PATH_MAX);
-			strlcat(outputfile, "/out.txt", PATH_MAX);
+			strlcpy(outputfile, outdir, PATH_BUF_SIZE);
+			strlcat(outputfile, "/out.txt", PATH_BUF_SIZE);
 		} else {
-			copy_file_name(filename, smess, outdir);
+			copy_file_name(outputfile, smess, outdir);
 		}
 	}
 	while(check != 0) {
@@ -211,7 +211,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			printf("\n\nWARNING: The results file \"%s\" already exists.\n"
 			       "  Enter 'a' or press RETURN to add the new results to the end of the file\n"
 			       "  Enter 'e' to erase the present content of the file\n"
-			       "  Otherwise, enter a new name for the results file\n", outputfile);
+			       "  Otherwise, enter a new name for the results file: ", outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
 			// Clear file
 			if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
@@ -227,10 +227,10 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
  		while(check==0 && (fp=fopen(outputfile,"a"))==NULL ){
 			printf("\nWARNING: Cannot open results file \"%s\".\n"
 			       "If it is being used by another application, close it first. Then press RETURN.\n"
-			       "  Otherwise, enter a new name for the results file\n", outputfile);
+			       "  Otherwise, enter a new name for the results file: ", outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
 			if(smess[0]!='\0'){
-				copy_file_name(filename,smess,outdir);
+				copy_file_name(outputfile,smess,outdir);
 				check=1;
 			}
 		}
@@ -238,16 +238,16 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	
 	// Find base name
-	strlcpy(filename, basename(outputfile), PATH_MAX);
+	strlcpy(filename, basename(outputfile), PATH_BUF_SIZE);
 	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
 	
 	// Use outdir of output
-	strlcpy(outdir, dirname(outputfile), PATH_MAX);
+	strlcpy(outdir, dirname(outputfile), PATH_BUF_SIZE);
 	
 	// Create error.txt in outputdir
-	strlcpy(errorfile, outdir, PATH_MAX);
-	strlcat(errorfile, "/", PATH_MAX);
-	strlcat(errorfile, ERRORTXT, PATH_MAX);
+	strlcpy(errorfile, outdir, PATH_BUF_SIZE);
+	strlcat(errorfile, "/", PATH_BUF_SIZE);
+	strlcat(errorfile, ERRORTXT, PATH_BUF_SIZE);
 }
 /*end of get_input_output_file_names*/
 

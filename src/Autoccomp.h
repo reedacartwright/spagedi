@@ -47,9 +47,11 @@
 #	define PATH_MAX _MAX_PATH
 #endif
 
+#define PATH_BUF_SIZE PATH_MAX+1
+
 #include "Xatools.h"
 
-extern char errorfile[PATH_MAX];
+extern char errorfile[PATH_BUF_SIZE];
 #define  ERRORFILE errorfile /* name of variable that contains errorfile */
 
 struct name{
