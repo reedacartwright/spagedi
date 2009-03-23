@@ -1665,7 +1665,7 @@ startagain:
 
 
 	if(*sigmaest!=0.){
-		if(ncoord=-2 && (*distm)==0) printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared km): ");
+		if(ncoord==-2 && (*distm)==0) printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared km): ");
 		else printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared distance unit, using same distance unit \nas for the spatial coordinates or the distance matrix): ");
 		do{
 			fgets_chomp(smess, sizeof(smess), stdin);
