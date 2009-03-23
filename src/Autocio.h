@@ -23,7 +23,7 @@
 
 void commom_errors();
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[]);
-void import_data_file(char inputfile[]);
+void import_data_file(char *inputfile);
 void export_data_file(int StatType,char inputfile[],int n,
 	double *xi,double *yi,double *zi,double *xp,double *yp,double *zp,double **Mdij,
 	int *popi,int Npop,int m,int ndigit,int *Nallelel,int ***gilc,int **allelesizela,

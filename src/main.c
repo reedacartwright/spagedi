@@ -186,7 +186,7 @@ strcpy(instrfile,"instruction.txt");
 	free_ivector(Niskg,0,n);
 
 	//read pairwise distances
-	if(distm){
+	if(distm==1){
 		if(StatType==1) {
 			Mdij=dmatrix(0,n,0,n);
 			read_pairwise_spatial_distances(inputfile,distfile,n,namei,Mdij);
@@ -208,7 +208,7 @@ strcpy(instrfile,"instruction.txt");
 
 	PWstat=0;
 	if(printdistmatrix) PWstat=1;
-	if(ncoord || Mdij[0][0]) PWstat=2;
+	if(ncoord || Mdij[0][0]==1.) PWstat=2;
 
 
 	//export data if necessary
@@ -364,7 +364,7 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 			xpmix=dvector(0,n);
 			ypmix=dvector(0,n);
 			zpmix=dvector(0,n);
-			if(Mdij[0][0]) {Mdijmix=dmatrix(0,n,0,n); Mdijmix[0][0]=Mdij[0][0];}
+			if(Mdij[0][0]==1.) {Mdijmix=dmatrix(0,n,0,n); Mdijmix[0][0]=Mdij[0][0];}
 			else Mdijmix=Mdij;
 			for(p=1;p<=Np;p++){
 				if(Np>=100){if((p%(Np/10))==0 || (p<=(Np/10) && (p%(Np/100))==0) ) printf(" %i",p);}
@@ -379,7 +379,7 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 			free_dvector(xpmix,0,n);
 			free_dvector(ypmix,0,n);
 			free_dvector(zpmix,0,n);
-			if(Mdij[0][0]) free_dmatrix(Mdijmix,0,n,0,n);
+			if(Mdij[0][0]==1.) free_dmatrix(Mdijmix,0,n,0,n);
 			if(TypeComp!=1) for(S=1;S<=NS;S++)for(c=-2;c<=nc+1;c++){if(c==0)c=1; r_statSlc[S][0][c].mode=60;}
 			if(TypeComp==1) for(S=1;S<=NS;S++)for(c=-2;c<=nc+1;c++){if(c==0)c=1; r_statSlc[S][0][c].mode=61;}
 		}
@@ -645,7 +645,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 		if((Np=Npermut[1])){
 			printf("\nPermutations of spatial locations (%i)\n",Np);
 			xmix=dvector(0,n);ymix=dvector(0,n);zmix=dvector(0,n);
-			if(Mdij[0][0]) {Mdijmix=dmatrix(0,n,0,n); Mdijmix[0][0]=Mdij[0][0];}
+			if(Mdij[0][0]==1.) {Mdijmix=dmatrix(0,n,0,n); Mdijmix[0][0]=Mdij[0][0];}
 			else Mdijmix=Mdij;
 			for(p=1;p<=Np;p++){
 				if(Np>=100){if((p%(Np/10))==0 || (p<=(Np/10) && (p%(Np/100))==0) ) printf(" %i",p);}
@@ -665,7 +665,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 			}
 
 			free_dvector(xmix,0,n);free_dvector(ymix,0,n);free_dvector(zmix,0,n);
-			if(Mdij[0][0]) free_dmatrix(Mdijmix,0,n,0,n);
+			if(Mdij[0][0]==1.) free_dmatrix(Mdijmix,0,n,0,n);
 		
 			if(Nsg<=1 && TypeComp!=1) for(c=-2;c<=nc;c++){if(c==0) c=1;for(S=1;S<=NS;S++) r_statSlc[S][0][c].mode=40;}
 			if(Nsg<=1 && TypeComp==1) for(c=-2;c<=nc;c++){if(c==0) c=1;for(S=1;S<=NS;S++) r_statSlc[S][0][c].mode=41;}

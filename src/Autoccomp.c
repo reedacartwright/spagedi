@@ -270,10 +270,11 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 			if(TypeComp==1)if(cati[i]!=cati[j]) continue;
 			if(TypeComp==2)if(cati[i]==cati[j]) continue;
 			if(StatType==1 && Mdij[0][0]==0)if(sgi[i]==sgi[j]) continue; /*don't take into account intra-group class*/
-			if(Mdij[0][0]){
+			if(Mdij[0][0]==1.){
 				if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 				else continue;
 			}
+			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 			
 			distp[p++]=dij;
@@ -305,10 +306,11 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 			if(TypeComp==1)if(cati[i]!=cati[j]) continue;
 			if(TypeComp==2)if(cati[i]==cati[j]) continue;
 
-			if(Mdij[0][0]){
+			if(Mdij[0][0]==1.){
 				if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 				else continue;
 			}
+			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 
 			/*check if a new class interval must be added*/
@@ -2998,10 +3000,11 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 			   */
 				if(val==(float)MISSVAL) continue;
 
-				if(Mdij[0][0]){
+				if(Mdij[0][0]==1.){
 					if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 					else continue;
 				}
+				else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 				else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 			
  				if(StatType==1 && Mdij[0][0]==0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
@@ -3331,10 +3334,11 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 			if(TypeComp==2)if(cati[i]==cati[j]) continue;
 
 			//find dist class
-			if(Mdij[0][0]){
+			if(Mdij[0][0]==1.){
 				if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 				else continue;
 			}
+			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 		
  			if(StatType==1 && Mdij[0][0]==0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
@@ -3771,10 +3775,11 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 
 					val=corrlij[l][i][j];
 
-					if(Mdij[0][0]){
+					if(Mdij[0][0]==1.){
 						if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 						else continue;
 					}
+					else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 					else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 				
  					if(Mdij[0][0]==0 && (sgi[i]==sgi[j])){ dij=-1.; cneighb=2;}	/*intra-group class*/
@@ -4163,12 +4168,12 @@ void permut_locations
 	resample_shuffle(loci,1,n,seed);
 
 	for(i=1;i<=n;i++){
-		if(!Mdij[0][0]){
+		if(Mdij[0][0]==1.) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
+		else{
 			xmix[i]=x[loci[i]];
 			ymix[i]=y[loci[i]];
 			zmix[i]=z[loci[i]];
 		}
-		if(Mdij[0][0]) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
 	}
 	
 }
@@ -4198,12 +4203,12 @@ void permut_locations_of_groups
 	for(i=1;i<=n;i++) loci[i]=locg[groupi[i]];
 
 	for(i=1;i<=n;i++){
-		if(!Mdij[0][0]){
+		if(Mdij[0][0]==1.) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
+		else{
 			xmix[i]=x[loci[i]];
 			ymix[i]=y[loci[i]];
 			zmix[i]=z[loci[i]];
 		}
-		if(Mdij[0][0]) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
 	}
 	
 }
@@ -4224,13 +4229,13 @@ void permut_locations_within_cat
 		j=0;
 		for(i=1;i<=n;i++) if(cati[i]==k){
 			j++;
-			if(!Mdij[0][0]){
+			if(Mdij[0][0]!=1.){
 				xmix[i]=x[loci[j]];
 				ymix[i]=y[loci[j]];
 				zmix[i]=z[loci[j]];
 			}
 			j2=0;
-			if(Mdij[0][0]) for(i2=1;i2<=n;i2++) if(cati[i2]==k){
+			if(Mdij[0][0]==1.) for(i2=1;i2<=n;i2++) if(cati[i2]==k){
 				j2++;
 				Mdijmix[i][i2]=Mdij[loci[j]][loci[j2]];
 			}
@@ -4265,12 +4270,12 @@ void permut_locations_of_groups_within_cat
 		for(i=1;i<=n;i++) if(cati[i]==k) loci[i]=locg[groupi[i]];
 
 		for(i=1;i<=n;i++) if(cati[i]==k){			
-			if(!Mdij[0][0]){
+			if(Mdij[0][0]!=1.){
 				xmix[i]=x[loci[i]];
 				ymix[i]=y[loci[i]];
 				zmix[i]=z[loci[i]];
 			}
-			if(Mdij[0][0]) for(i2=1;i2<=n;i2++) if(cati[i2]==k){
+			if(Mdij[0][0]==1.) for(i2=1;i2<=n;i2++) if(cati[i2]==k){
 				Mdijmix[i][i2]=Mdij[loci[i]][loci[i2]];
 			}
 		}

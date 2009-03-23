@@ -26,6 +26,9 @@
 #	include <direct.h>
 #	define chdir _chdir
 #endif
+#ifdef HAVE_LIBGEN_H
+#	include <libgen.h>
+#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -125,7 +128,7 @@ void copy_file_name(char *to, const char *from) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[SMAX],ch,*ptr, *ptrt;
+	char smess[SMAX], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
 	int check;
 	FILE *fp;
 
@@ -144,13 +147,26 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		// Replace file with "out.txt"
 		strncpy(ptr, "out.txt", PATH_MAX-1-(ptr-outputfile));
 		printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-		printf("\n\n  Data file: %s",inputfile);
-		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", outputfile);
+		ptr = inputfile;
+		while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
+		printf("\n\n  Data file: %s",ptr);
+		printf("\n    full path: %s",inputfile);
+		printf("\n\n\nEnter the name of the results file (with ext)\n  or press RETURN for the default results file \"%s\"\n\n  Results file: ", "out.txt");
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
-			printf("%s",outputfile);
-		} else
-			copy_file_name(outputfile,smess);
+			ptr = outputfile;
+			while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
+			printf("%s",ptr);
+		} else {
+			copy_file_name(filename,smess);
+			if(strpbrk(filename, "/\\")==NULL){
+				strncpy(outputfile, inputfile, PATH_MAX);
+				ptr = outputfile;
+				while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
+				strncpy(ptr, filename, PATH_MAX-1-(ptr-outputfile));
+			} else strncpy(outputfile, filename, PATH_MAX);
+		}
+
 	}
 	if(argc == 3) {
 		strncpy(inputfile,argv[1],PATH_MAX);
@@ -220,7 +236,13 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 						fclose(fp);
 				}
 				else if(strcmp(smess,"a") && strcmp(smess,"A")) {
-					copy_file_name(outputfile,smess);
+					copy_file_name(filename,smess);
+					if(strpbrk(filename, "/\\")==NULL){
+						strncpy(outputfile, inputfile, PATH_MAX);
+						ptr = outputfile;
+						while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
+						strncpy(ptr, filename, PATH_MAX-1-(ptr-outputfile));
+					} else strncpy(outputfile, filename, PATH_MAX);
 					check=1;
 				}
 			}
@@ -229,7 +251,13 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			printf("\nWARNING: Cannot open results file \"%s\".\nIf it is being used by another application, close it first. Then press RETURN.\n  Otherwise, enter a new name for the results file\n",outputfile);
 			fgets_chomp(smess, sizeof(smess), stdin);
 			if(smess[0]!='\0'){
-				copy_file_name(outputfile,smess);
+				copy_file_name(filename,smess);
+				if(strpbrk(filename, "/\\")==NULL){
+					strncpy(outputfile, inputfile, PATH_MAX);
+					ptr = outputfile;
+					while((ptrt = strpbrk(ptr, "/\\")) != NULL) ptr = ptrt+1;
+					strncpy(ptr, filename, PATH_MAX-1-(ptr-outputfile));
+				} else strncpy(outputfile, filename, PATH_MAX);
 				check=1;
 			}
 		}
@@ -253,9 +281,8 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 
 
 
-void import_data_file(char inputfile[])
+void import_data_file(char *inputfile)
 {
-	FILE *fp,*fp2,*fp3;
 	int line=0,line3=0,flag;
 	int format,n,i,check;
 	int m=0,Maxallele,ndigit,l;
@@ -265,6 +292,7 @@ void import_data_file(char inputfile[])
 	char ch,importfile[50],labelfile[50];
 	char namelocus[MMAX][50],popname[501][50],indname[50];
 	double X,Y;
+	FILE *fp,*fp2,*fp3;
 
 	/*define the data file to import*/
 	format=0;
@@ -743,8 +771,8 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 		printf("\nPress any key to stop the program");
 		wait_a_char();exit(1);
 	}
-	if(*ncoord > NCOORDMAX || *ncoord < 0) {
-		sprintf(smess,"\nNumber of spatial coordinates=%d higher than max allowed=%d, or less than 0",*ncoord,NCOORDMAX);
+	if(*ncoord > NCOORDMAX || (*ncoord < 0 && *ncoord != -2) ) {
+		sprintf(smess,"\nNumber of spatial coordinates, %i, not in the range admitted (0 to 3 or -2)",*ncoord);
 		write(ERRORFILE,smess);
 		printf("\nPress any key to stop the program");
 		wait_a_char();exit(1);
@@ -812,7 +840,7 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 		s2=nexttab(s2,inputfile,line);
 		readsfromstring(s2,catname,MAXNOM-1,inputfile,line);
 	}
-	for(i=1;i<=*ncoord;i++) {
+	for(i=1;i<=abs(*ncoord);i++) {
 		s2=nexttab(s2,inputfile,line);
 		readsfromstring(s2,namecoord[i],MAXNOM-1,inputfile,line);
  	}  /*end of for, loop for loci names*/
@@ -838,8 +866,9 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 	int gentemp,maxploidy,ploidyl;
 	char s[SMAX], *s2,smess[SMAX],ch,*ptr;
 	char newind[SMAX];
-	int nallele,ok;
+	int nallele,ok,coordproblem=0;
 	float allelesizea[1000];
+	double PI=3.14159265358979;
 	
 	while((fp=fopen(inputfile,"rt"))==NULL){
 		printf("\nWARNING: Cannot open data file %c%s%c.\nIf it is being used by another application, close it first.\nIf it does not exist in the specified directory, bring it first.\nThen press RETURN.\nPress Ctrl+c twice to stop the programm now.\n",'"',inputfile,'"');
@@ -881,19 +910,27 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 		else strncpy(namecati[i].n,"0",MAXNOM-1);
 
 		/*indiv coordinates*/
-		if(ncoord>0){
+		if(abs(ncoord)>0){
 			s2=nexttab(s2,inputfile,line);
 			if(strchr(s2,','))if(strchr(s2,',')<strpbrk(s2,"\t\n\r")){printf("\nWARNING: problem reading spatial coordinates on line %d of the data file: \n\tdecimals must be indicated by a point, not a coma.\nPress any key to stop the program now",line);wait_a_char();exit(1);} 
 			readdoublefromstring(s2,&xi[i],inputfile,line);
+			if(ncoord==-2){
+				if(xi[i]>90. || xi[i]<-90.) coordproblem=1;
+				xi[i]=xi[i]/360.*2.*PI; //transformation into radian
+			}
 		}
 		else xi[i]=0.;
-		if(ncoord>1){
+		if(abs(ncoord)>1){
 			s2=nexttab(s2,inputfile,line);
 			if(strchr(s2,','))if(strchr(s2,',')<strpbrk(s2,"\t\n\r")){printf("\nWARNING: problem reading spatial coordinates on line %d of the data file: \n\tdecimals must be indicated by a point, not a coma.\nPress any key to stop the program now",line);wait_a_char();exit(1);} 
 			readdoublefromstring(s2,&yi[i],inputfile,line);
+			if(ncoord==-2){
+				if(yi[i]>180. || yi[i]<-180.) coordproblem=1;				
+				yi[i]=yi[i]/360.*2.*PI; //transformation into radian
+			}
 		}
 		else yi[i]=0.;
-		if(ncoord>2){
+		if(abs(ncoord)>2){
 			s2=nexttab(s2,inputfile,line);
 			if(strchr(s2,','))if(strchr(s2,',')<strpbrk(s2,"\t\n\r")){printf("\nWARNING: problem reading spatial coordinates on line %d of the data file: \n\tdecimals must be indicated by a point, not a coma.\nPress any key to stop the program now",line);wait_a_char();exit(1);} 
 			readdoublefromstring(s2,&zi[i],inputfile,line);
@@ -960,6 +997,11 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 		printf("\nCheck in the file %s the list of individuals successfully found.\nPress any key to stop the program.",ERRORFILE);
 		wait_a_char();exit(1);					
 	}
+	if(coordproblem){
+		write(ERRORFILE,"\nERROR: some coordinates are out of range for latitude (-90 to 90) or for\n\tlongitude (-180 to 180)");
+		wait_a_char();exit(1);
+	}
+
 
 
 	
@@ -1078,9 +1120,10 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 		else sprintf(smess,", %s",namecat[i].n);
 		write(outputfilename,smess);
 	}
-	sprintf(smess,"\n%i spatial coordinates",ncoord);
+	if(ncoord==-2) sprintf(smess,"\nLatitude-longitude coordinates (assumed to be in degrees; used to compute distances in km)"); 
+	else sprintf(smess,"\n%i spatial coordinates",ncoord);
 	write(outputfilename,smess);
-	for(i=1;i<=ncoord;i++) {
+	for(i=1;i<=abs(ncoord);i++) {
 		if(i==1) sprintf(smess,": %s",namecoord[i]);
 		sprintf(smess,", %s",namecoord[i]);
 		write(outputfilename,smess);
@@ -1622,7 +1665,8 @@ startagain:
 
 
 	if(*sigmaest!=0.){
-		printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared distance unit, using same distance unit \nas for the spatial coordinates or the distance matrix): ");
+		if(ncoord=-2 && (*distm)==0) printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared km): ");
+		else printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared distance unit, using same distance unit \nas for the spatial coordinates or the distance matrix): ");
 		do{
 			fgets_chomp(smess, sizeof(smess), stdin);
 			ok=sscanf(smess,"%f",density);
@@ -2647,6 +2691,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 		printf("\nWriting pairwise distances in matrix form. Please wait.");
 		fprintf(fp,"\n\nPAIRWISE SPATIAL AND GENETIC DISTANCES written as matrices");
 		fprintf(fp,"\n\nMatrix of pairwise spatial distances");
+		if(Mdij[0][0]==-1.) fprintf(fp," (km)");
 		if(StatType==1) fprintf(fp," between INDIVIDUALS (a -1 value is given for pairs of individuals belonging to a same spatial group)");
 		if(StatType==2) fprintf(fp," between POPULATIONS (1 pop = 1 CATEGORICAL GROUP)");
 		if(StatType==3) fprintf(fp," between POPULATIONS (1 pop = 1 SPATIAL GROUP)");
@@ -2657,9 +2702,10 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 		for(j=1;j<=n;j++){
 			fprintf(fp,"\n%s",namei[j].n);
 			for(i=1;i<=n;i++){
-				if(Mdij[0][0]) dij=(float)Mdij[i][j];
+				if(Mdij[0][0]==1.) dij=(float)Mdij[i][j];
 				else{
-					dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+					if(Mdij[0][0]==-1.) dij=(float)acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
+					else dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 					if(StatType==1 && sgi[i]==sgi[j]) dij=-1.0f;
 				}
 				fprintf(fp,"\t%G",dij);
@@ -2736,6 +2782,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 	printf("\nWriting pairwise distances in column form. Please wait.");
 	fprintf(fp,"\n\n\nPAIRWISE SPATIAL AND GENETIC DISTANCES written in column form");
 	fprintf(fp,"\nName i\tName j\tN°i\tN°j\tSpatial dist");
+	if(Mdij[0][0]==-1.) fprintf(fp," (km)");
 	for(S=1;S<=NS;S++){
 		if(StatType==1){
 			if(Stat[S]==1) sprintf(smess,"\tPairwise KINSHIP coefficients (Loiselle et al., 1995)");
@@ -2782,9 +2829,10 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 		if(TypeComp==1)if(cati[i]!=cati[j]) continue;
 		if(TypeComp==2)if(cati[i]==cati[j]) continue;
 
-		if(Mdij[0][0]) dij=(float)Mdij[i][j];
+		if(Mdij[0][0]==1.) dij=(float)Mdij[i][j];
 		else{
-			dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+			if(Mdij[0][0]==-1.) dij=(float)acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
+			else dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
 			if(StatType==1 && sgi[i]==sgi[j]) dij=-1.0f;
 		}
 
