@@ -320,6 +320,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 				copy_file_name(outputfile,smess,outdir);
 				check=1;
 			}
+			
 		}
 		fclose(fp);
 	}
