@@ -322,7 +322,8 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 			}
 			
 		}
-		fclose(fp);
+		if(fp != NULL)
+			fclose(fp);
 	}
 	
 	// Find base name
