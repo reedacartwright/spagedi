@@ -46,8 +46,18 @@ char errorfile[PATH_BUF_SIZE] = ERRORTXT;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #	define DIRSEP "\\"
+int is_rel_path(const char *path) {
+	return (path[1] == ':') ? is_rel_path(path+2) :
+		   (path[0] == '/' || path[0] == '\\') ? 0 :
+		   1;
+}
 #else
 #	define DIRSEP "/"
+
+int is_rel_path(const char *path) {
+	return (path[0] == '/') ? 0 : 1;
+}
+
 #endif
 
 #ifndef HAVE_STRLCPY
@@ -199,7 +209,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 		}
 		len = len2+strcspn(to+len2,sps);
 	}
-	if(outdir != NULL && to[0] != '/') {
+	if(outdir != NULL && is_rel_path(to)) {
 		// Relative filename, so make it relative to outdir
 		strlcpy(filename, outdir, PATH_BUF_SIZE);
 		strlcat(filename, DIRSEP, PATH_BUF_SIZE);
