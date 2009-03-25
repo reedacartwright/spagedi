@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "Autoccomp.h"
 #include "Autocio.h" 
@@ -42,108 +43,16 @@
 
 #define write write_string
 
-char errorfile[PATH_BUF_SIZE] = ERRORTXT;
-
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#	define DIRSEP "\\"
-int is_rel_path(const char *path) {
-	return (path[1] == ':') ? is_rel_path(path+2) :
-		   (path[0] == '/' || path[0] == '\\') ? 0 :
-		   1;
-}
-#else
-#	define DIRSEP "/"
+char errorfile[PATH_MAX] = ERRORTXT;
 
 int is_rel_path(const char *path) {
-	return (path[0] == '/') ? 0 : 1;
+#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+	/* Skip over the disk name in MSDOS pathnames. */
+	if (isalpha(path[0]) && path[1] == ':')
+		path += 2;
+#endif
+	return (IS_DIR_SEPARATOR(path[0])) ? 0 : 1;
 }
-
-#endif
-
-#ifndef HAVE_STRLCPY
-size_t strlcpy(char *dst, const char *src, size_t size) {
-	size_t slen = strlen(src);
-	if(size == 0 )
-		return slen;
-	strncpy(dst, src, size-1);
-	dst[size-1] = '\0';
-	return slen;
-}
-#endif
-
-#ifndef HAVE_STRLCAT
-size_t strlcat(char *dst, const char *src, size_t size) {
-	size_t slen = strlen(src), dlen, n;
-	if(size == 0)
-		return slen;
-	dlen = strlen(dst);
-	if(dlen >= size)
-		return dlen+slen;
-	n = size-dlen;
-	strncat(dst, src, n-1);
-	dst[size-1] = '\0';
-	return dlen+slen;
-}
-#endif
-
-#ifndef HAVE_BASENAME
-#ifdef HAVE__SPLITPATH
-char _basename_buf[PATH_BUF_SIZE];
-char * basename(const char *path) {
-	char fname[_MAX_FNAME], ext[_MAX_EXT];
-	size_t n;
-	if(path == NULL || path[0] == '\0') {
-		strlcpy(_basename_buf, ".", PATH_BUF_SIZE);
-		return _basename_buf;
-	}
-	n = strlcpy(_basename_buf, path, PATH_BUF_SIZE);
-	// remove trailing slashes from path
-	for(; n > 0 && _basename_buf[n-1] == '\\' || _basename_buf[n-1] == '/'; --n)
-		;
-	_basename_buf[n] = '\0';
-	
-	_splitpath(_basename_buf, NULL, NULL, fname, ext);
-	strlcpy(_basename_buf, fname, PATH_BUF_SIZE);
-	strlcat(_basename_buf, ext, PATH_BUF_SIZE);
-	if(_basename_buf[0] == '\0') {
-		strlcpy(_basename_buf, DIRSEP, PATH_BUF_SIZE);
-	}
-	
-	return _basename_buf;
-}
-#endif
-#endif
-
-#ifndef HAVE_DIRNAME
-#ifdef HAVE__SPLITPATH
-char _dirname_buf[PATH_BUF_SIZE];
-char * dirname(const char *path) {
-	char drive[_MAX_DRIVE], dir[_MAX_DIR];
-	size_t n;
-	if(path == NULL || path[0] == '\0' || strpbrk(path, "\\/") == NULL) {
-		strlcpy(_dirname_buf, ".", PATH_BUF_SIZE);
-		return _dirname_buf;
-	}
-	n = strlcpy(_dirname_buf, path, PATH_BUF_SIZE);
-	// remove trailing slashes from path
-	for(; n > 0 && _dirname_buf[n-1] == '\\' || _dirname_buf[n-1] == '/'; --n)
-		;
-	_dirname_buf[n] = '\0';
-	
-	_splitpath(_dirname_buf, drive, dir, NULL, NULL);
-	if(dir[0] != '\0')
-		dir[strlen(dir)-1] = '\0';
-	strlcpy(_dirname_buf, drive, PATH_BUF_SIZE);
-	
-	if(dir[0] == '\0') {
-		strlcat(_dirname_buf, DIRSEP, PATH_BUF_SIZE);
-	} else {
-		strlcat(_dirname_buf, dir, PATH_BUF_SIZE);
-	}
-	return _dirname_buf;	
-}
-#endif
-#endif
 
 void commom_errors()
 {
@@ -194,12 +103,12 @@ char *fgets_chomp(char * a, int b, FILE * c) {
 
 void copy_file_name(char *to, const char *from, const char *outdir) {
 	const char sps[] = " \n\r\"\'";
-	char filename[PATH_BUF_SIZE];
+	char filename[PATH_MAX];
 	size_t len,len2;
 	
 	len = strspn(from,sps); // some drag-n-drop strings can be quoted
 	from += len;
-	strlcpy(to,from,PATH_BUF_SIZE);
+	strlcpy(to,from,PATH_MAX);
 	len = strcspn(to,sps);  // skip non-sps chars
 	while(to[len] != '\0') {
 		len2 = len+strspn(to+len,sps); // skip sps chars
@@ -211,10 +120,10 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 	}
 	if(outdir != NULL && is_rel_path(to)) {
 		// Relative filename, so make it relative to outdir
-		strlcpy(filename, outdir, PATH_BUF_SIZE);
-		strlcat(filename, DIRSEP, PATH_BUF_SIZE);
-		strlcat(filename, to, PATH_BUF_SIZE);
-		strlcpy(to, filename, PATH_BUF_SIZE);
+		strlcpy(filename, outdir, PATH_MAX);
+		strlcat(filename, DIR_SEPARATOR_STR, PATH_MAX);
+		strlcat(filename, to, PATH_MAX);
+		strlcpy(to, filename, PATH_MAX);
 	}
 }
 
@@ -222,7 +131,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[SMAX], filename[PATH_BUF_SIZE], outdir[PATH_BUF_SIZE], ch,*ptr, *ptrt;
+	char smess[SMAX], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
 	int check=1;
 	FILE *fp;
 
@@ -232,11 +141,11 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	
 	printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 	
-	getcwd(outdir, PATH_BUF_SIZE);
+	getcwd(outdir, PATH_MAX);
 	
 	// Determine Inputfile
 	if( argc > 1 ) {
-		strlcpy(inputfile, argv[1], PATH_BUF_SIZE);
+		strlcpy(inputfile, argv[1], PATH_MAX);
 		// Find base name
 	} else { // Filename not specified on command line
 		printf("\n\nEnter the name of the data file (with ext)\n"
@@ -245,7 +154,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		       "  Data file: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
-			strlcpy(inputfile, "in.txt", PATH_BUF_SIZE);
+			strlcpy(inputfile, "in.txt", PATH_MAX);
 			printf("%s\n",inputfile);
 		} else if(smess[0]==' ')
 			import_data_file(inputfile);
@@ -267,17 +176,17 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	fclose(fp);
 
 	// Find base name
-	strlcpy(filename, basename(inputfile), PATH_BUF_SIZE);
+	strlcpy(filename, basename(inputfile), PATH_MAX);
 	printf("\n\n  Data file: %s\n    full path: %s\n", filename, inputfile);
 	
 	// find directory of input file name, will be used as initial outdir
 	// use filename as initial buffer in case dirname modifies it
-	strlcpy(filename, inputfile, PATH_BUF_SIZE);
-	strlcpy(outdir, dirname(filename), PATH_BUF_SIZE);
+	strlcpy(filename, inputfile, PATH_MAX);
+	strlcpy(outdir, dirname(filename), PATH_MAX);
 	
 	// Determine Outputfile
 	if( argc > 2) {
-		strlcpy(outputfile, argv[2], PATH_BUF_SIZE);
+		strlcpy(outputfile, argv[2], PATH_MAX);
 	} else { // Filename not specifed on command line
 		printf("\n\nEnter the name of the results file (with ext)\n"
 		       "or press RETURN for the default results file \"%s\"\n\n"
@@ -285,8 +194,8 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]=='\0') {
 			// Create default output filename: outdir+"out.txt"
-			strlcpy(outputfile, outdir, PATH_BUF_SIZE);
-			strlcat(outputfile, DIRSEP "out.txt", PATH_BUF_SIZE);
+			strlcpy(outputfile, outdir, PATH_MAX);
+			strlcat(outputfile, DIR_SEPARATOR_STR "out.txt", PATH_MAX);
 		} else {
 			copy_file_name(outputfile, smess, outdir);
 		}
@@ -327,15 +236,15 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	
 	// Find base name
-	strlcpy(filename, basename(outputfile), PATH_BUF_SIZE);
+	strlcpy(filename, basename(outputfile), PATH_MAX);
 	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
 	
 	// Use outdir of output
-	strlcpy(outdir, dirname(outputfile), PATH_BUF_SIZE);
+	strlcpy(outdir, dirname(outputfile), PATH_MAX);
 	
 	// Create error.txt in outputdir
-	strlcpy(errorfile, outdir, PATH_BUF_SIZE);
-	strlcat(errorfile, DIRSEP ERRORTXT, PATH_BUF_SIZE);
+	strlcpy(errorfile, outdir, PATH_MAX);
+	strlcat(errorfile, DIR_SEPARATOR_STR ERRORTXT, PATH_MAX);
 }
 /*end of get_input_output_file_names*/
 
