@@ -27,8 +27,6 @@
 #	define PATH_MAX _MAX_PATH
 #endif
 
-#define PATH_BUF_SIZE PATH_MAX+1
-
 /* Functions for platforms that are missing them. */
 
 /*******************************************************************************
@@ -70,7 +68,8 @@ size_t strlcat(char *d, const char *s, size_t bufsize)
 }
 #endif
 
-/*
+/*******************************************************************************
+ * Borrowed from FreeBSD
  * Copyright (c) 1997 Todd C. Miller <Todd.Miller@courtesan.com>
  * Copyright (c) 2009 Reed A. Cartwright
  * All rights reserved.
@@ -98,45 +97,84 @@ size_t strlcat(char *d, const char *s, size_t bufsize)
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-char * basename(const char *path)
-{
-	static char *bname = NULL;
+char * basename(const char *path) {
+	static char bname[PATH_MAX];
 	const char *endp, *startp;
 
- 	if (bname == NULL) {
-		bname = (char *)malloc(MAXPATHLEN);
-		if (bname == NULL)
-			return(NULL);
+	/* Empty or NULL string gets treated as "." */
+	if (path == NULL || *path == '\0') {
+		strcpy(bname, ".");
+		return(bname);
 	}
+#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
+	/* Skip over the disk name in MSDOS pathnames. */
+	if (isalpha(path[0]) && path[1] == ':') 
+		path += 2;
+#endif
+
+	/* Strip trailing slashes */
+	endp = path + strlen(path) - 1;
+	while (endp > path && IS_DIR_SEPARATOR(*endp))
+		endp--;
+
+	/* All slashes becomes "/" */
+	if (endp == path && IS_DIR_SEPARATOR(*endp)) {
+		(void)strcpy(bname, DIR_SEPARATOR_STR);
+		return(bname);
+	}
+
+	/* Find the start of the base */
+	startp = endp;
+	while (startp > path && !IS_DIR_SEPARATOR(*(startp - 1)))
+		startp--;
+
+	if (endp - startp + 2 > PATH_MAX) {
+		return(NULL);
+	}
+	(void)strncpy(bname, startp, endp - startp + 1);
+	bname[endp - startp + 1] = '\0';
+	return(bname);
+}
+
+char * dirname(const char *path) {
+	static char bname[PATH_MAX];
+	const char *endp;
 
 	/* Empty or NULL string gets treated as "." */
 	if (path == NULL || *path == '\0') {
 		(void)strcpy(bname, ".");
 		return(bname);
 	}
+#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
+	/* Skip over the disk name in MSDOS pathnames. */
+	if (isalpha(path[0]) && path[1] == ':') 
+		path += 2;
+#endif	
 
 	/* Strip trailing slashes */
 	endp = path + strlen(path) - 1;
-	while (endp > path && *endp == '/')
+	while (endp > path && IS_DIR_SEPARATOR(*endp))
 		endp--;
 
-	/* All slashes becomes "/" */
-	if (endp == path && *endp == '/') {
-		(void)strcpy(bname, "/");
+	/* Find the start of the dir */
+	while (endp > path && !IS_DIR_SEPARATOR(*endp))
+		endp--;
+
+	/* Either the dir is "/" or there are no slashes */
+	if (endp == path) {
+		(void)strcpy(bname, IS_DIR_SEPARATOR(*endp) ? DIR_SEPARATOR_STR : ".");
 		return(bname);
+	} else {
+		do {
+			endp--;
+		} while (endp > path && IS_DIR_SEPARATOR(*endp));
 	}
 
-	/* Find the start of the base */
-	startp = endp;
-	while (startp > path && *(startp - 1) != '/')
-		startp--;
-
-	if (endp - startp + 2 > MAXPATHLEN) {
-		errno = ENAMETOOLONG;
+	if (endp - path + 2 > PATH_MAX) {
 		return(NULL);
 	}
-	(void)strncpy(bname, startp, endp - startp + 1);
-	bname[endp - startp + 1] = '\0';
+	(void)strncpy(bname, path, endp - path + 1);
+	bname[endp - path + 1] = '\0';
 	return(bname);
 }
 
@@ -158,5 +196,50 @@ char * basename (const char *name) {
 		}
 	}
 	return (char *) base;
+}
+
+char * basename(const char *path) {
+	static char bname[PATH_MAX];
+	const char *endp, *startp;
+
+	/* Empty or NULL string gets treated as "." */
+	if (path == NULL || *path == '\0') {
+		strcpy(bname, ".");
+		return(bname);
+	}
+#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
+	/* Skip over the disk name in MSDOS pathnames. */
+	if (isalpha(path[0]) && path[1] == ':') 
+		path += 2;
+#endif
+
+	for(; *path; path++) {
+		if(IS_DIR_SEPARATOR(*path)) {
+			
+		} else 
+	}
+
+	/* Strip trailing slashes */
+	endp = path + strlen(path) - 1;
+	while (endp > path && IS_DIR_SEPARATOR(*endp))
+		endp--;
+
+	/* All slashes becomes "/" */
+	if (endp == path && IS_DIR_SEPARATOR(*endp)) {
+		(void)strcpy(bname, DIR_SEPARATOR_STR);
+		return(bname);
+	}
+
+	/* Find the start of the base */
+	startp = endp;
+	while (startp > path && !IS_DIR_SEPARATOR(*(startp - 1)))
+		startp--;
+
+	if (endp - startp + 2 > PATH_MAX) {
+		return(NULL);
+	}
+	(void)strncpy(bname, startp, endp - startp + 1);
+	bname[endp - startp + 1] = '\0';
+	return(bname);
 }
 
