@@ -19,9 +19,13 @@
 #	include "config.h"
 #endif
 
+#include "compat.h"
+
 #include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #ifndef PATH_MAX
 #	define PATH_MAX _MAX_PATH
@@ -68,75 +72,9 @@ size_t strlcat(char *d, const char *s, size_t bufsize)
 }
 #endif
 
-/*******************************************************************************
- * Borrowed from FreeBSD
- * Copyright (c) 1997 Todd C. Miller <Todd.Miller@courtesan.com>
- * Copyright (c) 2009 Reed A. Cartwright
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+/******************************************************************************/
 
-char * basename(const char *path) {
-	static char bname[PATH_MAX];
-	const char *endp, *startp;
-
-	/* Empty or NULL string gets treated as "." */
-	if (path == NULL || *path == '\0') {
-		strcpy(bname, ".");
-		return(bname);
-	}
-#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
-	/* Skip over the disk name in MSDOS pathnames. */
-	if (isalpha(path[0]) && path[1] == ':') 
-		path += 2;
-#endif
-
-	/* Strip trailing slashes */
-	endp = path + strlen(path) - 1;
-	while (endp > path && IS_DIR_SEPARATOR(*endp))
-		endp--;
-
-	/* All slashes becomes "/" */
-	if (endp == path && IS_DIR_SEPARATOR(*endp)) {
-		(void)strcpy(bname, DIR_SEPARATOR_STR);
-		return(bname);
-	}
-
-	/* Find the start of the base */
-	startp = endp;
-	while (startp > path && !IS_DIR_SEPARATOR(*(startp - 1)))
-		startp--;
-
-	if (endp - startp + 2 > PATH_MAX) {
-		return(NULL);
-	}
-	(void)strncpy(bname, startp, endp - startp + 1);
-	bname[endp - startp + 1] = '\0';
-	return(bname);
-}
-
-char * dirname(const char *path) {
+char * dirnamex(const char *path) {
 	static char bname[PATH_MAX];
 	const char *endp;
 
@@ -178,68 +116,101 @@ char * dirname(const char *path) {
 	return(bname);
 }
 
-/******************************************************************************
- * Borrowed from libiberty
- * Public domain
- */
+/* Treat the terminal null as a sep as well to simplify loop. */
+#define IS_DIR_SEPARATOR_2(x) ((IS_DIR_SEPARATOR(x)) || ((x) == '\0'))
 
-char * basename (const char *name) {
-	const char *base;
-#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
-	/* Skip over the disk name in MSDOS pathnames. */
-	if (isalpha(name[0]) && name[1] == ':') 
-		name += 2;
-#endif
-	for (base = name; *name; name++) {
-		if (IS_DIR_SEPARATOR (*name)) {
-			base = name + 1;
-		}
-	}
-	return (char *) base;
-}
-
+#ifndef HAVE_BASENAME
 char * basename(const char *path) {
 	static char bname[PATH_MAX];
-	const char *endp, *startp;
+	const char *p, *endp, *startp;
 
 	/* Empty or NULL string gets treated as "." */
 	if (path == NULL || *path == '\0') {
 		strcpy(bname, ".");
-		return(bname);
+		return bname;
 	}
 #if defined (HAVE_DOS_BASED_FILE_SYSTEM)
 	/* Skip over the disk name in MSDOS pathnames. */
-	if (isalpha(path[0]) && path[1] == ':') 
+	if (isalpha(path[0]) && path[1] == ':') {
 		path += 2;
+	/* Check for NULL string */
+		if (*path == '\0') {
+			strcpy(bname, ".");
+			return bname;
+		}
+	}
+#endif
+	startp = p = path;
+	endp = path+1;
+	for(p=path;*p;++p) {
+		if(IS_DIR_SEPARATOR(*p)) {
+			if(!IS_DIR_SEPARATOR_2(*(p+1)))
+				/* SEP NSEP = start of new dir */
+				startp = p+1;
+		} else if(IS_DIR_SEPARATOR_2(*(p+1)))
+			/* NSEP SEP = end of new dir */
+			endp = p+1;
+	}
+	if(endp-startp+1 > PATH_MAX)
+		return NULL;
+	strncpy(bname, startp, endp-startp);
+	bname[endp-startp] = '\0';
+	return bname;
+}
 #endif
 
-	for(; *path; path++) {
-		if(IS_DIR_SEPARATOR(*path)) {
-			
-		} else 
+#ifndef HAVE_DIRNAME
+char * dirname(const char *path) {
+	static char dname[PATH_MAX];
+	const char *p, *startp, *endp, *endpp;
+
+	/* Empty or NULL string gets treated as "." */
+	if (path == NULL || *path == '\0') {
+		strcpy(dname, ".");
+		return dname;
 	}
-
-	/* Strip trailing slashes */
-	endp = path + strlen(path) - 1;
-	while (endp > path && IS_DIR_SEPARATOR(*endp))
-		endp--;
-
-	/* All slashes becomes "/" */
-	if (endp == path && IS_DIR_SEPARATOR(*endp)) {
-		(void)strcpy(bname, DIR_SEPARATOR_STR);
-		return(bname);
+	startp = path;
+#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
+	/* Skip over the disk name in MSDOS pathnames. */
+	if (isalpha(startp[0]) && startp[1] == ':') {
+		startp += 2;
+	/* Check for NULL string */
+		if (*startp == '\0') {
+			/* if PATH_MAX > 3 this will work */
+			strcpy(dname, path);
+			strcat(dname, ".");
+			return dname;
+		}
 	}
-
-	/* Find the start of the base */
-	startp = endp;
-	while (startp > path && !IS_DIR_SEPARATOR(*(startp - 1)))
-		startp--;
-
-	if (endp - startp + 2 > PATH_MAX) {
-		return(NULL);
+#endif
+	endp = endpp = p = startp;
+	for(;*p;++p) {
+		if(IS_DIR_SEPARATOR(*p)) {
+			if(!IS_DIR_SEPARATOR_2(*(p+1)))
+				/* SEP NSEP = start of new dir */
+				endp = endpp;
+		} else if(IS_DIR_SEPARATOR_2(*(p+1)))
+			/* NSEP SEP = end of new dir */
+			endpp = p+1;
 	}
-	(void)strncpy(bname, startp, endp - startp + 1);
-	bname[endp - startp + 1] = '\0';
-	return(bname);
+	/* no dir? */
+	if(endp == startp) {
+		p = IS_DIR_SEPARATOR(*endp) ? DIR_SEPARATOR_STR : ".";
+		/* check to see if we need to copy a drive letter */
+#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+		if(startp > path) {
+			strncpy(dname, path, startp-path);
+			dname[startp-path] = '\0';
+			strcat(dname, p);
+		} else
+#endif
+		strcpy(dname, p);
+		return dname;
+	}
+	if(endp-path+1 > PATH_MAX)
+		return NULL;
+	strncpy(dname, path, endp-path);
+	dname[endp-path] = '\0';
+	return dname;
 }
-
+#endif

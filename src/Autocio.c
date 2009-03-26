@@ -40,6 +40,7 @@
 #include "Autoccomp.h"
 #include "Autocio.h" 
 #include "Xatools.h"
+#include "compat.h"
 
 #define write write_string
 

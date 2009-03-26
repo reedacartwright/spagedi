@@ -49,7 +49,7 @@
 
 #include "Xatools.h"
 
-extern char errorfile[PATH_BUF_SIZE];
+extern char errorfile[PATH_MAX];
 #define  ERRORFILE errorfile /* name of variable that contains errorfile */
 
 struct name{

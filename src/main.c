@@ -29,12 +29,12 @@ long seed;
 
 int main(int argc,char *argv[])
 {
-	char inputfile[PATH_BUF_SIZE];			//name of datafile
-	char outputfile[PATH_BUF_SIZE];		//name of outputfile
-	char instrfile[PATH_BUF_SIZE];			//name of instruction file (for command line)
-	char distfile[PATH_BUF_SIZE];			//name of the file with spatial pairwise distances
-	char alleledistfile[PATH_BUF_SIZE];	//name of the file with distances btw alleles
-	char freqfile[PATH_BUF_SIZE];			//name of file with reference allele frequencies
+	char inputfile[PATH_MAX];			//name of datafile
+	char outputfile[PATH_MAX];		//name of outputfile
+	char instrfile[PATH_MAX];			//name of instruction file (for command line)
+	char distfile[PATH_MAX];			//name of the file with spatial pairwise distances
+	char alleledistfile[PATH_MAX];	//name of the file with distances btw alleles
+	char freqfile[PATH_MAX];			//name of file with reference allele frequencies
 	char smess[SMAX];
 	int n,ntot;					//number of individuals
  	int Ncat;				//# of different categories of ind
