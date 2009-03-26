@@ -25,7 +25,6 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #ifndef PATH_MAX
 #	define PATH_MAX _MAX_PATH
@@ -73,48 +72,6 @@ size_t strlcat(char *d, const char *s, size_t bufsize)
 #endif
 
 /******************************************************************************/
-
-char * dirnamex(const char *path) {
-	static char bname[PATH_MAX];
-	const char *endp;
-
-	/* Empty or NULL string gets treated as "." */
-	if (path == NULL || *path == '\0') {
-		(void)strcpy(bname, ".");
-		return(bname);
-	}
-#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
-	/* Skip over the disk name in MSDOS pathnames. */
-	if (isalpha(path[0]) && path[1] == ':') 
-		path += 2;
-#endif	
-
-	/* Strip trailing slashes */
-	endp = path + strlen(path) - 1;
-	while (endp > path && IS_DIR_SEPARATOR(*endp))
-		endp--;
-
-	/* Find the start of the dir */
-	while (endp > path && !IS_DIR_SEPARATOR(*endp))
-		endp--;
-
-	/* Either the dir is "/" or there are no slashes */
-	if (endp == path) {
-		(void)strcpy(bname, IS_DIR_SEPARATOR(*endp) ? DIR_SEPARATOR_STR : ".");
-		return(bname);
-	} else {
-		do {
-			endp--;
-		} while (endp > path && IS_DIR_SEPARATOR(*endp));
-	}
-
-	if (endp - path + 2 > PATH_MAX) {
-		return(NULL);
-	}
-	(void)strncpy(bname, path, endp - path + 1);
-	bname[endp - path + 1] = '\0';
-	return(bname);
-}
 
 /* Treat the terminal null as a sep as well to simplify loop. */
 #define IS_DIR_SEPARATOR_2(x) ((IS_DIR_SEPARATOR(x)) || ((x) == '\0'))
