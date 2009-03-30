@@ -14,6 +14,9 @@ SPAGeDi -- a program for Spatial Pattern Analysis of Genetic Diversity
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+PORTABLE/UNIX PORT
+
+Portable source code (Unix/OSX Port) created by Reed Cartwright <reed@scit.us>
 
 NOTE
 
@@ -30,18 +33,31 @@ misinterpretation of the results given by SPAGeDi.
 
 INSTALLATION
 
-See SPAGeDi's website for binary packages for Windows, Mac OSX, and other systems.
-Alternatively, you can compile SPAGeDi from the source.  SPAGeDi requires
-CMake 2.6 (http://www.cmake.org/) to build it from sources.  Many Unix-like opera-
-ting systems can install CMake through their package systems.  Extract the SPAGeDi
-source code and issue the following commands in the extracted directory:
+See SPAGeDi's website for binary packages for Windows, Mac OSX, and other sys-
+tems.  Alternatively, you can compile SPAGeDi from the source.  SPAGeDi requires
+CMake 2.6 (http://www.cmake.org/) to build it from sources.  Many Unix-like
+operating systems can install CMake through their package systems.  Extract the
+SPAGeDi source code and issue the following commands in the extracted directory:
 
-cmake -g "Unix Makefiles" .
-make
-make install
+    cmake .
+    make
+    make install
 
-The '-g' option to cmake can be changed provide different build system options.
-See CMake's manual for information.
+The '-G' option to cmake is used to specify different build systems, e.g. Unix
+Makefiles versus KDevelop3 project.  The '-D' option to cmake can be used to
+set different cmake variables from the command line:
+
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .
+    make
+    make install
+
+This will build an optimized version of SPAGeDi and install it to '/usr/bin'.
+To specify your own build flags you need to set the environment variables
+CFLAGS and LDFLAGS as neccessary.  Then specify
+
+    cmake -DCMAKE_BUILD_TYPE= .
+
+See CMake's manual for additional information.
 
 MANUAL
 
@@ -53,6 +69,3 @@ Hardy, O. J. & X. Vekemans (2002). SPAGeDi: a versatile computer program to
 analyse spatial genetic structure at the individual or population levels.
 Molecular Ecology Notes 2: 618-620.
 
-PORTABLE/UNIX PORT
-
-Portable source code (Unix/OSX Port) created by Reed A. Cartwright <reed@scit.us>
