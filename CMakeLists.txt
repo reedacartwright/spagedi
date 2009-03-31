@@ -60,6 +60,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "_CPACK_PACKAGES"  "_CPack_Packages"
   "\\\\.vcproj"  "\\\\.dir"  "\\\\.ncb$"  "\\\\.sln$"  "\\\\.suo$"
   "Makefile$" "\\\\.ilk"  "\\\\.pdb"
+  "/releng/"
 )
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${SPAGEDI_NAME}")
