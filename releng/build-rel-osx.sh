@@ -4,6 +4,12 @@ MAKE=make
 CMAKE=cmake
 REPOS=svn://scit.us/documents/projects/spagedi
 
+xcode=/Xcode2.5/usr
+PATH="${xcode}/bin:${PATH}"; export PATH
+CPPFLAGS="$CPPFLAGS -I${xcode}/include"; export CPPFLAGS
+CFLAGS="$CFLAGS -isysroot ${xcode}/SDKs/MacOSX10.4u.sdk"; export CFLAGS
+LDFLAGS="-L${xcode}/lib"; export LDFLAGS
+
 RELENG_DIR=`mktemp -q -d -t spagedi-releng`
 if [ $? -ne 0 ]; then
         echo "$0: Can't create temp directory, exiting..."
