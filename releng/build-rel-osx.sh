@@ -36,7 +36,6 @@ $MAKE package_source
 mv SPAGeDi-1* $DEST_DIR
 
 cd $DEST_DIR
-#rm -rf $RELENG_DIR
-
+rm -rf $RELENG_DIR
 
 
