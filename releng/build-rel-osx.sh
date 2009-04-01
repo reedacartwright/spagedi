@@ -8,6 +8,7 @@ xcode=/Xcode2.5/usr
 PATH="${xcode}/bin:${PATH}"; export PATH
 CPPFLAGS="$CPPFLAGS -I${xcode}/include"; export CPPFLAGS
 CFLAGS="$CFLAGS -isysroot ${xcode}/SDKs/MacOSX10.4u.sdk"; export CFLAGS
+CXXFLAGS="$CXXFLAGS -isysroot ${xcode}/SDKs/MacOSX10.4u.sdk"; export CXXFLAGS
 LDFLAGS="-L${xcode}/lib"; export LDFLAGS
 
 RELENG_DIR=`mktemp -q -d -t spagedi-releng`
@@ -25,7 +26,8 @@ svn co -q $REPOS $SOURCE_DIR || exit 1
 mkdir $BUILD_DIR || exit 1
 cd $BUILD_DIR || exit 1
 
-$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
+$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_OSX_SYSROOT=/Xcode2.5/SDKs/MacOSX10.4u.sdk
 $MAKE
 $MAKE package
 $MAKE package_source
@@ -34,4 +36,6 @@ mv SPAGeDi-1* $DEST_DIR
 
 cd $DEST_DIR
 rm -rf $RELENG_DIR
+
+
 
