@@ -4,12 +4,13 @@ MAKE=make
 CMAKE=cmake
 REPOS=svn://scit.us/documents/projects/spagedi
 
-xcode=/Xcode2.5/usr
-PATH="${xcode}/bin:${PATH}"; export PATH
-CPPFLAGS="$CPPFLAGS -I${xcode}/include"; export CPPFLAGS
+xcode=/Xcode2.5
+xcodep=${xcode}/usr
+PATH="${xcodep}/bin:${PATH}"; export PATH
+CPPFLAGS="$CPPFLAGS -I${xcodep}/include"; export CPPFLAGS
 CFLAGS="$CFLAGS -isysroot ${xcode}/SDKs/MacOSX10.4u.sdk"; export CFLAGS
 CXXFLAGS="$CXXFLAGS -isysroot ${xcode}/SDKs/MacOSX10.4u.sdk"; export CXXFLAGS
-LDFLAGS="-L${xcode}/lib"; export LDFLAGS
+LDFLAGS="-L${xcodep}/lib"; export LDFLAGS
 
 RELENG_DIR=`mktemp -q -d -t spagedi-releng`
 if [ $? -ne 0 ]; then
@@ -27,7 +28,7 @@ mkdir $BUILD_DIR || exit 1
 cd $BUILD_DIR || exit 1
 
 $CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_OSX_SYSROOT=/Xcode2.5/SDKs/MacOSX10.4u.sdk
+  -DCMAKE_OSX_SYSROOT=${xcode}/SDKs/MacOSX10.4u.sdk
 $MAKE
 $MAKE package
 $MAKE package_source
@@ -35,7 +36,7 @@ $MAKE package_source
 mv SPAGeDi-1* $DEST_DIR
 
 cd $DEST_DIR
-rm -rf $RELENG_DIR
+#rm -rf $RELENG_DIR
 
 
 
