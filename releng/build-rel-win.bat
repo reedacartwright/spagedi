@@ -10,7 +10,7 @@ set REPOS=svn://scit.us/documents/projects/spagedi
 set RELENG_DIR="%TEMP%\spagedi-releng.%RANDOM%"
 mkdir %RELENG_DIR% || exit /B 1
 
-set DEST_DIR=%CD%
+set DEST_DIR="%CD%"
 set SOURCE_DIR="%RELENG_DIR%\source"
 set BUILD_DIR="%RELENG_DIR%\build"
 

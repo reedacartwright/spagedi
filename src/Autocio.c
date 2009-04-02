@@ -137,9 +137,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// if(argc>2)printf("\n%s",argv[2]);
 	
 	printf("\n\n\n\nDATA / RESULTS FILE NAMES");
-	
-	getcwd(outdir, PATH_MAX);
-	
+		
 	// Determine Inputfile
 	if( argc > 1 ) {
 		strlcpy(inputfile, argv[1], PATH_MAX);
