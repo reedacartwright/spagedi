@@ -937,8 +937,8 @@ void resample_shuffle(int *index, int first,int last, long *seed)
 			for(i=first;i<=last;i++) {
 				sprintf(smess,"\n%d\t%d",i,index[i]);
 				write(ERRORFILE,smess);
-				exit(1);
 			}
+			exit(1);
 		}  /*end if icheck different than iok*/
 	}	/*end if VERIF*/ 	
 }
