@@ -28,8 +28,8 @@ mkdir $BUILD_DIR || exit 1
 cd $BUILD_DIR || exit 1
 
 $CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_OSX_ARCHITECTURES=ppc;i386 \
-  -DCPACK_SYSTEM_NAME=Darwin-universal \
+  -DCMAKE_OSX_ARCHITECTURES="ppc;i386" \
+  -DCPACK_SYSTEM_NAME=Darwin8-universal \
   -DAPPLE_BUNDLE=ON
 $MAKE
 $MAKE package
