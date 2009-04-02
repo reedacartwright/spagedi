@@ -27,7 +27,10 @@ svn co -q $REPOS $SOURCE_DIR || exit 1
 mkdir $BUILD_DIR || exit 1
 cd $BUILD_DIR || exit 1
 
-$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
+$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_OSX_ARCHITECTURES=ppc;i386 \
+  -DCPACK_SYSTEM_NAME=Darwin-universal \
+  -DAPPLE_BUNDLE=ON
 $MAKE
 $MAKE package
 $MAKE package_source
