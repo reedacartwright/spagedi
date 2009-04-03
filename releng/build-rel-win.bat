@@ -24,7 +24,7 @@ cd %BUILD_DIR% || exit /B 1
 %MAKE% package
 %MAKE% package_source
 
-xcopy SPAGeDi-1* %DEST_DIR%
+xcopy /Q /Y SPAGeDi-1* %DEST_DIR%
 
 cd %DEST_DIR%
-rd /s /q %RELENG_DIR%
+rd /S /Q %RELENG_DIR%
