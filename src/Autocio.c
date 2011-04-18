@@ -178,7 +178,7 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	// use filename as initial buffer in case dirname modifies it
 	strlcpy(filename, inputfile, PATH_MAX);
 	strlcpy(outdir, dirname(filename), PATH_MAX);
-	
+		
 	// Determine Outputfile
 	if( argc > 2) {
 		strlcpy(outputfile, argv[2], PATH_MAX);
@@ -231,11 +231,12 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	
 	// Find base name
-	strlcpy(filename, basename(outputfile), PATH_MAX);
-	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
+	strlcpy(filename, outputfile, PATH_MAX);
+	printf("\n\n  Results file: %s\n    full path: %s\n", basename(filename), outputfile);	
 	
 	// Use outdir of output
-	strlcpy(outdir, dirname(outputfile), PATH_MAX);
+	strlcpy(filename, outputfile, PATH_MAX);
+	strlcpy(outdir, dirname(filename), PATH_MAX);
 	
 	// Create error.txt in outputdir
 	strlcpy(errorfile, outdir, PATH_MAX);
