@@ -4,7 +4,7 @@ MAKE=make
 CMAKE=cmake
 REPOS=svn://scit.us/documents/projects/spagedi
 
-RELENG_DIR=`mktemp -q -d -t spagedi-releng`
+RELENG_DIR=`mktemp -q -d -t spagedi-releng.XXX`
 if [ $? -ne 0 ]; then
         echo "$0: Can't create temp directory, exiting..."
         exit 1
