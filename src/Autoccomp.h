@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2011 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -22,7 +22,7 @@
 #ifdef PACKAGE_STRING
 #	define VERSION PACKAGE_STRING
 #else
-#	define  VERSION "SPAGeDi 1.3-STABLE"
+#	define  VERSION "SPAGeDi 1.3e-STABLE"
 #endif
 
 #define  VARTYPE 0  /*0 for locus with genotypes, 1 for quantitative variable*/
@@ -35,7 +35,8 @@
 #define  MAXNOM 31  /*max number of characters read for individual names*/
 #define  MAXINTERVALS 102	/*max number of classes of intervals*/
 #define  NRESAMPLE 20001 	/*max number of resamplings*/
-#define  SMAX 100000	/*max number of characters for strings*/
+#define  SMAX 10000	/*max number of characters for strings*/
+#define  SMAX2 1000000	/*max number of characters for strings*/
 #define  ERRORTXT "error.txt"	/*name of file for error messages*/
 #define  MISSVAL HUGE_VAL	/*value given for missing value*/
 #define  MISSING 999.99F        /*missing value for avestd and ttest routines*/
@@ -134,6 +135,9 @@ void permut_locations
 	(int n,double *x,double *y,double *z,double **Mdij,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed);
 void permut_locations_of_groups
+	(int n,double *x,double *y,double *z,double **Mdij,int *groupi,
+	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed);
+void grumph
 	(int n,double *x,double *y,double *z,double **Mdij,int *groupi,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed);
 void permut_locations_within_cat

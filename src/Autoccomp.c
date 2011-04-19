@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2011 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -639,7 +639,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 	maxa=0;
 	for(l=1;l<=m;l++)if(Nallelel[l]>maxa) maxa=Nallelel[l]; 
 
-	if(FreqRef==1) FRef=Ncat;	   //in case of local ref freq
+	if(FreqRef==1 || FreqRef==-2) FRef=Ncat;	   //in case of local ref freq
 	else FRef=0;				   //in case of global (or given) ref freq
 
 	//compute allele frequencies
@@ -668,6 +668,15 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 			}
 			for(a=1;a<=Nallelel[l];a++) for(k=0;k<=FRef;k++) Pkla[k][l][a]/=Nivalidk[k];
 		}
+
+		if(FreqRef==-2){ //compute unweighted average allele freq over categories
+			FRef=0;
+			for(l=1;l<=m;l++)for(a=1;a<=Nallelel[l];a++){
+				Pkla[0][l][a]=0.;
+				for(k=1;k<=Ncat;k++) Pkla[0][l][a]+=Pkla[k][l][a]/Ncat;
+			}
+		}
+
 	}
 	if(FreqRef==-1) for(l=1;l<=m;l++)for(a=0;a<=Nallelel[l];a++) Pkla[0][l][a]=givenPla[l][a]; 
 	
@@ -688,7 +697,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 			SSasize+=Pkla[k][l][a]*allelesizela[l][a]*allelesizela[l][a];
 		}
 		Masizekl[k][l]=(float)Sasize;
-		if(FreqRef!=-1) Vasizekl[k][l]=(float)((SSasize-Sasize*Sasize)*((double)Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.)));
+		if(FreqRef>-1) Vasizekl[k][l]=(float)((SSasize-Sasize*Sasize)*((double)Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.)));
 		else Vasizekl[k][l]=(float)(SSasize-Sasize*Sasize);
 	}
 
@@ -711,7 +720,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 				for(a1=1;a1<=Nallelel[l];a1++)for(a2=1;a2<=Nallelel[l];a2++){
 					DivN[k][l]+=Pkla[k][l][a1]*Pkla[k][l][a2]*Distla1a2[l][a1][a2];
 				}
-				if(FreqRef!=-1 && Nvalgenkl[k][l]>1) DivN[k][l]*=Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.0f);
+				if(FreqRef>-1 && Nvalgenkl[k][l]>1) DivN[k][l]*=Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.0f);
 			}
 		}
 
@@ -743,7 +752,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 									SoP+=1.0f/Pkla[k][l][gilc[i][l][ci]];	  
 
-					/*				if(FreqRef==-1) SoP+=1./Pkla[0][l][gilc[i][l][ci]];
+					/*				if(FreqRef<=-1) SoP+=1./Pkla[0][l][gilc[i][l][ci]];
 									else{ //compute the corrected (elimination of the compared ind) allele freq (for Ritland's estimator)
 										Ngivenallele=Nvalidallele=0.;
 										for(g=0;g<ploidy;g++)if(gilc[i][l][g]){
@@ -762,7 +771,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 							
 							if(Easc && Vasizekl[k][l]){
 								asc=(allelesizela[l][gilc[i][l][ci]]-Masizekl[k][l])*(allelesizela[l][gilc[i][l][cj]]-Masizekl[k][l])/Vasizekl[k][l];
-								if(FreqRef!=-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
+								if(FreqRef>-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
 								ascor+=asc;
 								Sasc+=asc*Vasizekl[k][l];
 							}
@@ -778,7 +787,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					if(Elois && Ncomp && LoisD[k][l]){ 
 						LoisN/=Ncomp;
 						Lois=(LoisN/LoisD[k][l]);
-						if(FreqRef!=-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f); //sampling bias correction
+						if(FreqRef>-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f); //sampling bias correction
 						LoisNt+=Lois*LoisD[k][l];
 						LoisDt+=LoisD[k][l];
 					}
@@ -901,7 +910,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 									SoP+=1.0f/Pkla[0][l][gilc[i][l][ci]];		 
 
-			/*						if(FreqRef==-1) SoP+=1./Pkla[0][l][gilc[i][l][ci]];
+			/*						if(FreqRef<=-1) SoP+=1./Pkla[0][l][gilc[i][l][ci]];
 									else{ //compute the corrected (elimination of the compared ind) allele freq
 										Ngivenallele=Nvalidallele=0.;
 										for(g=0;g<ploidy;g++){
@@ -921,7 +930,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 							if(Easc && Vasizekl[k][l]){
 								asc=(allelesizela[l][gilc[i][l][ci]]-Masizekl[k][l])*(allelesizela[l][gilc[j][l][cj]]-Masizekl[k][l])/Vasizekl[k][l];
-								if(FreqRef!=-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
+								if(FreqRef>-1) asc+=1.0f/(Nvalgenkl[k][l]-1.0f);
 								ascor+=asc;
 								Sasc+=asc*Vasizekl[k][l];;
 							}
@@ -938,7 +947,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						if(Ncomp && LoisD[k][l]){ 
 							LoisN/=Ncomp;
 							Lois=(LoisN/LoisD[k][l]);
-							if(FreqRef!=-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f);
+							if(FreqRef>-1) Lois+=1.0f/(Nvalgenkl[k][l]-1.0f);
 							LoisNt+=Lois*LoisD[k][l];
 							LoisDt+=LoisD[k][l];
    							corrSlij[Elois][l][i][j]=Lois;//kinship of Loiselle
@@ -1134,7 +1143,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 						else RdomN=-1.0f*Pkla[k][l][1]*Pkla[k][l][2];
 
 						Rdom=(RdomN/RdomD[k][l]);
-						if(FreqRef!=-1) Rdom+=1.0f/(Nvalgenkl[k][l]-1.0f);
+						if(FreqRef>-1) Rdom+=1.0f/(Nvalgenkl[k][l]-1.0f);
 						RdomNt+=Rdom*RdomD[k][l];
 						RdomDt+=RdomD[k][l];
    						if(Erelatdom) corrSlij[Erelatdom][l][i][j]=Rdom;//relationship
@@ -1700,7 +1709,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 				a3kl[k][l]+=Pkla[k][l][a]*Pkla[k][l][a]*Pkla[k][l][a];
 			}
 			//sample size corrected a values (following Wang (2002)
-			if(FreqRef!=-1){
+			if(FreqRef>-1){
 				a2kl[k][l]=(Nvalgenkl[k][l]*a2kl[k][l]-1.)/(Nvalgenkl[k][l]-1.);
 				a3kl[k][l]=(Nvalgenkl[k][l]*Nvalgenkl[k][l]*a3kl[k][l]-3.*(Nvalgenkl[k][l]-1.)*a2kl[k][l]-1.)/((Nvalgenkl[k][l]-1.)*(Nvalgenkl[k][l]-2.));
 			}
@@ -1831,7 +1840,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 					a4kl[k][l]+=Pkla[k][l][a]*Pkla[k][l][a]*Pkla[k][l][a]*Pkla[k][l][a];
 				}
 				//sample size corrected a values
-				if(FreqRef!=-1){
+				if(FreqRef>-1){
 					a2kl[k][l]=(Nvalgenkl[k][l]*a2kl[k][l]-1.)/(Nvalgenkl[k][l]-1.);
 					a3kl[k][l]=(Nvalgenkl[k][l]*Nvalgenkl[k][l]*a3kl[k][l]-3.*(Nvalgenkl[k][l]-1.)*a2kl[k][l]-1.)/((Nvalgenkl[k][l]-1.)*(Nvalgenkl[k][l]-2.));
 					a4kl[k][l]=(Nvalgenkl[k][l]*Nvalgenkl[k][l]*Nvalgenkl[k][l]*a4kl[k][l]-6.*(Nvalgenkl[k][l]-1.)*(Nvalgenkl[k][l]-2.)*a3kl[k][l]-7.*(Nvalgenkl[k][l]-1.)*a2kl[k][l]-1.)/(Nvalgenkl[k][l]*Nvalgenkl[k][l]*Nvalgenkl[k][l]-6.*Nvalgenkl[k][l]*Nvalgenkl[k][l]+11.*Nvalgenkl[k][l]-6.);
@@ -3949,7 +3958,7 @@ void analyse_resampling(int m,int cinit,int nc,int Npermut,float ***corrlcp,
 		r_statlc[l][c].n=r_statlc[l][c].nd=r_statlc[l][c].mode=0;
 		r_statlc[l][c].obs=r_statlc[l][c].mean=r_statlc[l][c].sd=r_statlc[l][c].low95=r_statlc[l][c].high95=r_statlc[l][c].low99=r_statlc[l][c].high99=r_statlc[l][c].plow=r_statlc[l][c].phigh=r_statlc[l][c].pbil=(float)MISSVAL;	
 	}
- 
+
 	free_vector(val,0,Npermut);
 
 }/*end of procedure analyse_resampling*/ 
@@ -4123,7 +4132,9 @@ void permut_genetic_distances
 		resample_shuffle(loca,1,Nallelel[l],seed);
 
 		for(a1=1;a1<=Nallelel[l];a1++){
-			for(a2=1;a2<=Nallelel[l];a2++) Mgdlaamix[l][a1][a2]=Mgdlaa[l][loca[a1]][loca[a2]];
+			for(a2=1;a2<=Nallelel[l];a2++){
+				Mgdlaamix[l][a1][a2]=Mgdlaa[l][loca[a1]][loca[a2]];
+			}
 		}
 	}
 }
@@ -4161,7 +4172,9 @@ void permut_locations
 	(int n,double *x,double *y,double *z,double **Mdij,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
 {
-	int i,j,loci[NMAX];
+	int i,j,*loci;
+
+	loci=ivector(0,n);
 
 	for(i=0;i<=n;i++) loci[i]=i;
 
@@ -4175,41 +4188,7 @@ void permut_locations
 			zmix[i]=z[loci[i]];
 		}
 	}
-	
-}
-/************************************************************************************/
-void permut_locations_of_groups
-	(int n,double *x,double *y,double *z,double **Mdij,int *groupi,
-	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
-{
-	int i,j,loci[NMAX];
-	int locg[NMAX],group[NMAX],newgroup,ng,g;
-
-	ng=0;
-	for(i=1;i<=n;i++){
-		newgroup=1;
-		for(g=ng;g>=1;g--)if(groupi[i]==group[g]) {
-			newgroup=0;
-			break;
-		}
-		if(newgroup){
-			ng++;
-			group[ng]=groupi[i];
-			locg[ng]=i;
-		}
-	}
-	resample_shuffle(locg,1,ng,seed);
-
-	for(i=1;i<=n;i++) loci[i]=locg[groupi[i]];
-
-	for(i=1;i<=n;i++){
-		if(Mdij[0][0]==1.) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
-		else{
-			xmix[i]=x[loci[i]];
-			ymix[i]=y[loci[i]];
-			zmix[i]=z[loci[i]];
-		}
-	}
+	free_ivector(loci,0,n);
 	
 }
 /************************************************************************************/
@@ -4217,7 +4196,9 @@ void permut_locations_within_cat
 	(int n,int *cati,int Ncat,double *x,double *y,double *z,double **Mdij,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
 {
-	int i,j,i2,j2,k,loci[NMAX];
+	int i,j,i2,j2,k,*loci;
+
+	loci=ivector(0,n);
 
 	for(k=1;k<=Ncat;k++){
 		j=0;
@@ -4241,6 +4222,7 @@ void permut_locations_within_cat
 			}
 		}
 	}
+	free_ivector(loci,0,n);
 }
 
 /************************************************************************************/
@@ -4248,8 +4230,12 @@ void permut_locations_of_groups_within_cat
 	(int n,int *cati,int Ncat,double *x,double *y,double *z,double **Mdij,int *groupi,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
 {
-	int i,j,i2,j2,k,loci[NMAX];
-	int locg[NMAX],group[NMAX],newgroup,ng,g;
+	int i,j,i2,j2,k,*loci;
+	int *locg,*group,newgroup,ng,g;
+
+	loci=ivector(0,n);
+	locg=ivector(0,n);
+	group=ivector(0,n);
 
 	for(k=1;k<=Ncat;k++){
 		ng=0;
@@ -4280,7 +4266,56 @@ void permut_locations_of_groups_within_cat
 			}
 		}
 	}
+	free_ivector(loci,0,n);
+	free_ivector(locg,0,n);
+	free_ivector(group,0,n);
 }
+
+/************************************************************************************/
+
+void permut_locations_of_groups
+	(int n,double *x,double *y,double *z,double **Mdij,int *groupi,
+	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
+{
+	int i,j,*loci;
+	int *locg,*group,newgroup,ng,g;
+
+	loci=ivector(0,n);
+	locg=ivector(0,n);
+	group=ivector(0,n);
+
+	ng=0;
+	for(i=1;i<=n;i++){
+		newgroup=1;
+		for(g=ng;g>=1;g--)if(groupi[i]==group[g]) {
+			newgroup=0;
+			break;
+		}
+		if(newgroup){
+			ng++;
+			group[ng]=groupi[i];
+			locg[ng]=i;
+		}
+	}
+	resample_shuffle(locg,1,ng,seed);
+
+	for(i=1;i<=n;i++) loci[i]=locg[groupi[i]];
+
+	for(i=1;i<=n;i++){
+		if(Mdij[0][0]==1.) for(j=1;j<=n;j++) Mdijmix[i][j]=Mdij[loci[i]][loci[j]];
+		else{
+			xmix[i]=x[loci[i]];
+			ymix[i]=y[loci[i]];
+			zmix[i]=z[loci[i]];
+		}
+	}
+
+	free_ivector(loci,0,n);
+	free_ivector(locg,0,n);
+	free_ivector(group,0,n);
+
+}
+
 
 /************************************************************************************/
 void permut_genes_among_indiv
