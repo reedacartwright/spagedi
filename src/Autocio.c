@@ -817,6 +817,7 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
  	}  /*end of for, loop for loci names*/
 
 	fclose(fp);
+	free_cvector(s,0,SMAX2);
 
 } /*end of readbasicinfoF*/
 
@@ -1019,6 +1020,7 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 	for(l=1;l<=m;l++) if(Nallelel[l]>Nallelel[0]) Nallelel[0]=Nallelel[l];
 
 	fclose(fp);
+	free_cvector(s,0,SMAX2);
 
 }	/*end of readsecondinfoF*/
 
@@ -1122,7 +1124,7 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 	}
 	if(Nip[0]){	sprintf(smess,"\n  WARNING: There is(are) %i individual(s) without genotype at any locus",Nip[0]);write(outputfilename,smess); }
 	if(ndigit>0)if(Nip[ploidy+1]){	
-		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv n° ",Nip[ploidy+1]);
+		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv no. ",Nip[ploidy+1]);
 		write(outputfilename,smess); 
 		for(i=1;i<=n;i++) if(ploidyi[i]==(ploidy+1)){sprintf(smess,"%i  ",i); write(outputfilename,smess);}
 		sprintf(smess,"\nYou must first resolve this problem. Note that 0's representing missing alleles of incomplete genotypes must be on the RIGHT, whereas 0's representing no information for individuals with a ploidy level inferior to that announced must be on the LEFT.\nPress any key to stop the program now.");

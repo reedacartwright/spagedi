@@ -136,6 +136,7 @@ strcpy(instrfile,"instruction.txt");
 	Niskg=ivector(0,n);
 	catskg=ivector(0,n);
 	Nallelel=ivector(0,m);
+	density=0.;
 
 	gilc=i3tensor(0,n,0,m,0,ploidy-1);
 	allelesizela=imatrix(0,m,0,2+(int)pow(10,ndigit));
@@ -249,6 +250,59 @@ strcpy(instrfile,"instruction.txt");
 	write_tofile_only(outputfile,smess);
 	printf("\n\nThe program has finished normally. \nLet's now open the file %c%s%c with a worksheet program\n... and digest SPAGeDi's results. \nPress any key to exit this program.\n",'"',outputfile,'"');
 	if(argc<4) wait_a_char();			
+	
+	if(distm==1){
+		if(StatType==1)
+			free_dmatrix(Mdij,0,n,0,n);
+		else /* if(StatType>=2)*/
+			free_dmatrix(Mdij,0,Npop,0,Npop);
+	} else
+		free_dmatrix(Mdij,0,0,0,0);
+	
+	if(alleledist)
+		free_f3tensor(Mgdlaa,0,m,0,maxnal,0,maxnal);
+	else
+		free_f3tensor(Mgdlaa,0,0,0,0,0,0);
+	
+	free_cvector(smess,0,SMAX);
+	free_i3tensor(gilc,0,n,0,m,0,ploidy-1);
+	free_imatrix(allelesizela,0,m,0,2+(int)pow(10,ndigit));
+	free((char *)namepop);
+	free((char *)namei);
+	free((char *)namecat);
+	free_ivector(popi,0,n);
+	free_ivector(Nip,0,Npop);
+	free_ivector(catp,0,Npop);
+	free_dvector(xp,0,Npop);
+	free_dvector(yp,0,Npop);
+	free_dvector(zp,0,Npop);
+
+	
+	free_ivector(ploidyi,0,n);
+	free_ivector(cati,0,n);
+	free_ivector(Nik,0,Ncat);
+	free_dvector(xi,0,n);
+	free_dvector(yi,0,n);
+	free_dvector(zi,0,n);
+	free_ivector(npc,0,abs(nc)+2);
+	free_ivector(sgi,0,n);
+	free_ivector(skgi,0,n);
+	free_ivector(catskg,0,n);
+	free_ivector(Nallelel,0,m);	
+	
+	free_f3tensor(Ppla,-1,Npop,0,m,0,maxnal);
+	free_imatrix(Nmissinggenotpl,0,Npop,0,m);
+	free_imatrix(Nincompletegenotpl,0,Npop,0,m);
+	free_imatrix(Nallelepl,0,Npop,0,m);
+	free_imatrix(Nvalgenpl,0,Npop,0,m);
+	free_matrix(Hepl,0,Npop,0,m);
+	free_matrix(hTpl,0,Npop,0,m);
+	free_matrix(vTpl,0,Npop,0,m);
+	free_matrix(Dmpl,0,Npop,0,m);
+	free_matrix(Dwmpl,0,Npop,0,m);
+	free_matrix(Masizepl,0,Npop,0,m);
+	free_matrix(Vasizepl,0,Npop,0,m);
+	free_ivector(rl,0,m);
 	
 	return 0;
 }	//end of main
@@ -783,6 +837,19 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	if(TypeComp!=1) for(S=1;S<=NS;S++) free_f3tensor(corrSlij[S],linit,m,0,n,0,n);
 //	for(S=1;S<=NS;S++) free_matrix(corrSlc[S],0,m+4,-20,abs(nc)+2);
 	if(Rbtwloc)for(S=1;S<=NS;S++) {free_f3tensor(RSll[S],0,1,0,m,0,m); free_f3tensor(V[S],0,1,0,5,0,2);}
+	
+	if(JKest) {
+		for(S=1;S<=NS;S++)
+			free_matrix(corrSlc[S],-m,m+4,-28,abs(nc)+2);
+	} else {
+		for(S=1;S<=NS;S++)
+			free_matrix(corrSlc[S],0,m+4,-28,abs(nc)+2);
+	}
+	
+	free_matrix(indexpartic,0,abs(nc)+2,0,1);
+	free_ivector(npc,0,abs(nc)+2);
+	free_dvector(mdc,0,abs(nc)+2);
+	free_dvector(mlndc,0,abs(nc)+2);
 }
 
 
