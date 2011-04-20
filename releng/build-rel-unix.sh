@@ -32,24 +32,18 @@ svn co -q $REPOS $SOURCE_DIR || exit 1
 mkdir $BUILD_DIR || exit 1
 cd $BUILD_DIR || exit 1
 
-if test -n "build_mingw32"; then
+if test -n $build_mingw32; then
 	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_TOOLCHAIN_FILE="${SOURCE_DIR}/releng/i586-mingw32msvc.cmake" \
 		-DUSE_STATIC_LIBS=on
-elif test -n "build_m32"; then
+elif test -n $build_m32; then
 	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
 else
-	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
-		-DBoost_USE_STATIC_LIBS=ON -DGSL_USE_STATIC_LIBS=ON
+	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
 fi
 $MAKE
 $MAKE package
 $MAKE package_source
-
-
-
-cd $DEST_DIR
-rm -rf $RELENG_DIR
 
 echo
 echo Moving distribution packages ...
