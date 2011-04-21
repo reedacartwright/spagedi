@@ -37,9 +37,12 @@ if test $build_mingw32; then
 		-DCMAKE_TOOLCHAIN_FILE="${SOURCE_DIR}/releng/i586-mingw32msvc.cmake" \
 		-DUSE_STATIC_LIBS=on
 elif test -n $build_m32; then
-	CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 $CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
+	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS=-m32 \
+		-DUSE_STATIC_LIBS=on
 else
-	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release
+	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
+	-DUSE_STATIC_LIBS=on
 fi
 $MAKE
 $MAKE package
