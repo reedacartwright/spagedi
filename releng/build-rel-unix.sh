@@ -36,7 +36,7 @@ if test $build_mingw32; then
 	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_TOOLCHAIN_FILE="${SOURCE_DIR}/releng/i586-mingw32msvc.cmake" \
 		-DUSE_STATIC_LIBS=on
-elif test -n $build_m32; then
+elif test $build_m32; then
 	$CMAKE $SOURCE_DIR -DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_C_FLAGS=-m32 \
 		-DUSE_STATIC_LIBS=on
