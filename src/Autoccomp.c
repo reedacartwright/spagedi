@@ -2213,7 +2213,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 /*compute F-stat or R-stat between Npop>2 populations (Npop=# pop, pop1=pop2=0) or just
 2 populations (Npop=2, pop1 & pop2 >0).
 n :					# individuals (total) 
-popi[i] :			n° of the population to which i belongs (popi >0).
+popi[i] :			no. of the population to which i belongs (popi >0).
 m :					# of loci
 Nallelel[l] :		# of alleles at locus l
 gilc[i][l][a] :		allele of ind i at locus l for chromosome a
@@ -2238,7 +2238,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	int i,p,l,c,a,a1,a2,r,S,linit;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
 	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
 	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
-	int *nip,*nip2, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
+	int *nip,*nip2, nc;		//ind no. in pop p (nip=1-Nip[p]; chromosome no. (nc=1-Ncpi[c][i])
 	int *ploidyi;
 	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
 	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
@@ -2683,7 +2683,7 @@ void compute_FiPop(int n,int Npop,int *popi,int m,int *Nallelel,
 	int i,i2,p,l,c,a;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
 	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
 	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
-	int *nip,*nip2, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
+	int *nip,*nip2, nc;		//ind no. in pop p (nip=1-Nip[p]; chromosome no. (nc=1-Ncpi[c][i])
 	int *ploidyi;
 	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
 	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
@@ -2836,7 +2836,7 @@ void compute_FiPop(int n,int Npop,int *popi,int m,int *Nallelel,
 	
 /*compute G-stat or N-stat between populations (Npop=# pop, pop1=pop2=0) .
 n :					# individuals (total) 
-popi[i] :			n° of the population to which i belongs (popi >0).
+popi[i] :			no. of the population to which i belongs (popi >0).
 m :					# of loci
 Nallelel[l] :		# of alleles at locus l
 gilc[i][l][a] :		allele of ind i at locus l for chromosome a
@@ -3862,7 +3862,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 
 
 
-	//ANOVA2 à 1obs
+	//ANOVA2 at 1obs
 /**/	Sl=d3tensor(0,n,0,n,-m,m);
 	Sp=dvector(-m,m);
 	S=dvector(-m,m);
@@ -3949,7 +3949,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 	}
 
 
-	//ANOVA1 à m obs
+	//ANOVA1 at m obs
 	SCEr[0]=SCEt[0]-SCEp[0];
 	CMr[0]=SCEr[0]/((m-1)*n*(n-1.)/2.);
 	Vp1[0]=(CMp[0]-CMr[0])/m;
