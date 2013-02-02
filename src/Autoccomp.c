@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2011 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -269,13 +269,14 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 		for(i=1;i<n;i++)for(j=i+1;j<=n;j++){
 			if(TypeComp==1)if(cati[i]!=cati[j]) continue;
 			if(TypeComp==2)if(cati[i]==cati[j]) continue;
-			if(StatType==1 && Mdij[0][0]==0)if(sgi[i]==sgi[j]) continue; /*don't take into account intra-group class*/
+			if(StatType==1 && Mdij[0][0]<=0)if(sgi[i]==sgi[j]) continue; /*don't take into account intra-group class*/
 			if(Mdij[0][0]==1.){
 				if(Mdij[i][j]!=(float)MISSVAL) dij=Mdij[i][j];
 				else continue;
 			}
 			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+			if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
 			
 			distp[p++]=dij;
 		}
@@ -312,6 +313,8 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 			}
 			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+			if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
+
 
 			/*check if a new class interval must be added*/
 			if((dij>maxc[(*nc)])&&(add_classSup==0) /*&&(*nc>0)*/ ){
@@ -325,7 +328,7 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 				/* if(*nc==0) maxc[1]=dmax;		*/
 			}
 			/*define the distance interval containing dij*/
-			if(StatType==1 && (sgi[i]==sgi[j]) && Mdij[0][0]==0) c=1;	/*intra-group class*/
+			if(StatType==1 && (sgi[i]==sgi[j]) && Mdij[0][0]<=0) c=1;	/*intra-group class*/
 			else{
 				c=1; 
 				while(dij>maxc[c] && c<=(*nc)) c++;
@@ -381,14 +384,16 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 void compute_allele_freq(int n,int Ncat,int *cati,int m,
 			int ndigit,int ploidy,int ***gilc,int *ploidyi,int *Nallelel,int **allelesizela,float ***Mgdlaa,
 			int alleledist,float ***Pkla,int **Nallelekl,int **Nmissinggenotkl,int **Nincompletegenotkl,
-			int **Nvalgenkl,float **Hekl,float **hTkl,float **vTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl)
+			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hekl,float **hTkl,float **vTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl)
 {
 	int i,l,a,a1,a2,ncomp,k,k1,k2,npairs,nallelepairs,nloci;/*counter for individuals (i,j), locus (l), group (g), allele (a), category*/ 
 	float Navalid,nvalidpop,sumweight;		/*number of individuals with valid data*/
 	float Sasize,SSasize;	/*for estimators of allele size coef*/
 	float **Jkl;
-	int *Nik;
+	int *Nik, ***Nkla;
 	int maxnal;
+	int N, Ns;
+	double C;
 
 
 	//Pkla[k][l][a]: freq of allele a at locus l in pop k, over all pop when k=0 (weighted by # of defined genes per pop) and k=-1 (arithmetic average over pop). When a=0, it gives the number of defined genes.
@@ -409,10 +414,11 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	maxnal=0;
 	for(l=1;l<=m;l++) if(Nallelel[l]>maxnal) maxnal=Nallelel[l];
 	Jkl=matrix(0,Ncat,0,m);
+	Nkla=i3tensor(-1,Ncat,0,m,0,maxnal);
 	
-	/*determine allele frequencies (allele '0' correspond to a missing data)*/
+	/*determine allele frequencies (allele '0' corresponds to a missing data)*/
 	for(k=0;k<=Ncat;k++) for(l=0;l<=m;l++) Nvalgenkl[k][l]=Nmissinggenotkl[k][l]=Nincompletegenotkl[k][l]=0;
-	for(k=-1;k<=Ncat;k++) for(l=0;l<=m;l++) for(a=0;a<=Nallelel[l];a++) Pkla[k][l][a]=0.;
+	for(k=-1;k<=Ncat;k++) for(l=0;l<=m;l++) for(a=0;a<=Nallelel[l];a++) Pkla[k][l][a]=Nkla[k][l][a]=0;
 
 	for(i=1;i<=n;i++){
 		for(l=1;l<=m;l++){
@@ -425,13 +431,17 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 					if(Ncat) Nvalgenkl[cati[i]][l]++;
 					/*add ind allele freq*/
 					Pkla[0][l][gilc[i][l][a]]+=1.0f/Navalid;
-					if(Ncat>1) Pkla[cati[i]][l][gilc[i][l][a]]+=1.0f/Navalid;
+					Nkla[0][l][gilc[i][l][a]]++;
+					if(Ncat>=1){
+						Pkla[cati[i]][l][gilc[i][l][a]]+=1.0f/Navalid;
+						Nkla[cati[i]][l][gilc[i][l][a]]++;
+					}
 				}
 			}
 			else{	/*count number of missing genotypes*/
 				Pkla[0][l][0]++;
 				Nmissinggenotkl[0][l]++;
-				if(Ncat>1) Pkla[cati[i]][l][0]++; 
+				if(Ncat>=1) Pkla[cati[i]][l][0]++; 
 			}
 			if(Navalid>0 && Navalid<ploidyi[i]) Nincompletegenotkl[0][l]++;
 			if(Ncat){
@@ -444,6 +454,11 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	for(l=1;l<=m;l++) for(a=1;a<=Nallelel[l];a++) for(k=0;k<=Ncat;k++) Pkla[k][l][a]/=(Nik[k]-Pkla[k][l][0]);
 
 	for(l=1;l<=m;l++) for(k=0;k<=Ncat;k++) Pkla[k][l][0]=(float)Nvalgenkl[k][l];
+
+	for(k=0;k<=Ncat;k++){// tell for each population if it has at least 2 valid gene copies on each locus
+		Nvalgenkl[k][0]=2;
+		for(l=1;l<=m;l++) if(Nvalgenkl[k][l]<2) Nvalgenkl[k][0]=0;
+	}
 
 	//compute mean allele freq over pop without weighting by the #ind/pop (put in k=-1)
 	for(l=1;l<=m;l++){
@@ -459,15 +474,46 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	/*determine the number of alleles per locus*/
 	for(l=0;l<=m;l++) for(k=0;k<=Ncat;k++) Nallelekl[k][l]=0;
 	for(l=1;l<=m;l++) for(a=1;a<=Nallelel[l];a++)for(k=0;k<=Ncat;k++)if(Pkla[k][l][a]) Nallelekl[k][l]++;
+
+	//Expected number of alleles among K gene copies
+	if((*K)==0){
+		(*K)=n*ploidy;
+		for(l=1;l<=m;l++) for(k=0;k<=Ncat;k++) if(Nvalgenkl[k][l]>1 && Nvalgenkl[k][l]<(*K)) (*K)=Nvalgenkl[k][l];
+	}
+	for(k=0;k<=Ncat;k++){
+		RA[k][0]=0.;
+		for(l=1;l<=m;l++){
+			if(Nvalgenkl[k][l]>(*K)){
+				N=Nvalgenkl[k][l];
+				RA[k][l]=0.;
+				for(a=1;a<=Nallelel[l];a++){
+					Ns=Nkla[k][l][a];	
+					C=1.;
+					for(n=0;n<(*K);n++) C*=(N-Ns-n)/(double)(N-n);
+					RA[k][l]+=(float)(1.-C);
+				}
+			}
+			else if(Nvalgenkl[k][l]==(*K)) RA[k][l]=Nallelekl[k][l];
+			else RA[k][l]=MISSVAL;
+			RA[k][0]+=RA[k][l]/m;
+		}
+	}
+
 		
 	/*determine the expected heterozygosity (gene diversity) per locus Hekl*/
-	for(k=0;k<=Ncat;k++) Hekl[k][0]=0.;
-	for(l=1;l<=m;l++)for(k=0;k<=Ncat;k++){ 
-		Jkl[k][l]=0.;
-		for(a=1;a<=Nallelel[l];a++) Jkl[k][l]+=Pkla[k][l][a]*Pkla[k][l][a];/*homozygosity*/
-		Hekl[k][l]=1.0f-Jkl[k][l];
-		Hekl[k][l]*=(float)(Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.0f));//corrected heterozygosity		 
+	for(k=0;k<=Ncat;k++) Hekl[k][0]=Nnielsenkl[k][0]=0.;
+	for(k=0;k<=Ncat;k++)for(l=1;l<=m;l++){
+		if(Nvalgenkl[k][l]>1){
+			Jkl[k][l]=0.;
+			for(a=1;a<=Nallelel[l];a++) Jkl[k][l]+=Pkla[k][l][a]*Pkla[k][l][a];/*homozygosity*/
+			Hekl[k][l]=1.0f-Jkl[k][l];
+			Hekl[k][l]*=(float)(Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.0f));//corrected heterozygosity		
+			Nnielsenkl[k][l]=Nvalgenkl[k][l]*(Nvalgenkl[k][l]-1.)/(2.+(1.-Hekl[k][l])*(Nvalgenkl[k][l]-2.)*(Nvalgenkl[k][l]+1.));//effective number of alleles
+		}
+		else Hekl[k][l]=Nnielsenkl[k][l]=MISSVAL;
+
 		Hekl[k][0]+=Hekl[k][l]/m;
+		Nnielsenkl[k][0]+=Nnielsenkl[k][l]/m;
 	}
 
 	//determine diversity of unordered and ordered alleles per locus hTkl, vTkl
@@ -511,8 +557,11 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 				}
 			}
 		}
-		hTkl[0][l]/=npairs;	
-		vTkl[0][l]/=npairs;
+		if(npairs){
+			hTkl[0][l]/=npairs;	
+			vTkl[0][l]/=npairs;
+		}
+		else hTkl[0][l]=vTkl[0][l]=MISSVAL;
 		
 		nallelepairs=0;
 		sumweight=0.0f;
@@ -534,7 +583,7 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	for(k=0;k<=Ncat;k++){
 		nloci=0;
 		hTkl[k][0]=vTkl[k][0]=Dmkl[k][0]=Dwmkl[k][0]=0.0f;	
-		for(l=1;l<=m;l++)if(Nvalgenkl[k][l]>1){
+	/*	for(l=1;l<=m;l++)if(Nvalgenkl[k][l]>1){
 			nloci++;
 			hTkl[k][0]+=hTkl[k][l];
 			vTkl[k][0]+=vTkl[k][l];
@@ -544,20 +593,32 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 		hTkl[k][0]/=nloci;
 		vTkl[k][0]/=nloci;
 		Dmkl[k][0]/=nloci;
-		Dwmkl[k][0]/=nloci;
+		Dwmkl[k][0]/=nloci; */
+		for(l=1;l<=m;l++){
+			hTkl[k][0]+=hTkl[k][l]/m;
+			vTkl[k][0]+=vTkl[k][l]/m;
+			Dmkl[k][0]+=Dmkl[k][l]/m;
+			Dwmkl[k][0]+=Dwmkl[k][l]/m;
+		}
 	}
 
 
 	/*determine the mean and variance of allele size*/
+	for(k=0;k<=Ncat;k++) Masizekl[k][0]=Vasizekl[k][0]=(float)0.;
 	for(l=1;l<=m;l++){
 		for(k=0;k<=Ncat;k++){
-			Sasize=SSasize=0.;
-			for(a=1;a<=Nallelel[l];a++){
-				Sasize+=Pkla[k][l][a]*allelesizela[l][a];
-				SSasize+=Pkla[k][l][a]*allelesizela[l][a]*allelesizela[l][a];
+			if(Nvalgenkl[k][l]>1){
+				Sasize=SSasize=0.;
+				for(a=1;a<=Nallelel[l];a++){
+					Sasize+=Pkla[k][l][a]*allelesizela[l][a];
+					SSasize+=Pkla[k][l][a]*allelesizela[l][a]*allelesizela[l][a];
+				}
+				Masizekl[k][l]=Sasize;
+				Vasizekl[k][l]=(float)((SSasize-Sasize*Sasize)*((double)Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.)));
 			}
-			Masizekl[k][l]=Sasize;
-			Vasizekl[k][l]=(float)((SSasize-Sasize*Sasize)*((double)Nvalgenkl[k][l]/(Nvalgenkl[k][l]-1.)));
+			else Masizekl[k][l]=Vasizekl[k][l]=MISSVAL;
+			Masizekl[k][0]+=Masizekl[k][l]/m;
+			Vasizekl[k][0]+=Vasizekl[k][l]/m;
 		}
 	}
 
@@ -580,7 +641,7 @@ If no correlation can be computed (no variation, missing value,...), value =(flo
 void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,int ploidy,
 			float missdat,int ***gilc,int *N1allelel,int **allelesizela,float ***Distla1a2,
 			float ***corrSlij[],int NS,int Stat[12],int FreqRef,float **givenPla,int *Ngivenallelel,
-			int TypeComp,float givenF,int compute_inbreeding_coef_only,int JKl)
+			int TypeComp,float givenF,double *H2,int compute_inbreeding_coef_only,int JKl)
 {
 	int i,j,k,l,linit,g,ci,cj,a,a1,a2,maxa,S,c;//counter for individuals (i,j), locus (l), gene (g), allele (a), max value for a at locus l, type of statistic (S=1 for Loiselle, 2 for Ritland original, 3 for Wright coef of relationship, 4 for Rousset) 
 	int newSumNall; //sums of the number of alleles per locus
@@ -1108,13 +1169,16 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 
 
 
-	//KINSHIP / RELATIONSHIP ESTIMATORS FOR DOMINANT MARKERS (estimator of Hardy)
+	//KINSHIP / RELATIONSHIP ESTIMATORS FOR DOMINANT MARKERS (estimator of Hardy 2003)
 	//compute inbreeding for each indiv
 	if(Ekinshipdom || Erelatdom){
 		//compute heritability of dominant markers
 		h2kl=matrix(0,FRef,0,m);
 		for(k=0;k<=FRef;k++)for(l=1;l<=m;l++){
 			if(Pkla[k][l][1] && (1.0f-Pkla[k][l][1])) h2kl[k][l]=(float)(2.0/(1.0+givenF)*(sqrt(givenF*givenF+4.0*(1.0-Pkla[k][l][2])*(1.0-givenF))+givenF)/(sqrt(givenF*givenF+4.*(1.0-Pkla[k][l][2])*(1.0-givenF))+2.0-givenF));
+			else h2kl[k][l]=0.;
+			//multiply by assumed broad-sense heritability (given in data file or set to 1 if not given)
+			if(H2[l]>0.) h2kl[k][l]*=(float)H2[l]; 
 			else h2kl[k][l]=0.;
 		}
 		
@@ -2149,7 +2213,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 /*compute F-stat or R-stat between Npop>2 populations (Npop=# pop, pop1=pop2=0) or just
 2 populations (Npop=2, pop1 & pop2 >0).
 n :					# individuals (total) 
-popi[i] :			no. of the population to which i belongs (popi >0).
+popi[i] :			n° of the population to which i belongs (popi >0).
 m :					# of loci
 Nallelel[l] :		# of alleles at locus l
 gilc[i][l][a] :		allele of ind i at locus l for chromosome a
@@ -2169,16 +2233,17 @@ FstatSlr[S][l][r] values of Fit (r=1), Fis (r=2), Fst (r=3), Rho (r=4),
 
 void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nallelel,
 		int ploidy,int ***gilc,int **allelesizela,int NS,int Stat[],
-		float **FstatSlr[],float ***corrSlij[],int Rstat_only,int JKest)
+		float **FstatSlr[],float ***corrSlij[],float **Fpl,int Rstat_only,int JKest,int Fipop)
 {	
 	int i,p,l,c,a,a1,a2,r,S,linit;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
 	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
-	int **Ncpi;			//#	chromosomes	with valid gene in ind i from pop  p
-	int *nip, nc;		//ind no. in pop p (nip=1-Nip[p]; chromosome no. (nc=1-Ncpi[c][i])
+	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
+	int *nip,*nip2, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
 	int *ploidyi;
 	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
-	double ***Gpic;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
+	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
 	double **NumFlr, **DenFlr, **NumRlr, **DenRlr;	//numerator and denominator for F-stat / R-stat
+	double **NumFpl, **DenFpl;	//numerator and denominator for Fi per pop
 	double SS[4],MS[4],s2[4];
 	float **Flr,**Rlr;		//Flr =Fit (r=1), =Fis (r=2), =Fst (r=3), =Rho (r=4); Rlr =Rit (r=1), Ris (r=2), =Rst (r=3)
 	float *Neil,*dm2l;	//Nei and DelaMuSquare distances
@@ -2229,6 +2294,8 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	nip=ivector(0,n);
 	NumFlr=dmatrix(0,m,0,4);
 	DenFlr=dmatrix(0,m,0,4);
+
+
 	NumRlr=dmatrix(0,m,0,4);
 	DenRlr=dmatrix(0,m,0,4);
 	Flr=matrix(-m,m+2,0,4);
@@ -2239,11 +2306,20 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	Ncpi=imatrix(0,Npop,0,Nipmax);			//Ncpi[p][i] = # of valid genes (chromosomes) in ind i from pop p
 	for(l=0;l<=m;l++) Nlpa[l]=imatrix(0,Npop,0,Nallelel[l]);	 //counter for allele freq
 
+	if(Fipop){
+		NumFpl=dmatrix(0,Npop,0,m);	//for Fi per pop
+		DenFpl=dmatrix(0,Npop,0,m); //for Fi per pop
+		nip2=ivector(0,n);
+		Gpic2=d3tensor(0,1,0,Nipmax,0,ploidy);	
+		Ncpi2=imatrix(0,1,0,Nipmax);
+	}
+
 	SJ1=SJ2=SJ12=0.;
 	//Define the values for the Nested ANOVA	
 	for(l=1;l<=m;l++){
 		for(r=0;r<=4;r++) NumFlr[l][r]=DenFlr[l][r]=NumRlr[l][r]=DenRlr[l][r]=0.;
 		for(p=0;p<=Npop;p++) for(a=0;a<=Nallelel[l];a++) Nlpa[l][p][a]=0;//allele freq counter
+		if(Fipop) for(p=0;p<=Npop;p++) NumFpl[p][l]=DenFpl[p][l]=0.;
 
 		for(a=0;a<=Nallelel[l];a++){  //loop over alleles (when a=0, R-stat are computed)
 			if(Rstat_only) if(a>0) break;
@@ -2281,6 +2357,22 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 				else nip[p]--;	//remove one ind as there is no data for it
 			} //end of loop i
 
+			
+			//within each pop (Fi and Ri)
+			if(Fipop && a>0)for(p=1;p<=Npop;p++){
+				nip2[1]=nip[p];
+				for(i=1;i<=nip[p];i++)Ncpi2[1][i]=Ncpi[p][i];
+				for(i=1;i<=nip[p];i++)for(c=1;c<=Ncpi[p][i];c++) Gpic2[1][i][c]=Gpic[p][i][c];
+				NestedANOVA(1,nip2,Ncpi2,Gpic2,SS,MS,s2);
+				if(a>0){
+					if((s2[2]+s2[3])!=(float)MISSVAL){
+						NumFpl[p][l]+=(s2[2]);			   //Fis
+						DenFpl[p][l]+=(s2[2]+s2[3]);
+					}
+				}
+			}
+
+			//over all pop
 			NestedANOVA(Npop,nip,Ncpi,Gpic,SS,MS,s2);
 
 			if(a==0){
@@ -2348,17 +2440,26 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 			}
 		}//end loop over alleles
 		for(r=1;r<=4;r++){
-			if(DenFlr[l][r] && DenFlr[l][r]!=(float)MISSVAL){
+			if(DenFlr[l][r] && DenFlr[l][r]!=(float)MISSVAL && NumFlr[l][r]!=(float)MISSVAL){
 				Flr[l][r]=(float)(NumFlr[l][r]/DenFlr[l][r]);
 			}
 			else Flr[l][r]=(float)MISSVAL;
 
-			if(DenRlr[l][r] && DenRlr[l][r]!=(float)MISSVAL){
+			if(DenRlr[l][r] && DenRlr[l][r]!=(float)MISSVAL && NumRlr[l][r]!=(float)MISSVAL){
 				Rlr[l][r]=(float)(NumRlr[l][r]/DenRlr[l][r]);
 			}
 			else Rlr[l][r]=(float)MISSVAL;
 
 		}
+
+		if(Fipop)for(p=1;p<=Npop;p++){
+			if(DenFpl[p][l] && DenFpl[p][l]!=(float)MISSVAL && NumFpl[p][l]!=(float)MISSVAL){
+				Fpl[p][l]=(float)(NumFpl[p][l]/DenFpl[p][l]);
+			}
+			else Fpl[p][l]=(float)MISSVAL;
+		}
+
+
 
 		//compute Nei and Goldstein dist
 		if(pop1 && pop2){
@@ -2418,6 +2519,24 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 		if(DenRlr[0][r]) Rlr[0][r]=(float)(NumRlr[0][r]/DenRlr[0][r]);	//multilocus average
 		else Rlr[0][r]=(float)MISSVAL;
 	}
+
+	if(Fipop){
+		for(p=1;p<=Npop;p++){
+			NumFpl[p][0]=DenFpl[p][0]=0.;
+			for(l=1;l<=m;l++){
+				if(DenFpl[p][l] && DenFpl[p][l]!=(float)MISSVAL && NumFpl[p][l]!=(float)MISSVAL){
+					NumFpl[p][0]+=NumFpl[p][l];
+					DenFpl[p][0]+=DenFpl[p][l];
+				}
+			}
+			if(DenFpl[p][0] && DenFpl[p][0]!=(float)MISSVAL && NumFpl[p][0]!=(float)MISSVAL){
+				Fpl[p][0]=(float)(NumFpl[p][0]/DenFpl[p][0]);
+			}
+			else Fpl[p][0]=(float)MISSVAL;
+		}
+	}
+
+
 	if(pop1 && pop2){  //Nei and Goldstein dist
 		Neil[0]=(float)-log(SJ12/sqrt(SJ1*SJ2));
 		nvl=0;
@@ -2507,11 +2626,11 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	if(m==1) linit=1;
 	if(pop1 && pop2)for(l=linit;l<=m;l++)for(S=1;S<=NS;S++){//for pairwise comparisons
 		if(Stat[S]==1) corrSlij[S][l][pop1][pop2]=Flr[l][3];				//Fst
-		if(Stat[S]==2) corrSlij[S][l][pop1][pop2]=Flr[l][3]/(1.0f-Flr[l][3]);	//Fst/(1-Fst)
+		if(Stat[S]==2) {if(Flr[l][3]!=(float)MISSVAL && Flr[l][3]!=1.0f)corrSlij[S][l][pop1][pop2]=Flr[l][3]/(1.0f-Flr[l][3]); else corrSlij[S][l][pop1][pop2]=(float)MISSVAL;} 	//Fst/(1-Fst)
 		if(Stat[S]==3) corrSlij[S][l][pop1][pop2]=Flr[l][4];				//Rho
-		if(Stat[S]==4) corrSlij[S][l][pop1][pop2]=Flr[l][4]/(1.0f-Flr[l][4]);	//Rho/(1-Rho)
+		if(Stat[S]==4) {if(Flr[l][4]!=(float)MISSVAL && Flr[l][4]!=1.0f)corrSlij[S][l][pop1][pop2]=Flr[l][4]/(1.0f-Flr[l][4]);	else corrSlij[S][l][pop1][pop2]=(float)MISSVAL;}//Rho/(1-Rho)
 		if(Stat[S]==5) corrSlij[S][l][pop1][pop2]=Rlr[l][3];				//Rst
-		if(Stat[S]==6) corrSlij[S][l][pop1][pop2]=Rlr[l][3]/(1.0f-Rlr[l][3]);	//Rst/(1-Rst)
+		if(Stat[S]==6) {if(Rlr[l][3]!=(float)MISSVAL && Rlr[l][3]!=1.0f)corrSlij[S][l][pop1][pop2]=Rlr[l][3]/(1.0f-Rlr[l][3]);	else corrSlij[S][l][pop1][pop2]=(float)MISSVAL;}//Rst/(1-Rst)
 		if(Stat[S]==7) corrSlij[S][l][pop1][pop2]=Neil[l];	//Nei's standard dist
 		if(Stat[S]==8) corrSlij[S][l][pop1][pop2]=dm2l[l];	//Goldstein distance
 
@@ -2544,7 +2663,171 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	free_d3tensor(Gpic,0,Npop,0,Nipmax,0,ploidy);
 	free_imatrix(Ncpi,0,Npop,0,Nipmax);
 	for(l=0;l<=m;l++) free_imatrix(Nlpa[l],0,Npop,0,Nallelel[l]);
+	if(Fipop){
+		free_dmatrix(NumFpl,0,Npop,0,m);	//for Fi per pop
+		free_dmatrix(DenFpl,0,Npop,0,m); //for Fi per pop
+		free_ivector(nip2,0,n);
+		free_d3tensor(Gpic2,0,1,0,Nipmax,0,ploidy);	
+		free_imatrix(Ncpi2,0,1,0,Nipmax);
+	}
 
+
+}
+
+
+/****************************************************************************/
+
+void compute_FiPop(int n,int Npop,int *popi,int m,int *Nallelel,
+		int ploidy,int ***gilc,int **allelesizela,float **Fpl)
+{	
+	int i,i2,p,l,c,a;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
+	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
+	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
+	int *nip,*nip2, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
+	int *ploidyi;
+	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
+	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
+	double **NumFpl, **DenFpl;	//numerator and denominator for Fi per pop
+	double SS[4],MS[4],s2[4];
+
+	//check individual ploidy level
+	ploidyi=ivector(0,n);
+	for(i=1;i<=n;i++){
+		ploidyi[i]=0;
+		for(l=1;l<=m;l++){
+			for(c=ploidy-1;c>=0;c--) if(gilc[i][l][c]) break;
+			if(ploidyi[i]<(c+1)) ploidyi[i]=c+1;
+		}
+	}
+
+
+	//compute the # of ind in each pop
+	Nip=ivector(0,Npop);
+
+	for(p=0;p<=Npop;p++) Nip[p]=0;
+	for(i=1;i<=n;i++){
+		if(popi[i]<=Npop) Nip[popi[i]]++;
+		else {printf("\n\nERROR in ""compute_FiPop"": popi[%i]>Npop: %i>%i",i,popi[i],Npop); wait_a_char(); exit(33);} 
+	}
+	Nipmax=0;
+	for(p=1;p<=Npop;p++) if(Nip[p]>Nipmax) Nipmax=Nip[p];
+	if(Npop==0) Nipmax=n;
+
+	nip=ivector(0,n);
+	Gpic=d3tensor(0,Npop,0,Nipmax,0,ploidy);	//Gpic[p][i][c] = value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
+	Ncpi=imatrix(0,Npop,0,Nipmax);			//Ncpi[p][i] = # of valid genes (chromosomes) in ind i from pop p
+	for(l=0;l<=m;l++) Nlpa[l]=imatrix(0,Npop,0,Nallelel[l]);	 //counter for allele freq
+
+	NumFpl=dmatrix(0,Npop,0,m);	//for Fi per pop
+	DenFpl=dmatrix(0,Npop,0,m); //for Fi per pop
+	nip2=ivector(0,n);
+	Gpic2=d3tensor(0,1,0,n,0,ploidy);	
+	Ncpi2=imatrix(0,1,0,n);
+
+	//Define the values for the Nested ANOVA	
+	for(l=1;l<=m;l++){
+		for(p=0;p<=Npop;p++) NumFpl[p][l]=DenFpl[p][l]=0.;
+
+		for(a=1;a<=Nallelel[l];a++){  //loop over alleles (when a=0, R-stat are computed)
+			for(p=0;p<=Npop;p++) nip[p]=0;
+			for(i=1;i<=n;i++){
+				p=popi[i];
+				nip[p]++;
+				nc=0;
+				Gpic[p][nip[p]][0]=0.; //reset mean individual allele a freq
+				for(c=0;c<ploidyi[i];c++){	 //loop over chromosomes
+					if(gilc[i][l][c]) nc++;
+					else continue;
+
+					if(gilc[i][l][c]==a) Gpic[p][nip[p]][nc]=1.;
+					else Gpic[p][nip[p]][nc]=0.;
+
+					Gpic[p][nip[p]][0]+=Gpic[p][nip[p]][nc]; //sum of allele freq to compute mean ind allele a freq
+				}
+				if(nc){
+					Ncpi[p][nip[p]]=nc;
+					Gpic[p][nip[p]][0]/=nc;	
+				}
+				else nip[p]--;	//remove one ind as there is no data for it
+			} //end of loop i
+
+			
+			//within each pop (Fi and Ri)
+			for(p=1;p<=Npop;p++){
+				nip2[1]=nip[p];
+				for(i=1;i<=nip[p];i++)Ncpi2[1][i]=Ncpi[p][i];
+				for(i=1;i<=nip[p];i++)for(c=1;c<=Ncpi[p][i];c++) Gpic2[1][i][c]=Gpic[p][i][c];
+				NestedANOVA(1,nip2,Ncpi2,Gpic2,SS,MS,s2);
+				if((s2[2]+s2[3])!=(float)MISSVAL){
+					NumFpl[p][l]+=(s2[2]);			   //Fis
+					DenFpl[p][l]+=(s2[2]+s2[3]);
+				}
+			}
+			//all pop grouped
+			nip2[1]=0;
+			i2=0;
+			for(p=1;p<=Npop;p++){
+				nip2[1]+=nip[p];
+				for(i=1;i<=nip[p];i++){
+					i2++;
+					Ncpi2[1][i2]=Ncpi[p][i];
+					for(c=1;c<=Ncpi[p][i];c++) Gpic2[1][i2][c]=Gpic[p][i][c];
+				}
+			}	
+			if(Npop==0){
+				nip2[1]=nip[0];
+				for(i=1;i<=nip[0];i++){
+					Ncpi2[1][i]=Ncpi[0][i];
+					for(c=1;c<=Ncpi[0][i];c++) Gpic2[1][i][c]=Gpic[0][i][c];
+				}
+			}
+			NestedANOVA(1,nip2,Ncpi2,Gpic2,SS,MS,s2);
+			if((s2[2]+s2[3])!=(float)MISSVAL){
+				NumFpl[0][l]+=(s2[2]);			   //Fis
+				DenFpl[0][l]+=(s2[2]+s2[3]);
+			}
+
+
+		}//end loop over alleles
+
+		for(p=0;p<=Npop;p++){
+			if(DenFpl[p][l] && DenFpl[p][l]!=(float)MISSVAL && NumFpl[p][l]!=(float)MISSVAL){
+				Fpl[p][l]=(float)(NumFpl[p][l]/DenFpl[p][l]);
+			}
+			else Fpl[p][l]=(float)MISSVAL;
+		}
+	}//end loop over loci
+
+	//multilocus estimates
+
+	for(p=0;p<=Npop;p++){
+		NumFpl[p][0]=DenFpl[p][0]=0.;
+		for(l=1;l<=m;l++){
+			if(DenFpl[p][l] && DenFpl[p][l]!=(float)MISSVAL && NumFpl[p][l]!=(float)MISSVAL){
+				NumFpl[p][0]+=NumFpl[p][l];
+				DenFpl[p][0]+=DenFpl[p][l];
+			}
+		}
+		if(DenFpl[p][0] && DenFpl[p][0]!=(float)MISSVAL && NumFpl[p][0]!=(float)MISSVAL){
+			Fpl[p][0]=(float)(NumFpl[p][0]/DenFpl[p][0]);
+		}
+		else Fpl[p][0]=(float)MISSVAL;
+	}
+
+
+
+	free_ivector(ploidyi,0,n);
+	free_ivector(nip,0,n);
+	free_ivector(Nip,0,Npop);
+	free_d3tensor(Gpic,0,Npop,0,Nipmax,0,ploidy);
+	free_imatrix(Ncpi,0,Npop,0,Nipmax);
+	for(l=0;l<=m;l++) free_imatrix(Nlpa[l],0,Npop,0,Nallelel[l]);
+
+	free_dmatrix(NumFpl,0,Npop,0,m);	//for Fi per pop
+	free_dmatrix(DenFpl,0,Npop,0,m); //for Fi per pop
+	free_ivector(nip2,0,n);
+	free_d3tensor(Gpic2,0,1,0,n,0,ploidy);	
+	free_imatrix(Ncpi2,0,1,0,n);
 }
 
 
@@ -2553,7 +2836,7 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	
 /*compute G-stat or N-stat between populations (Npop=# pop, pop1=pop2=0) .
 n :					# individuals (total) 
-popi[i] :			no. of the population to which i belongs (popi >0).
+popi[i] :			n° of the population to which i belongs (popi >0).
 m :					# of loci
 Nallelel[l] :		# of alleles at locus l
 gilc[i][l][a] :		allele of ind i at locus l for chromosome a
@@ -2576,7 +2859,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 {	
 	int i,p,p1,p2,l,c,a,a1,a2,r,S,linit,Ncvalid;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 7)
 	int **Ncpl = NULL, *Nip = NULL;	//#	chromosomes	with valid gene in pop  p at locus l
-	int **Nlpa[MMAX];	//# of allele a at locus l in pop p (totals for p=0 and a=0)
+	double **Nlpa[MMAX];	//# of allele a at locus l in pop p (totals for p=0 and a=0)
 	double **Plpa[MMAX];		//freq of allele a at locus l in pop p 
 	double **NumGlr, **DenGlr, **NumNlr, **DenNlr;	//numerator and denominator for G-stat / N-stat
 	float **Glr;		//=Git (r=1), =Gis (r=2), =Gst (r=3) 
@@ -2594,7 +2877,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	if(computeallelefreq){
 		Ncpl=imatrix(0,Npop,0,m);			//Ncpl[p][l] = # of valid genes (chromosomes) in pop p at locus l
 		Nip=ivector(0,Npop);				//#ind with valid genes per pop p
-		for(l=0;l<=m;l++) Nlpa[l]=imatrix(0,Npop,0,Nallelel[l]);	 //counter for allele freq
+		for(l=0;l<=m;l++) Nlpa[l]=dmatrix(0,Npop,0,Nallelel[l]);	 //counter for allele freq
 
 		for(l=1;l<=m;l++){
 			for(p=0;p<=Npop;p++) for(a=0;a<=Nallelel[l];a++) Nlpa[l][p][a]=0;
@@ -2614,7 +2897,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 					for(c=0;c<ploidy;c++)if(gilc[i][l][c]){	 //loop over chromosomes
 						Ncpl[p][l]++;
 						// TODO: Is this a bug?
-						Nlpa[l][p][gilc[i][l][c]]+=(int)(1./Ncvalid);
+						Nlpa[l][p][gilc[i][l][c]]+=(1./Ncvalid);
 					}
 				}
 			} //end of loop i
@@ -2901,7 +3184,7 @@ void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 	if(computeallelefreq){
 		free_imatrix(Ncpl,0,Npop,0,m);
 		free_ivector(Nip,0,Npop);
-		for(l=0;l<=m;l++) free_imatrix(Nlpa[l],0,Npop,0,Nallelel[l]);
+		for(l=0;l<=m;l++) free_dmatrix(Nlpa[l],0,Npop,0,Nallelel[l]);
 	}
 	free_matrix(Glr,-m,m+2,0,4);
 	free_matrix(Nlr,-m,m+2,0,4);
@@ -2997,7 +3280,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 				statlc[l][0]+=corrlij[l][i][i];
 			}
 			if(!inbreedingonly)for(j=i+1;j<=n;j++) {
-				if(TypeComp==1)if(cati[i]!=cati[j]) {corrlij[l][i][j]=(float)MISSVAL;continue;}
+				if(TypeComp==1)if(cati[i]!=cati[j]) {/*corrlij[l][i][j]=(float)MISSVAL;*/continue;}
 				if(TypeComp==2)if(cati[i]==cati[j]) {corrlij[l][i][j]=(float)MISSVAL;continue;}
 
 				val=corrlij[l][i][j];
@@ -3015,8 +3298,10 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 				}
 				else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 				else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+				if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
+
 			
- 				if(StatType==1 && Mdij[0][0]==0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
+ 				if(StatType==1 && Mdij[0][0]<=0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
 				else{c=1; while(dij>maxc[c] && c<=nc) c++;}
 
 				np[c]++;				/*add a pair of allele within class c*/
@@ -3349,8 +3634,10 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 			}
 			else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+			if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
+
 		
- 			if(StatType==1 && Mdij[0][0]==0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
+ 			if(StatType==1 && Mdij[0][0]<=0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
 			else{c=1; while(dij>maxc[c] && c<=nc) c++;}
 
 			//get residuals
@@ -3575,7 +3862,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 
 
 
-	//ANOVA2 at 1obs
+	//ANOVA2 à 1obs
 /**/	Sl=d3tensor(0,n,0,n,-m,m);
 	Sp=dvector(-m,m);
 	S=dvector(-m,m);
@@ -3662,7 +3949,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 	}
 
 
-	//ANOVA1 at m obs
+	//ANOVA1 à m obs
 	SCEr[0]=SCEt[0]-SCEp[0];
 	CMr[0]=SCEr[0]/((m-1)*n*(n-1.)/2.);
 	Vp1[0]=(CMp[0]-CMr[0])/m;
@@ -3790,8 +4077,9 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 					}
 					else if(Mdij[0][0]==-1.) dij=acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 					else dij=sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+					if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
 				
- 					if(Mdij[0][0]==0 && (sgi[i]==sgi[j])){ dij=-1.; cneighb=2;}	/*intra-group class*/
+ 					if(Mdij[0][0]<=0 && (sgi[i]==sgi[j])){ dij=-1.; cneighb=2;}	/*intra-group class*/
 
 					/*compute correlation/regression btw pairwise autocorrelation coef & dist*/
 					if(dij>0. && dij>=dijmin && (dij<=(dwidth*dijmin) || dijmin==0)){
@@ -4069,7 +4357,7 @@ void NestedANOVA(int a,int *bi,int **Nij,double ***Yijk,double SS[4],double MS[4
 	if(MS[3]!=(float)MISSVAL){
 		if(n0) s2[2]=(MS[2]-s2[3])/n0;
 		else s2[2]=(float)MISSVAL;
-	   	if(nb0) s2[1]=(MS[1]-s2[3]-n0bis*s2[2])/nb0;
+	   	if(nb0 && s2[2]!=(float)MISSVAL) s2[1]=(MS[1]-s2[3]-n0bis*s2[2])/nb0;
 		else s2[1]=(float)MISSVAL;
 	}
 	else{			/*one-way ANOVA*/
@@ -4415,6 +4703,34 @@ void permut_indiv_among_pop_within_categ
 
 		Ni=0;
 		for(i=1;i<=n;i++)if(cati[i]==k){
+			Ni++;
+			popimix[i]=popi[ind[Ni]];
+		}
+	}
+
+	free_ivector(ind,0,n);
+}
+/************************************************************************************/
+void permut_indiv_between_2pop
+	(int n,int *popi,int p1, int p2,int *popimix,long *seed)
+{
+	int i,Ni;
+	int *ind;
+
+	ind=ivector(0,n);
+	Ni=0;
+	for(i=1;i<=n;i++){
+		popimix[i]=popi[i];
+		if(popi[i]==p1 || popi[i]==p2){
+			Ni++;
+			ind[Ni]=i;
+		}
+	}
+	resample_shuffle(ind,1,Ni,seed);
+
+	Ni=0;
+	for(i=1;i<=n;i++){		
+		if(popi[i]==p1 || popi[i]==p2){
 			Ni++;
 			popimix[i]=popi[ind[Ni]];
 		}

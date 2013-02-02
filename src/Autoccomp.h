@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2011 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -22,20 +22,19 @@
 #ifdef PACKAGE_STRING
 #	define VERSION PACKAGE_STRING
 #else
-#	define  VERSION "SPAGeDi 1.3e-STABLE"
+#	define  VERSION "SPAGeDi 1.4a (build 11-01-2013)"
 #endif
 
-#define  VARTYPE 0  /*0 for locus with genotypes, 1 for quantitative variable*/
 #define  NMAX 100000	/*max number of individuals*/
 #define  NCOORDMAX 3    /*max number of spatial coordinates*/
 #define  MMAX 10000    /*max number of loci or variables*/
 #define  NDIGITMAX 3    /*max number of digits per allele*/
-#define  PLOIDYMAX 8    /*max number of digits per allele*/
+#define  PLOIDYMAX 8    /*max number of alleles per individual*/
 #define  MAXALLID 999 /*max number of alleles per locus*/
 #define  MAXNOM 31  /*max number of characters read for individual names*/
 #define  MAXINTERVALS 102	/*max number of classes of intervals*/
 #define  NRESAMPLE 20001 	/*max number of resamplings*/
-#define  SMAX 10000	/*max number of characters for strings*/
+#define  SMAX 100000	/*max number of characters for strings*/
 #define  SMAX2 1000000	/*max number of characters for strings*/
 #define  ERRORTXT "error.txt"	/*name of file for error messages*/
 #define  MISSVAL HUGE_VAL	/*value given for missing value*/
@@ -61,7 +60,7 @@ struct name{
 void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi,double **dij,int *sgi,int Nsg,int *skgi,int Nskg,
 	int *catskg,int *cati,int Ncat,int *Nik,int nc,double *maxc,float dijmin,float dijmax,
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nallelekl,int **Nvalgenkl,int ***gilc,
-	float ***Pkla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,
+	float ***Pkla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,double *H2,
 	struct name namei[],char namelocus[][MAXNOM],struct name namecat[],
 	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,
 	int NS,int Stat[],int printdistmatrix,float sigmaest,float density,float dwidth,
@@ -96,14 +95,16 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 void compute_allele_freq(int n,int Ncat,int *cati,int m,
 			int ndigit,int ploidy,int ***gilc,int *ploidyi,int *Nallelel,int **allelesizela,float ***Mgdlaa,
 			int alleledist,float ***Pkla,int **Nallelekl,int **Nmissinggenotkl,int **Nincompletegenotkl,
-			int **Nvalgenkl,float **Hekl,float **hTkl,float **uTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl);
+			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hekl,float **hTkl,float **uTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl);
 void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,int ploidy,
 			float missdat,int ***gilc,int *Nallelel,int **allelesizela,float ***Distla1a2,
 			float ***corrSlij[],int NS,int Stat[12],int FreqRef,float **givenPla,int *Ngivenallelel,
-			int TypeComp,float givenF,int compute_inbreeding_coef_only,int JKl);
+			int TypeComp,float givenF,double *H2,int compute_inbreeding_coef_only,int JKl);
 void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nallelel,
 		int ploidy,int ***gilc,int **allelesizela,int NS,int Stat[],
-		float **FstatSlr[],float ***corrSlij[],int Rstat_only,int JKest);
+		float **FstatSlr[],float ***corrSlij[],float **Fpl,int Rstat_only,int JKest,int Fipop);
+void compute_FiPop(int n,int Npop,int *popi,int m,int *Nallelel,
+		int ploidy,int ***gilc,int **allelesizela,float **Fpl);
 void compute_G_N_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nallelel,
 		int ploidy,int ***gilc,float ***Ppla,float ***Distla1a2,int NS,int Stat[],
 		float **FstatSlr[],float ***corrSlij[],int JKest,int computeallelefreq);
@@ -155,6 +156,8 @@ void permut_indiv_among_pop
 	(int n,int *popi, int Npop,int *popimix,long *seed);
 void permut_indiv_among_pop_within_categ
 	(int n,int *popi, int Npop,int *cati,int Ncat,int *popimix,long *seed);
+void permut_indiv_between_2pop
+	(int n,int *popi,int p1, int p2,int *popimix,long *seed);
 
 #endif
 

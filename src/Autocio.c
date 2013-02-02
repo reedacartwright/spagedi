@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2011 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -231,12 +231,11 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	
 	// Find base name
-	strlcpy(filename, outputfile, PATH_MAX);
-	printf("\n\n  Results file: %s\n    full path: %s\n", basename(filename), outputfile);	
+	strlcpy(filename, basename(outputfile), PATH_MAX);
+	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
 	
 	// Use outdir of output
-	strlcpy(filename, outputfile, PATH_MAX);
-	strlcpy(outdir, dirname(filename), PATH_MAX);
+	strlcpy(outdir, dirname(outputfile), PATH_MAX);
 	
 	// Create error.txt in outputdir
 	strlcpy(errorfile, outdir, PATH_MAX);
@@ -278,14 +277,17 @@ void import_data_file(char *inputfile)
 	/*define the name of the data file in SPAGeDi format*/
 	printf("\nEnter the name of the data file in format SPAGeDi: ");
 	do{
-		scanf("%s",inputfile);
+		fgets_chomp(smess, sizeof(smess), stdin);
+		if(smess[0]!='\0') strncpy(inputfile,smess,MAXNOM-1);
+//		scanf("%s",inputfile);
 	}while(inputfile[0]=='\0'); 
 	do{
 		check=0;
 		if((fp2=fopen(inputfile,"r"))){
 			fclose(fp2);
 			printf("\nWARNING: File \"%s\" already exists.\n  Enter 'e' to erase the present content of the file\n  Otherwise, enter a new file name\n",inputfile);
-			scanf("%s",smess);
+			fgets_chomp(smess, sizeof(smess), stdin);
+			//scanf("%s",smess);
 			if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
 				if((fp2=fopen(inputfile,"wt"))!=NULL) fclose(fp2);
 			}
@@ -350,7 +352,7 @@ void import_data_file(char *inputfile)
 
 
 		/*write 4 first lines of data file*/
-		sprintf(smess,"\" Data file in SPAGeDi format imported from file \"%s\" in FSTAT format",importfile);
+		sprintf(smess,"// Data file in SPAGeDi format imported from file \"%s\" in FSTAT format",importfile);
 		write_tofile_only(inputfile,smess);
 		sprintf(smess,"\n%i\t%i\t0\t%i\t%i\t2\n0\nInd\tPop",n,Npop,m,ndigit);
 		write_tofile_only(inputfile,smess);
@@ -363,7 +365,7 @@ void import_data_file(char *inputfile)
 		/*Read labels*/
 		printf("\nEnter the name the file of population labels in Fstat format\n (press RETURN if there is no such file): ");
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\r'){
+		if(smess[0]!='\0'){
 			strncpy(labelfile,smess,MAXNOM-1);
 			while((fp3=fopen(labelfile,"rt"))==NULL){
 				printf("\nWARNING: Cannot open the labels file \"%s\".\nIf it is being used by another application, close it first.\nIf it does not exist in the specified directory, bring it first.\nThen press RETURN.\nPress Ctrl+c twice to stop the programm now.\n",labelfile);
@@ -434,9 +436,9 @@ void import_data_file(char *inputfile)
 		/*read 1st line (comments)*/
 		readsfromfile(fp,s,importfile,&line);
 		/*write 2 comment lines*/
-		sprintf(smess,"\" Data file in SPAGeDi format imported from file \"%s\" in GENEPOP format",importfile);
+		sprintf(smess,"// Data file in SPAGeDi format imported from file \"%s\" in GENEPOP format",importfile);
 		write_tofile_only(inputfile,smess);
-		sprintf(smess,"\n/* %s",s);
+		sprintf(smess,"\n// %s",s);
 		write_tofile_only(inputfile,smess);
 
 		/*read locus names*/
@@ -444,7 +446,7 @@ void import_data_file(char *inputfile)
 		if(strchr(s,',')){	/*locus names written on a line and separated by comma*/
 			s2=s3=&s[0];
 			for(l=1;l<=MMAX;l++){
- 				s2=strchr(s2,',');
+ 				s2=strchr(s3,',');
 				if(s2){
 					*s2='\0';
 					readsfromstring(s3,namelocus[l],MAXNOM-1,importfile,line);
@@ -817,7 +819,6 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
  	}  /*end of for, loop for loci names*/
 
 	fclose(fp);
-	free_cvector(s,0,SMAX2);
 
 } /*end of readbasicinfoF*/
 
@@ -827,7 +828,7 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct name namecat[],
 					 struct name namecati[],int *cati,int ncoord,double *xi,double *yi,double *zi,
 					 int m,int ndigit,int ploidy,int ***gilc,int *Nallelel,int **allelesizela,
-					 int *ploidyi,int Nip[])
+					 int *ploidyi,int Nip[],double *H2)
 {
 	FILE *fp;
 	int c,i,l,line=0,z,ncatobs,newcat,k,g,nsg;
@@ -972,6 +973,21 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 		wait_a_char();exit(1);
 	}
 
+	if(ndigit<=0){ //read H2 values (broad-sense heritability) per locus in case of dominant markers
+		readsfromfile(fp,s,inputfile,&line);  /*read next line*/
+		while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comment   */
+		if(strncmp(s,"H2",2)==0){
+			s2=&s[0];
+			for(l=1;l<=m;l++) {
+				s2=nexttab(s2,inputfile,line);
+				readdoublefromstring(s2,&H2[l],inputfile,line);
+			}
+		}
+		else for(l=1;l<=m;l++) H2[l]=1.;
+	}
+				
+
+
 
 
 	
@@ -1020,7 +1036,6 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 	for(l=1;l<=m;l++) if(Nallelel[l]>Nallelel[0]) Nallelel[0]=Nallelel[l];
 
 	fclose(fp);
-	free_cvector(s,0,SMAX2);
 
 }	/*end of readsecondinfoF*/
 
@@ -1124,7 +1139,7 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 	}
 	if(Nip[0]){	sprintf(smess,"\n  WARNING: There is(are) %i individual(s) without genotype at any locus",Nip[0]);write(outputfilename,smess); }
 	if(ndigit>0)if(Nip[ploidy+1]){	
-		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv no. ",Nip[ploidy+1]);
+		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv n° ",Nip[ploidy+1]);
 		write(outputfilename,smess); 
 		for(i=1;i<=n;i++) if(ploidyi[i]==(ploidy+1)){sprintf(smess,"%i  ",i); write(outputfilename,smess);}
 		sprintf(smess,"\nYou must first resolve this problem. Note that 0's representing missing alleles of incomplete genotypes must be on the RIGHT, whereas 0's representing no information for individuals with a ploidy level inferior to that announced must be on the LEFT.\nPress any key to stop the program now.");
@@ -1174,7 +1189,7 @@ void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m
 					  int *StatType,int *NS,int Stat[],int *TypeComp,int *cat1,int *cat2,
 					  struct name *namecat,int *FreqRef,float *givenF,int *writeallelefreq,int *JKest,int *distmatrix,int Npermut[],
 					  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,float *dwidth,
-					  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,int *definealleledist,char *alleledistfilename,
+					  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,int *K,int *definealleledist,char *alleledistfilename,
 					  int *export,long *seed)
 {
 	char ch,smess[SMAX];
@@ -1508,9 +1523,10 @@ startagain:
 		printf("\n\n\n\n\n\n\n\nPERMUTATION OPTIONS\n\nSelect among the following options (you can select several) or press RETURN");
 		
 		if(permutalleles){
-			printf("\n\n 1- Test of genetic structuring (permuting genes, individuals and/or locations)");
-			printf("\n\n 2- Test of mutation effect on genetic structure (permuting alleles)");
-			if(*StatType>=2) printf("\n\n 3- Test of mutation effect on genetic differentiation for each population pair");
+//			printf("\n\n 1- Tests of genetic structuring (permuting gene copies, individuals and/or locations)");
+			printf("\n\n 1- Tests of genetic structuring\n    (permuting gene copies, individuals and/or locations)");
+			printf("\n\n 2- Tests of mutation effect on genetic structure (permuting alleles)");
+//			if(*StatType>=2) printf("\n\n 3- Tests of genetic differentiation for each population pair");
 			printf("\n\n");
 
 			permutalleles=permutgil=0;
@@ -1521,7 +1537,7 @@ startagain:
 				for(k=1;k<=Noptions;k++){
 					if(stats%10==1) permutgil=1;
 					if(stats%10==2 && permutalleles==0) permutalleles=1;
-					if(stats%10==3) permutalleles=2;
+//					if(stats%10==3) permutalleles=2;
 					stats=(int)(stats/10);
 				}
 			}
@@ -1534,7 +1550,9 @@ startagain:
 		if(permutalleles)printf("\n\nSelect among the following additional options (you can select several) or press RETURN");
 		printf("\n\n 1- Report only P-values (otherwise details of permutation tests are reported)");
 		if(permutgil) printf("\n\n 2- Define # of permutations for each randomised unit (otherwise same #)");
-		printf("\n\n 3- Initialise random number generator (otherwise initialisation on clock)\n\n");
+		printf("\n\n 3- Initialise random number generator (otherwise initialisation on clock)");
+		if(*StatType>=2) printf("\n\n 4- Perform tests of genetic differentiation on each population pair\n\n");
+		else printf("\n\n");
 
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0'){	
@@ -1544,6 +1562,10 @@ startagain:
 				if(stats%10==1) *permutdetails=0;
 				if(stats%10==2 && permutgil) Npermut[0]=2;
 				if(stats%10==3) *seed=1;
+				if(stats%10==4){
+					if(permutalleles) permutalleles=2;
+					if(permutgil) permutgil=2;
+				}
 				stats=(int)(stats/10);
 			}
 		}
@@ -1566,7 +1588,7 @@ startagain:
 					if(k==1)printf("\n LOCATION permutations (tests of spatial structure): ................ ");
 					if(k==2 && (*StatType)==1) printf("\n INDIVIDUAL permutations (tests of intra-group coefficients):........ ");
 					if(k==2 && (*StatType)>=2) printf("\n INDIVIDUAL permutations (tests of population differentiation):...... ");
-					if(k==3)printf("\n GENE permutations (tests of inbreeding coefficients): .............. ");
+					if(k==3)printf("\n GENE COPY permutations (tests of inbreeding coefficients): .............. ");
 					if(k==4)printf("\n ALLELE permutations (tests of mutation effect of genetic structure): ");
 					fgets_chomp(smess, sizeof(smess), stdin); 
 					ok=sscanf(smess,"%i",&Npermut[k]);
@@ -1578,6 +1600,7 @@ startagain:
 		if(!permutind) Npermut[2]=0;
 		if(!permutgenes) Npermut[3]=0;
 		if(!permutalleles) Npermut[4]=0;
+		if(permutgil==2) Npermut[2]*=-1; //negative # if tests for each pair of pop required 
 		if(permutalleles==2) Npermut[4]*=-1; //negative # if tests for each pair of pop required 
 
 		/*random number generators initialisation*/ 
@@ -1609,16 +1632,17 @@ startagain:
 	printf("\n\n\n\n\n\n\n\nOUTPUT OPTIONS\n\nSelect among the following options (you can select several) or press RETURN :");
 	if(*StatType==1 && Ncat) printf("\n\n 1- Report allele freq and diversity coef per categ (or only averages reported)");
 	if(*StatType>=2) printf("\n\n 1- Report allele freq and diversity coef per pop (or only averages reported)");
-	printf("\n\n 2- Report all stat of regression analyses (or only slopes reported)");
-	printf("\n\n 3- Report matrices with pairwise spatial distances and genetic coefficients");
-	if(ploidy==2) printf("\n\n 4- Convert data file into GENEPOP or FSTAT format");
+	printf("\n\n 2- Set subsample size to compute allelic richness (or use minimal sample size)");
+	printf("\n\n 3- Report all stat of regression analyses (or only slopes reported)");
+	printf("\n\n 4- Report matrices with pairwise spatial distances and genetic coefficients");
+	if(ploidy==2) printf("\n\n 5- Convert data file into GENEPOP or FSTAT format");
 	if(*StatType==1 && *TypeComp==0){
 		for(k=1;k<=(*NS);k++) if(Stat[k]==1 || Stat[k]==2 || Stat[k]==4 || Stat[k]==11) (*sigmaest)=1.0f;
-		if((*sigmaest)){ printf("\n\n 5- Estimate gene dispersal sigma"); (*sigmaest)=0.0f;}
+		if((*sigmaest)){ printf("\n\n 6- Estimate gene dispersal sigma"); (*sigmaest)=0.0f;}
 	}
 	if(m>1){
-		printf("\n\n 6- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
-//		printf("\n\n 7- Report inter-locus correlation for pairwise genetic coefficients");
+		printf("\n\n 7- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
+//		printf("\n\n 8- Report inter-locus correlation for pairwise genetic coefficients");
 	}
 
 	printf("\n\nEnter 'R' to return to the first menu\n\n");
@@ -1632,16 +1656,23 @@ startagain:
 		Noptions=1+(int)log10(stats);
 		for(k=1;k<=Noptions;k++){
 			if(stats%10==1) (*writeallelefreq)=1;
-			if(stats%10==2) (*regdetails)=1;
-			if(stats%10==3) (*distmatrix)=1;
-			if(stats%10==4) (*export)=1;
-			if(stats%10==5) (*sigmaest)=1.;
-			if(stats%10==6) (*varcoef)=1;
-			if(stats%10==7) (*Rbtwloc)=1;
+			if(stats%10==2) (*K)=-1;
+			if(stats%10==3) (*regdetails)=1;
+			if(stats%10==4) (*distmatrix)=1;
+			if(stats%10==5) (*export)=1;
+			if(stats%10==6) (*sigmaest)=1.;
+			if(stats%10==7) (*varcoef)=1;
+			if(stats%10==8) (*Rbtwloc)=1;
 			stats=(int)(stats/10);
 		}
 	}
 
+	if((*K)==-1){
+		printf("\n\nEnter the number of gene copies used to compute allelic richness per population and locus: ");
+		fgets_chomp(smess, sizeof(smess), stdin);
+		if(smess[0]=='\0') (*K)=0;	
+		else sscanf(smess,"%i",K);
+	}
 
 	if(*sigmaest!=0.){
 		if(ncoord==-2 && (*distm)==0) printf("\n\nEnter the effective population density for gene dispersal sigma estimation \n(density in # individuals per squared km): ");
@@ -1657,6 +1688,7 @@ startagain:
 			else {(*dwidth)=20.0f; ok=1;}
 		}while (ok!=1 || (*dwidth)<=1.);
 	}
+	else (*density)=0.f;
 
 
 	if(*StatType>1)if(!ncoord && !(*distm) && !(*distmatrix)){
@@ -2174,12 +2206,15 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 
 
 /**************************************************************************************/
-void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM],int ndigit,
+void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM],int ndigit,int ploidy,
 		int Npop,int *Nip,struct name namepop[],int StatType,int NS,int Stat[],int **allelesizela,
-		int **Nallelepl,float ***Ppla,float **Hepl,float **hTpl,float **vTpl,float **Dmpl,float **Dwmpl,float **Masizepl,float **Vasizepl,
-		int **Nmissinggenotpl,int **Nincompletegenotpl,int **Nvalgenpl,int printallelefreq,int FreqRef,int *Ngivenallelel,float **givenPla)
+		int **Nallelepl,float ***Ppla,float **Nnielsenpl,float **RA, int K,float **Hepl,float **hTpl,float **vTpl,
+		float **Dmpl,float **Dwmpl,float **Masizepl,float **Vasizepl,int **Nmissinggenotpl,int **Nincompletegenotpl,
+		int **Nvalgenpl,int printallelefreq,int FreqRef,int *Ngivenallelel,float **givenPla,float**Fpl,int Npermut,struct resample_stat_type **r_statFlp)
 {
-	int l,S,a,p,allelesize,orderedalleles,Ntab,t;
+	int l,l2,S,a,p,allelesize,orderedalleles,Ntab,t;
+	float meanNallele,meanNmissing,meanNincomplete,meanNvalgen;
+
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2192,10 +2227,14 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 	orderedalleles=0;
 	for(S=1;S<=NS;S++)if((StatType>1 && (Stat[S]==11 || Stat[S]==12))) orderedalleles=1;
 
-	fprintf(fp,"\n\nALLELE FREQUENCIES");
+	fprintf(fp,"\n\nGENE DIVERSITY and ALLELE FREQUENCIES");
 	if(ndigit>0){
-		Ntab=6;
-		fprintf(fp,"\nLocus\t# missing genotypes (%%)\t# incomplete genotypes (%%)\t# of defined genes\t# alleles\tHe (gene diversity corrected for sample size, Nei 1978)");
+		Ntab=10;
+		if(StatType==1)fprintf(fp,"\nLocus\tCategory");
+		else fprintf(fp,"\nLocus\tPopulation");
+		fprintf(fp,"\tSample size\t# missing genotypes (%%)\t# incomplete genotypes (%%)\t# of defined gene copies\tNA: # alleles\tNAe: Effective # alleles (Nielsen et al. 2003)\tAR(k=%i): Allelic richness (expected number of alleles among %i gene copies)\tHe (gene diversity corrected for sample size, Nei 1978)",K,K);
+		if(ploidy>1){fprintf(fp,"\tFi (individual inbreeding coefficient)");Ntab++;}
+		if(Npermut>=40) {fprintf(fp,"\tPval(Fi<>0) after %i randomization of gene copies among individuals",Npermut);Ntab++;}
 		if(StatType>1){
 			Ntab++;
 			fprintf(fp,"\th (gene diversity with UNORDERED alleles, Pons & Petit 1996)");
@@ -2205,27 +2244,65 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 	//	fprintf(fp,"\t\tAllele names\tAllele frequencies");
 		Ntab++;
 	}
-	else {fprintf(fp,"\nLocus\t# missing genotypes\tFrequency of dominant genotype"); Ntab=3;}
-	for(p=0;p<=Npop;p++){
-		if(Npop && p==0){
-			if(StatType==1) fprintf(fp,"\nAll categories confounded (%i individuals)",Nip[p]);
-			else fprintf(fp,"\nAll populations confounded (%i individuals)",Nip[p]);
-		}
-		if(printallelefreq==0 && p>0) break;
-		if(Npop && p){
-			if(StatType==1) fprintf(fp,"\nCategory %s (%i individuals)",namepop[p].n,Nip[p]);
-			else fprintf(fp,"\nPopulation %s (%i individuals)",namepop[p].n,Nip[p]);
-		}
+	else {fprintf(fp,"\nLocus\tCategory\tSample size\t# missing phenotypes (%%)\tFrequency of dominant phenotype"); Ntab=5;}
 
-		for(l=1;l<=m;l++){
-			if(ndigit>0) fprintf(fp,"\n%s\t%i (%.1f%%)\t%i (%.1f%%)\t%i",namelocus[l],Nmissinggenotpl[p][l],(float)(Nmissinggenotpl[p][l]*100./Nip[p]),Nincompletegenotpl[p][l],(float)(Nincompletegenotpl[p][l]*100./Nip[p]),Nvalgenpl[p][l]);
- 			else fprintf(fp,"\n%s\t%i (%.1f%%)",namelocus[l],Nmissinggenotpl[p][l],(float)(Nmissinggenotpl[p][l]*100./Nip[p]));
+	strcpy(namelocus[0],"Multilocus average");
+	for(l=0;l<=m;l++){
+		if(ndigit>0){
+			if(printallelefreq!=0)fprintf(fp,"\n");
+			fprintf(fp,"\n%s",namelocus[l]);
+			for(t=1;t<Ntab;t++) fprintf(fp,"\t");
+			if(l && Nvalgenpl[0][l]){
+				fprintf(fp,"\t%s alleles:",namelocus[l]);
+				for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%i",allelesizela[l][a]);
+			}
+		}
+		else if(l==0) continue;
+
+		for(p=0;p<=Npop;p++){
+			if(p==0){
+				if(StatType==1) fprintf(fp,"\n%s\tAll categories confounded\t%i",namelocus[l],Nip[p]);
+				else fprintf(fp,"\n%s\tAll populations confounded\t%i",namelocus[l],Nip[p]);
+			}
+			if((printallelefreq==0 || Npop<2) && p>0) break;
+			if(p) fprintf(fp,"\n%s\t%s\t%i",namelocus[l],namepop[p].n,Nip[p]);
 
 			if(ndigit>0){
-				if(Nvalgenpl[p][l]){
-					fprintf(fp,"\t%i\t%.4f",Nallelepl[p][l],Hepl[p][l]);
+				if(l) fprintf(fp,"\t%i (%.1f%%)\t%i (%.1f%%)\t%i",Nmissinggenotpl[p][l],(float)(Nmissinggenotpl[p][l]*100./Nip[p]),Nincompletegenotpl[p][l],(float)(Nincompletegenotpl[p][l]*100./Nip[p]),Nvalgenpl[p][l]);
+				else{
+					meanNmissing=meanNincomplete=meanNvalgen=0.f;
+					for(l2=1;l2<=m;l2++)meanNmissing+=Nmissinggenotpl[p][l2]/(float)m;
+					for(l2=1;l2<=m;l2++)meanNincomplete+=Nincompletegenotpl[p][l2]/(float)m;
+					for(l2=1;l2<=m;l2++)meanNvalgen+=Nvalgenpl[p][l2]/(float)m;
+					fprintf(fp,"\t%.1f (%.1f%%)\t%.1f (%.1f%%)\t%.1f",meanNmissing,meanNmissing*100./Nip[p],meanNincomplete,meanNincomplete*100./Nip[p],meanNvalgen);
+				}
+			}
+			else fprintf(fp,"\t%i (%.1f%%)",Nmissinggenotpl[p][l],(float)(Nmissinggenotpl[p][l]*100./Nip[p]));
+
+			if(ndigit>0){
+				if(Nvalgenpl[p][l]>1){
+					if(l) fprintf(fp,"\t%i\t%.2f",Nallelepl[p][l],Nnielsenpl[p][l]);
+					else{
+						meanNallele=0.;
+						for(l2=1;l2<=m;l2++) meanNallele+=Nallelepl[p][l2]/(float)m;
+						fprintf(fp,"\t%.2f\t%.2f",meanNallele,Nnielsenpl[p][l]);
+					}
+					if(RA[p][l]!=MISSVAL) fprintf(fp,"\t%.2f",RA[p][l]);
+					else fprintf(fp,"\t");
+					fprintf(fp,"\t%.4f",Hepl[p][l]);
+					if(ploidy>1){
+						if(Fpl[p][l]!=MISSVAL) fprintf(fp,"\t%.3f",Fpl[p][l]);
+						else fprintf(fp,"\t");
+						if(Npermut>=40){
+							if(r_statFlp[l][p].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[l][p].pbil);
+							else fprintf(fp,"\t");
+						}
+					}
+
+
 					if(StatType>1){
-						fprintf(fp,"\t%.4f",hTpl[p][l]);
+						if(hTpl[p][l]!=MISSVAL) fprintf(fp,"\t%.4f",hTpl[p][l]);
+						else fprintf(fp,"\t");
 						if(orderedalleles){
 							fprintf(fp,"\t%.4f",vTpl[p][l]);
 							if(Dmpl[p][l]!=MISSVAL) fprintf(fp,"\t%.4f",Dmpl[p][l]);
@@ -2244,22 +2321,18 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 				if(Nvalgenpl[p][l]){
 					fprintf(fp,"\t%i",allelesizela[l][1]);
 					for(a=2;a<=Nallelepl[0][l];a++) fprintf(fp,", %i",allelesizela[l][a]);
- 					for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%g",Ppla[p][l][a]);
+					for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%g",Ppla[p][l][a]);
 				}
 			}		*/
 			if(ndigit>0){
-				if(Nvalgenpl[p][l]){
-					fprintf(fp,"\tallele");
-					for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%i",allelesizela[l][a]);
-					fprintf(fp,"\n");
-					for(t=1;t<Ntab;t++) fprintf(fp,"\t");
+				if(Nvalgenpl[p][l]>1 && l){
 					fprintf(fp,"\tfrequency");
- 					for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%g",Ppla[p][l][a]);
+					for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%g",Ppla[p][l][a]);
 				}
 			}		
 			else if(Nvalgenpl[p][l]) fprintf(fp,"\t%g",Ppla[p][l][2]);
-		}
-	}
+		}//end loop p
+	}//end loop l
 
 	if(FreqRef==-1){
 		fprintf(fp,"\n\nREFERENCE ALLELE FREQUENCIES");
@@ -2318,7 +2391,7 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 /**************************************************************************************/
 
 void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus[][MAXNOM],int nc,double *maxc,
-		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,
+		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,double *H2,
 		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSlc[],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12])
 {
@@ -2375,8 +2448,8 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 		if(Stat[S]==8) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients (Queller & Goodnight, 1989)");
 		if(Stat[S]==9) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients ('r' in Wang, 2002)");
 		if(Stat[S]==10) fprintf(fp,"\n\nPairwise FRATERNITY coefficients ('delta' in Wang, 2002)");
-		if(Stat[S]==11) fprintf(fp,"\n\nPairwise KINSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
-		if(Stat[S]==12) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
+		if(Stat[S]==11) fprintf(fp,"\n\nPairwise KINSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003; Ley & Hardy, 2013)",givenF);
+		if(Stat[S]==12) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003; Ley & Hardy, 2013)",givenF);
 		if(Stat[S]==13) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 		if(Stat[S]==14) fprintf(fp,"\n\nPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
 		
@@ -2385,7 +2458,8 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 		
 		if(regdetails) fprintf(fp,"\tRegression with linear distance\t\t\t\t\t\t\t\t\tRegression with ln(distance)");			
 
-		fprintf(fp,"\nLocus\tintra-individual (inbreeding coef)");		
+		if(Stat[S]==11 || Stat[S]==12) fprintf(fp,"\nLocus\tassumed broad-sense heritability of dominant marker");
+		else fprintf(fp,"\nLocus\tintra-individual (inbreeding coef)");
 		if(Nsg>1) fprintf(fp,"\tintra-group");
 		else fprintf(fp,"\t1");
 		
@@ -2409,7 +2483,8 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 			if(l==m+4) fprintf(fp,"\nSE (jackknife over loci)");			
 
 			for(c=0;c<=nc+1;c++){
-				if(((Stat[S]!=1 && Stat[S]!=2 && Stat[S]!=5 && Stat[S]!=14) && c==0) || corrSlc[S][l][c]==MISSVAL) fprintf(fp,"\t");
+				if((Stat[S]==11 || Stat[S]==12)  && c==0 && l>0 && l<=m) fprintf(fp,"\t%G",H2[l]);
+				else if(((Stat[S]!=1 && Stat[S]!=2 && Stat[S]!=5 && Stat[S]!=14) && c==0) || corrSlc[S][l][c]==MISSVAL) fprintf(fp,"\t");
 				else if(l<=m+2) fprintf(fp,"\t%.4f",corrSlc[S][l][c]);
 				else fprintf(fp,"\t%G",corrSlc[S][l][c]);
 				if(nc==1 && c==nc+1) fprintf(fp,"\t");				
@@ -2689,6 +2764,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 				else{
 					if(Mdij[0][0]==-1.) dij=(float)acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 					else dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+					if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
 					if(StatType==1 && sgi[i]==sgi[j]) dij=-1.0f;
 				}
 				fprintf(fp,"\t%G",dij);
@@ -2816,6 +2892,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 		else{
 			if(Mdij[0][0]==-1.) dij=(float)acos(sin(xi[i])*sin(xi[j])+cos(xi[i])*cos(xi[j])*cos(yi[j]-yi[i]))*6371;
 			else dij=(float)sqrt( (xi[i]-xi[j])*(xi[i]-xi[j])+(yi[i]-yi[j])*(yi[i]-yi[j])+(zi[i]-zi[j])*(zi[i]-zi[j]) );
+			if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
 			if(StatType==1 && sgi[i]==sgi[j]) dij=-1.0f;
 		}
 
@@ -2954,7 +3031,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
  	
 	if(permutdetails==0){
 		if(permutalleles) fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of allele sizes",Npermut[4]);
-		else fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of locations, %i random permutations of individuals, and %i random permutations of genes",Npermut[1],Npermut[2],Npermut[3]);	 	
+		else fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of locations, %i random permutations of individuals, and %i random permutations of gene copies",Npermut[1],Npermut[2],Npermut[3]);	 	
 	}
 
 	for(S=1;S<=NS;S++){
@@ -3132,6 +3209,73 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 
 /*************************************************************************************/
 
+void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Npop,struct name namepop[], 
+		int permutdetails,float **Fpl,struct resample_stat_type **r_statFlp,int Npermut,long seedinit)
+
+{
+	int l=0,p;
+
+	FILE *fp;
+
+	while((fp=fopen(outputfilename,"a"))==NULL){
+		printf("\nWARNING: Cannot open results file %c%s%c.\nIf it is being used by another application, close it first. Then press RETURN.\nPress ctrl+c if you wish to stop the program now.\n",'"',outputfilename,'"');
+		wait_a_char();
+	}
+
+	printf("\nWriting permutation results. Please, wait.");
+
+	fprintf(fp,"\n\nGENE PERMUTATION TESTS for INBREEDING COEFFICIENT within EACH POPULATION -> Ho: obs=exp (exp = mean value after permutation)");
+	fprintf(fp,"\nInitial seed= %i",abs(seedinit));
+	if(permutdetails==0){
+		fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of gene copies among individuals within each population",Npermut);
+	}
+
+	fprintf(fp,"\nLocus\tPopulation\tFi");
+	if(permutdetails) fprintf(fp,"\tObject permuted\tN valid permut\tN different permut val\tObs val\tMean permut val\tSD permut val\t95%%CI-inf\t95%%CI-sup\tP(1-sided test, H1: obs<exp)\tP(1-sided test, H1: obs>exp)\tP(2-sided test, H1: obs<>exp)");
+	else fprintf(fp,"\tP(2-sided test, H1: obs<>exp)");
+
+	for(l=0;l<=m;l++){
+		if(m==1) l=1;
+		for(p=1;p<=Npop;p++){
+			if(l==0) fprintf(fp,"\nALL LOCI\t%s\t%f",namepop[p].n,Fpl[p][l]);
+			if(l>0) fprintf(fp,"\n%s\t%s\t%f",namelocus[l],namepop[p].n,Fpl[p][l]);
+			if(permutdetails==0){
+				if(r_statFlp[p][l].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[p][l].pbil);
+				else fprintf(fp,"\t");
+			}
+			else{
+				fprintf(fp,"\tGaIwP\t%i\t%i",r_statFlp[p][l].n,r_statFlp[p][l].nd);
+
+				if(r_statFlp[p][l].obs!=MISSVAL) fprintf(fp,"\t%G",r_statFlp[p][l].obs);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].mean!=MISSVAL) fprintf(fp,"\t%G",r_statFlp[p][l].mean);
+				else fprintf(fp,"\t");	
+				if(r_statFlp[p][l].sd!=MISSVAL) fprintf(fp,"\t%G",r_statFlp[p][l].sd);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].low95!=MISSVAL) fprintf(fp,"\t%G",r_statFlp[p][l].low95);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].high95!=MISSVAL) fprintf(fp,"\t%G",r_statFlp[p][l].high95);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].plow!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[p][l].plow);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].phigh!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[p][l].phigh);
+				else fprintf(fp,"\t");
+				if(r_statFlp[p][l].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[p][l].pbil);
+				else fprintf(fp,"\t");
+			}
+		} //end loop pop
+		fprintf(fp,"\n");
+	}//end of loop l
+	fprintf(fp,"\n");
+
+	fclose (fp);
+
+
+}/*end of procedure WriteFiPermutRes*/
+
+/*******************************************************************************/
+/*************************************************************************************/
+
 void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 		double *maxc,int m,char namelocus[][MAXNOM],int TypeComp,
 		int nc,int NS,int Stat[],int Npermut[],int permutalleles,
@@ -3149,9 +3293,9 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 	permutmode[0]="";
 	permutmode[10]="ASaAwL";	/*allelic sizes within locus*/
 	permutmode[11]="RCoDMbA";	/*rows and columns of distance matrices between alleles*/
-	permutmode[20]="GaI";		/*genes among all individuals*/
-	permutmode[21]="GaIwC";		/*genes among individuals within category*/
-	permutmode[22]="GaIwP";		/*genes among individuals within population*/
+	permutmode[20]="GaI";		/*gene copies among all individuals*/
+	permutmode[21]="GaIwC";		/*gene copies among individuals within category*/
+	permutmode[22]="GaIwP";		/*gene copies among individuals within population*/
 	permutmode[30]="IaSG";		/*individuals among spatial groups*/
 	permutmode[31]="IaSGwC";	/*individuals among spatial groups within categories*/
 	permutmode[32]="IaP";		/*individuals among all populations*/
@@ -3167,74 +3311,65 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 		printf("\nWARNING: Cannot open results file %c%s%c.\nIf it is being used by another application, close it first. Then press RETURN.\nPress ctrl+c if you wish to stop the program now.\n",'"',outputfilename,'"');
 		wait_a_char();
 	}
-	fclose (fp);
+//	fclose (fp);
 
 	printf("\nWriting permutation results. Please, wait.");
 
-	if(permutalleles) sprintf(smess,"\n\nALLELES PERMUTATION TESTS -> Ho: obs=exp (exp = mean value after permutation)   Note: all alleles found in the data file are considered for permutation (for Nst, the alleles from the distance matrix that are not found in the data file are not considered)");
-	else sprintf(smess,"\n\nLOCATIONS, INDIVIDUALS and/or GENES PERMUTATION TESTS -> Ho: obs=exp (exp = mean value after permutation)");
- 	write_tofile_only(outputfilename,smess);
+	if(permutalleles) fprintf(fp,"\n\nALLELES PERMUTATION TESTS -> Ho: obs=exp (exp = mean value after permutation)   Note: all alleles found in the data file are considered for permutation (for Nst, the alleles from the distance matrix that are not found in the data file are not considered)");
+	else fprintf(fp,"\n\nLOCATIONS, INDIVIDUALS and/or GENES PERMUTATION TESTS -> Ho: obs=exp (exp = mean value after permutation)");
 	if(TypeComp==2 && !permutalleles){
-		sprintf(smess,"\nWARNING: Significant tests for spatial structuring (location permutations) in the case of pairwise comparisons among categories cannot be interpreted as a demonstration that gene flow occurs among categories (Hardy and Vekemans 2001)");
- 		write_tofile_only(outputfilename,smess);
+		fprintf(fp,"\nWARNING: Significant tests for spatial structuring (location permutations) in the case of pairwise comparisons among categories cannot be interpreted as a demonstration that gene flow occurs among categories (Hardy and Vekemans 2001)");
 	}
-	sprintf(smess,"\nInitial seed= %i",abs(seedinit));
- 	write_tofile_only(outputfilename,smess);
+	fprintf(fp,"\nInitial seed= %i",abs(seedinit));
 	if(permutdetails==0){
-		if(permutalleles) sprintf(smess,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of allele sizes",Npermut[4]);
-		else sprintf(smess,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of locations, %i random permutations of individuals, and %i random permutations of genes",Npermut[1],Npermut[2],Npermut[3]);
-	 	write_tofile_only(outputfilename,smess);
+		if(permutalleles) fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of allele sizes",Npermut[4]);
+		else fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of locations, %i random permutations of individuals, and %i random permutations of gene copies",Npermut[1],Npermut[2],Npermut[3]);
 	}
 
 	for(S=1;S<=NS;S++){
 		if(permutalleles)if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 		
 		if(permutdetails==0 || (permutdetails==1 && l!=0)){
-			sprintf(smess,"\nSTATISTICS:");
-			write_tofile_only(outputfilename,smess);
+			fprintf(fp,"\nSTATISTICS:");
 			if(PWstat){
-				if(Stat[S]==1) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst");
-				if(Stat[S]==2) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst/(1-Fst)");
-				if(Stat[S]==3) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho");
-				if(Stat[S]==4) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho/(1-Rho)");
-				if(Stat[S]==5) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst");
-				if(Stat[S]==6) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst/(1-Rst)");
-				if(Stat[S]==7) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Nei's (1978) Ds standard distance");
-				if(Stat[S]==8) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Goldstein's (1995) dm2 distance");
-				if(Stat[S]==9) sprintf(smess,"\tGlobal Gst \t\t\t\t\tPairwise Gst");
-				if(Stat[S]==10) sprintf(smess,"\tGlobal Gst \t\t\t\t\tPairwise Gij (OJ Hardy, unpublished)");
-				if(Stat[S]==11) sprintf(smess,"\tGlobal Nst \t\t\t\t\tPairwise Nst");
-				if(Stat[S]==12) sprintf(smess,"\tGlobal Nst \t\t\t\t\tPairwise Nij (OJ Hardy, unpublished)");
+				if(Stat[S]==1) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst");
+				if(Stat[S]==2) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst/(1-Fst)");
+				if(Stat[S]==3) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho");
+				if(Stat[S]==4) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho/(1-Rho)");
+				if(Stat[S]==5) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst");
+				if(Stat[S]==6) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst/(1-Rst)");
+				if(Stat[S]==7) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Nei's (1978) Ds standard distance");
+				if(Stat[S]==8) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Goldstein's (1995) dm2 distance");
+				if(Stat[S]==9) fprintf(fp,"\tGlobal Gst \t\t\t\t\tPairwise Gst");
+				if(Stat[S]==10) fprintf(fp,"\tGlobal Gst \t\t\t\t\tPairwise Gij (OJ Hardy, unpublished)");
+				if(Stat[S]==11) fprintf(fp,"\tGlobal Nst \t\t\t\t\tPairwise Nst");
+				if(Stat[S]==12) fprintf(fp,"\tGlobal Nst \t\t\t\t\tPairwise Nij (OJ Hardy, unpublished)");
 			}
 			else{
-				if(Stat[S]==1) sprintf(smess,"\tGlobal F-statistics");
-				if(Stat[S]==2) sprintf(smess,"\tGlobal F-statistics");
-				if(Stat[S]==3) sprintf(smess,"\tGlobal F-statistics");
-				if(Stat[S]==4) sprintf(smess,"\tGlobal F-statistics");
-				if(Stat[S]==5) sprintf(smess,"\tGlobal R-statistics");
-				if(Stat[S]==6) sprintf(smess,"\tGlobal R-statistics");
-				if(Stat[S]==7) sprintf(smess,"\tGlobal F-statistics");
-				if(Stat[S]==8) sprintf(smess,"\tGlobal R-statistics");
-				if(Stat[S]==9) sprintf(smess,"\tGlobal Gst");
-				if(Stat[S]==10) sprintf(smess,"\tGlobal Gst");
-				if(Stat[S]==11) sprintf(smess,"\tGlobal Nst");
-				if(Stat[S]==12) sprintf(smess,"\tGlobal Nst");
+				if(Stat[S]==1) fprintf(fp,"\tGlobal F-statistics");
+				if(Stat[S]==2) fprintf(fp,"\tGlobal F-statistics");
+				if(Stat[S]==3) fprintf(fp,"\tGlobal F-statistics");
+				if(Stat[S]==4) fprintf(fp,"\tGlobal F-statistics");
+				if(Stat[S]==5) fprintf(fp,"\tGlobal R-statistics");
+				if(Stat[S]==6) fprintf(fp,"\tGlobal R-statistics");
+				if(Stat[S]==7) fprintf(fp,"\tGlobal F-statistics");
+				if(Stat[S]==8) fprintf(fp,"\tGlobal R-statistics");
+				if(Stat[S]==9) fprintf(fp,"\tGlobal Gst");
+				if(Stat[S]==10) fprintf(fp,"\tGlobal Gst");
+				if(Stat[S]==11) fprintf(fp,"\tGlobal Nst");
+				if(Stat[S]==12) fprintf(fp,"\tGlobal Nst");
 			}
-			write_tofile_only(outputfilename,smess);
-			if(Stat[S]<=2 || Stat[S]==7) sprintf(smess,"\nLocus\tFit\tFis\tFst\t\t");
-			if(Stat[S]==3 || Stat[S]==4) sprintf(smess,"\nLocus\tFit\tFis\tFst\tRho\t");
-			if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8) sprintf(smess,"\nLocus\tRit\tRis\tRst\t\t");
-			if(Stat[S]==9 || Stat[S]==10) sprintf(smess,"\nLocus\t\t\tGst\t\t");
-			if(Stat[S]==11 || Stat[S]==12) sprintf(smess,"\nLocus\t\t\tNst\t\t");
+			if(Stat[S]<=2 || Stat[S]==7) fprintf(fp,"\nLocus\tFit\tFis\tFst\t\t");
+			if(Stat[S]==3 || Stat[S]==4) fprintf(fp,"\nLocus\tFit\tFis\tFst\tRho\t");
+			if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8) fprintf(fp,"\nLocus\tRit\tRis\tRst\t\t");
+			if(Stat[S]==9 || Stat[S]==10) fprintf(fp,"\nLocus\t\t\tGst\t\t");
+			if(Stat[S]==11 || Stat[S]==12) fprintf(fp,"\nLocus\t\t\tNst\t\t");
 
-			write_tofile_only(outputfilename,smess);
 			if(PWstat){
 				for(c=1;c<=nc;c++){
-					sprintf(smess,"\t%i",c);
-					write_tofile_only(outputfilename,smess);
+					fprintf(fp,"\t%i",c);
 				}
- 				sprintf(smess,"\taverage\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
-				write_tofile_only(outputfilename,smess);
+ 				fprintf(fp,"\taverage\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 			}
 		}
 
@@ -3243,283 +3378,230 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 			if(m==1) l=1;
 	
 			if(permutdetails==0 || (permutdetails==1 && l!=0)){
-				if(l==0) sprintf(smess,"\nALL LOCI");
-				if(l>0) sprintf(smess,"\n%s",namelocus[l]);
-				write_tofile_only(outputfilename,smess);
+				if(l==0) fprintf(fp,"\nALL LOCI");
+				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
 
 				for(r=1;r<=3;r++){
-					if(r_statFSlr[S][l][r].pbil!=MISSVAL) sprintf(smess,"\t%.4f",r_statFSlr[S][l][r].pbil);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFSlr[S][l][r].pbil);
+					else fprintf(fp,"\t");
 				}
-				if(Stat[S]==3 || Stat[S]==4) sprintf(smess,"\t");
-				else sprintf(smess,"\t\t"); 
-				write_tofile_only(outputfilename,smess);
+				if(Stat[S]==3 || Stat[S]==4) fprintf(fp,"\t");
+				else fprintf(fp,"\t\t"); 
 				if(PWstat)for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].pbil==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][c].pbil);
-					write_tofile_only(outputfilename,smess);
+					if(r_statSlc[S][l][c].pbil==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][c].pbil);
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat)for(c=-2;c<=-1;c++){
-					if(r_statSlc[S][l][c].phigh==MISSVAL) sprintf(smess,"\t");
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][c].phigh);
-					write_tofile_only(outputfilename,smess);
+					if(r_statSlc[S][l][c].phigh==MISSVAL) fprintf(fp,"\t");
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][c].phigh);
 				}
 			}
 
 			/*write complete analysis*/
 			if(permutdetails==2 || (permutdetails==1 && l==0)){
-				if(l==0) sprintf(smess,"\n\nALL LOCI");
-				if(l>0) sprintf(smess,"\n%s",namelocus[l]);
-				write_tofile_only(outputfilename,smess);
+				if(l==0) fprintf(fp,"\n\nALL LOCI");
+				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
 
 				if(PWstat){
-					if(Stat[S]==1) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst");
-					if(Stat[S]==2) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst/(1-Fst)");
-					if(Stat[S]==3) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho");
-					if(Stat[S]==4) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho/(1-Rho)");
-					if(Stat[S]==5) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst");
-					if(Stat[S]==6) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst/(1-Rst)");
-					if(Stat[S]==7) sprintf(smess,"\tGlobal F-statistics \t\t\t\t\tPairwise Nei's (1978) Ds standard distance");
-					if(Stat[S]==8) sprintf(smess,"\tGlobal R-statistics \t\t\t\t\tPairwise Goldstein's (1995) dm2 distance");
-					if(Stat[S]==9) sprintf(smess,"\tGlobal Gst \t\t\t\t\tPairwise Gst");
-					if(Stat[S]==10) sprintf(smess,"\tGlobal Gst \t\t\t\t\tPairwise Gij (OJ Hardy, unpublished)");
-					if(Stat[S]==11) sprintf(smess,"\tGlobal Nst \t\t\t\t\tPairwise Nst");
-					if(Stat[S]==12) sprintf(smess,"\tGlobal Nst \t\t\t\t\tPairwise Nij (OJ Hardy, unpublished)");
+					if(Stat[S]==1) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst");
+					if(Stat[S]==2) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst/(1-Fst)");
+					if(Stat[S]==3) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho");
+					if(Stat[S]==4) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Rho/(1-Rho)");
+					if(Stat[S]==5) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst");
+					if(Stat[S]==6) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Rst/(1-Rst)");
+					if(Stat[S]==7) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Nei's (1978) Ds standard distance");
+					if(Stat[S]==8) fprintf(fp,"\tGlobal R-statistics \t\t\t\t\tPairwise Goldstein's (1995) dm2 distance");
+					if(Stat[S]==9) fprintf(fp,"\tGlobal Gst \t\t\t\t\tPairwise Gst");
+					if(Stat[S]==10) fprintf(fp,"\tGlobal Gst \t\t\t\t\tPairwise Gij (OJ Hardy, unpublished)");
+					if(Stat[S]==11) fprintf(fp,"\tGlobal Nst \t\t\t\t\tPairwise Nst");
+					if(Stat[S]==12) fprintf(fp,"\tGlobal Nst \t\t\t\t\tPairwise Nij (OJ Hardy, unpublished)");
 				}
 				else{
-					if(Stat[S]==1) sprintf(smess,"\tGlobal F-statistics");
-					if(Stat[S]==2) sprintf(smess,"\tGlobal F-statistics");
-					if(Stat[S]==3) sprintf(smess,"\tGlobal F-statistics");
-					if(Stat[S]==4) sprintf(smess,"\tGlobal F-statistics");
-					if(Stat[S]==5) sprintf(smess,"\tGlobal R-statistics");
-					if(Stat[S]==6) sprintf(smess,"\tGlobal R-statistics");
-					if(Stat[S]==7) sprintf(smess,"\tGlobal F-statistics");
-					if(Stat[S]==8) sprintf(smess,"\tGlobal R-statistics");
-					if(Stat[S]==9) sprintf(smess,"\tGlobal Gst");
-					if(Stat[S]==10) sprintf(smess,"\tGlobal Gst");
-					if(Stat[S]==11) sprintf(smess,"\tGlobal Nst");
-					if(Stat[S]==12) sprintf(smess,"\tGlobal Nst");
+					if(Stat[S]==1) fprintf(fp,"\tGlobal F-statistics");
+					if(Stat[S]==2) fprintf(fp,"\tGlobal F-statistics");
+					if(Stat[S]==3) fprintf(fp,"\tGlobal F-statistics");
+					if(Stat[S]==4) fprintf(fp,"\tGlobal F-statistics");
+					if(Stat[S]==5) fprintf(fp,"\tGlobal R-statistics");
+					if(Stat[S]==6) fprintf(fp,"\tGlobal R-statistics");
+					if(Stat[S]==7) fprintf(fp,"\tGlobal F-statistics");
+					if(Stat[S]==8) fprintf(fp,"\tGlobal R-statistics");
+					if(Stat[S]==9) fprintf(fp,"\tGlobal Gst");
+					if(Stat[S]==10) fprintf(fp,"\tGlobal Gst");
+					if(Stat[S]==11) fprintf(fp,"\tGlobal Nst");
+					if(Stat[S]==12) fprintf(fp,"\tGlobal Nst");
 				}
-				write_tofile_only(outputfilename,smess);
 
 
-				if(Stat[S]<=2 || Stat[S]==7) sprintf(smess,"\n\tFit\tFis\tFst\t\t");
-				if(Stat[S]==3 || Stat[S]==4) sprintf(smess,"\n\tFit\tFis\tFst\tRho\t");
-				if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8) sprintf(smess,"\n\tRit\tRis\tRst\t\t");
-				if(Stat[S]==9 || Stat[S]==10) sprintf(smess,"\n\t\t\tGst\t\t");
-				if(Stat[S]==11 || Stat[S]==12) sprintf(smess,"\n\t\t\tNst\t\t");
-				write_tofile_only(outputfilename,smess);
+				if(Stat[S]<=2 || Stat[S]==7) fprintf(fp,"\n\tFit\tFis\tFst\t\t");
+				if(Stat[S]==3 || Stat[S]==4) fprintf(fp,"\n\tFit\tFis\tFst\tRho\t");
+				if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8) fprintf(fp,"\n\tRit\tRis\tRst\t\t");
+				if(Stat[S]==9 || Stat[S]==10) fprintf(fp,"\n\t\t\tGst\t\t");
+				if(Stat[S]==11 || Stat[S]==12) fprintf(fp,"\n\t\t\tNst\t\t");
 				if(PWstat){
 					for(c=1;c<=nc;c++){
-						sprintf(smess,"\t%i",c);
-						write_tofile_only(outputfilename,smess);
+						fprintf(fp,"\t%i",c);
 					}
- 					sprintf(smess,"\taverage\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
-					write_tofile_only(outputfilename,smess);
+ 					fprintf(fp,"\taverage\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 				}
 
 				
-				sprintf(smess,"\nObject permuted");
-				write_tofile_only(outputfilename,smess);
-				sprintf(smess,"\t%s\t%s\t%s\t",permutmode[r_statFSlr[S][0][1].mode],permutmode[r_statFSlr[S][0][2].mode],permutmode[r_statFSlr[S][0][3].mode]);
-				write_tofile_only(outputfilename,smess);
-				if(Stat[S]==3 || Stat[S]==4) sprintf(smess,"%s\t",permutmode[r_statFSlr[S][0][4].mode]);
-				else sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nObject permuted");
+				fprintf(fp,"\t%s\t%s\t%s\t",permutmode[r_statFSlr[S][0][1].mode],permutmode[r_statFSlr[S][0][2].mode],permutmode[r_statFSlr[S][0][3].mode]);
+				if(Stat[S]==3 || Stat[S]==4) fprintf(fp,"%s\t",permutmode[r_statFSlr[S][0][4].mode]);
+				else fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][0][c].mode==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%s",permutmode[r_statSlc[S][0][c].mode]);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][0][c].mode==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%s",permutmode[r_statSlc[S][0][c].mode]);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t");}
 					if(c==-1) break;
 				}
 
-				sprintf(smess,"\nN valid permut");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nN valid permut");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].n) sprintf(smess,"\t%i",r_statFSlr[S][l][r].n);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].n) fprintf(fp,"\t%i",r_statFSlr[S][l][r].n);
+					else fprintf(fp,"\t");	
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].n==0) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%i",r_statSlc[S][l][c].n);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].n==0) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%i",r_statSlc[S][l][c].n);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 
-				sprintf(smess,"\nN different permut val");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nN different permut val");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].nd) sprintf(smess,"\t%i",r_statFSlr[S][l][r].nd);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].nd) fprintf(fp,"\t%i",r_statFSlr[S][l][r].nd);
+					else fprintf(fp,"\t");	
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].nd==0) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%i",r_statSlc[S][l][c].nd);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].nd==0) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%i",r_statSlc[S][l][c].nd);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 
-				sprintf(smess,"\nObs val");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nObs val");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].obs!=MISSVAL) sprintf(smess,"\t%G",r_statFSlr[S][l][r].obs);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].obs!=MISSVAL) fprintf(fp,"\t%G",r_statFSlr[S][l][r].obs);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].obs==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%G",r_statSlc[S][l][c].obs);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].obs==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%G",r_statSlc[S][l][c].obs);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 			
-				sprintf(smess,"\nMean permut val");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nMean permut val");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].mean!=MISSVAL) sprintf(smess,"\t%G",r_statFSlr[S][l][r].mean);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].mean!=MISSVAL) fprintf(fp,"\t%G",r_statFSlr[S][l][r].mean);
+					else fprintf(fp,"\t");	
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].mean==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%G",r_statSlc[S][l][c].mean);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].mean==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%G",r_statSlc[S][l][c].mean);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 
-				sprintf(smess,"\nSD permut val");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nSD permut val");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].sd!=MISSVAL) sprintf(smess,"\t%G",r_statFSlr[S][l][r].sd);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].sd!=MISSVAL) fprintf(fp,"\t%G",r_statFSlr[S][l][r].sd);
+					else fprintf(fp,"\t");
+	
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].sd==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%G",r_statSlc[S][l][c].sd);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].sd==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%G",r_statSlc[S][l][c].sd);	
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 
-				sprintf(smess,"\n95%%CI-inf");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\n95%%CI-inf");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].low95!=MISSVAL) sprintf(smess,"\t%G",r_statFSlr[S][l][r].low95);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].low95!=MISSVAL) fprintf(fp,"\t%G",r_statFSlr[S][l][r].low95);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].low95==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%G",r_statSlc[S][l][c].low95);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].low95==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%G",r_statSlc[S][l][c].low95);
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 			
-				sprintf(smess,"\n95%%CI-sup");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\n95%%CI-sup");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].high95!=MISSVAL) sprintf(smess,"\t%G",r_statFSlr[S][l][r].high95);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].high95!=MISSVAL) fprintf(fp,"\t%G",r_statFSlr[S][l][r].high95);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].high95==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%G",r_statSlc[S][l][c].high95);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].high95==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%G",r_statSlc[S][l][c].high95);
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 			
-				sprintf(smess,"\nP(1-sided test, H1: obs<exp)");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nP(1-sided test, H1: obs<exp)");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].plow!=MISSVAL) sprintf(smess,"\t%.4f",r_statFSlr[S][l][r].plow);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].plow!=MISSVAL) fprintf(fp,"\t%.4f",r_statFSlr[S][l][r].plow);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].plow==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][c].plow);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].plow==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][c].plow);
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 			
-				sprintf(smess,"\nP(1-sided test, H1: obs>exp)");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nP(1-sided test, H1: obs>exp)");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].phigh!=MISSVAL) sprintf(smess,"\t%.4f",r_statFSlr[S][l][r].phigh);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].phigh!=MISSVAL) fprintf(fp,"\t%.4f",r_statFSlr[S][l][r].phigh);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].phigh==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][c].phigh);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].phigh==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][c].phigh);
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 			
-				sprintf(smess,"\nP(2-sided test, H1: obs<>exp)");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\nP(2-sided test, H1: obs<>exp)");
 				for(r=1;r<=4;r++){
-					if(r_statFSlr[S][l][r].pbil!=MISSVAL) sprintf(smess,"\t%.4f",r_statFSlr[S][l][r].pbil);
-					else sprintf(smess,"\t");
-					write_tofile_only(outputfilename,smess);
+					if(r_statFSlr[S][l][r].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFSlr[S][l][r].pbil);
+					else fprintf(fp,"\t");
 				}
-				sprintf(smess,"\t");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\t");
 				if(PWstat) for(c=1;c<=nc+1;c++){
-					if(r_statSlc[S][l][c].pbil==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][c].pbil);
-					write_tofile_only(outputfilename,smess);
-					if(c==nc+1){c=-3; sprintf(smess,"\t"); write_tofile_only(outputfilename,smess);}
+					if(r_statSlc[S][l][c].pbil==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][c].pbil);
+					if(c==nc+1){c=-3; fprintf(fp,"\t"); }
 					if(c==-1) break;
 				}
 
 				
-				sprintf(smess,"\n");
-				write_tofile_only(outputfilename,smess);
+				fprintf(fp,"\n");
 			}
 		}/*end of loop l for variables*/
-		sprintf(smess,"\n");
-		write_tofile_only(outputfilename,smess);
+		fprintf(fp,"\n");
 	}/*end of loop S*/
+
+	fclose (fp);
+
 
 }/*end of procedure WritePopPermutRes*/
 
 /*******************************************************************************/
-void WriteAllelesPermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM],
+void WritePermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM],
 		int p1,int p2,struct name *namepop,int NS,int Stat[],
 		struct resample_stat_type **r_statSlc[],int permutdetails,int comp)
 
@@ -3527,142 +3609,143 @@ void WriteAllelesPermutResForPopPair(char *outputfilename,int m,char namelocus[]
 	int l,linit,S,k;
 	char smess[SMAX];
 	char *permutmode[70];
+	int allelepermuttest;
 
 	FILE *fp;
 
 	permutmode[0]="";
 	permutmode[10]="ASwL";	/*allelelic sizes within locus*/
 	permutmode[11]="RCoDMbA";	/*rows and columns of distance matrices between alleles*/
-	permutmode[20]="GaI";		/*genes among all individuals*/
-	permutmode[21]="GaIwC";		/*genes among individuals within category*/
-	permutmode[22]="GaIwP";		/*genes among individuals within population*/
+	permutmode[20]="GaI";		/*gene copies among all individuals*/
+	permutmode[21]="GaIwC";		/*gene copies among individuals within category*/
+	permutmode[22]="GaIwP";		/*gene copies among individuals within population*/
 	permutmode[30]="IaSG";		/*individuals among spatial groups*/
 	permutmode[31]="IaSGwC";	/*individuals among spatial groups within categories*/
 	permutmode[32]="IaP";		/*individuals among all populations*/
 	permutmode[33]="IaPwC";		/*individuals among populations within category*/
+	permutmode[34]="IbPP";		/*individuals between a pair of populations*/
 	permutmode[40]="ILaI";		/*individual locations among all individuals*/
 	permutmode[41]="ILaIwC";		/*individual locations among individuals within category*/
 	permutmode[50]="SGLaSG";	/*spatial group locations among all spatial groups*/
 	permutmode[51]="SGLaSGwC";	/*spatial group locations among spatial groups within category*/
 	permutmode[60]="PLaP";		/*population locations among all populations*/
 	permutmode[61]="PLaPwC";	/*population locations among population within category*/
+
+	allelepermuttest=0;
+	for(S=1;S<=NS;S++)if(r_statSlc[S][0][0].mode==10 || r_statSlc[S][0][0].mode==11) allelepermuttest=1;
 	
 	while((fp=fopen(outputfilename,"a"))==NULL){
 		printf("\nWARNING: Cannot open results file \"%s\".\nIf it is being used by another application, close it first. Then press RETURN.\nPress ctrl+c if you wish to stop the program now.\n",outputfilename);
 		wait_a_char();
 	}
-	fclose (fp);
 
 	linit=0;
 	if(m==1) linit=1;
 
 	if(comp==1){  /*write 3 first lines for the first call*/
-		sprintf(smess,"\nALLELES PERMUTATION TESTS FOR EACH PAIR OF POPULATIONS -> Ho: obs=exp (exp = mean value after permutation)   Note: for Rst and Nst, only the alleles found within the compared populations are permuted; for Nij, all the alleles found in the data file are permuted (the alleles from the distance matrix that are not found in the data file are not considered)");
-	 	write_tofile_only(outputfilename,smess);
-		sprintf(smess,"\n\tStatistic ->\t\t");
-		write_tofile_only(outputfilename,smess);
-		for(S=1;S<=NS;S++) if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8 || Stat[S]==11 || Stat[S]==12){
+		if(allelepermuttest) fprintf(fp,"\nALLELES PERMUTATION TESTS FOR EACH PAIR OF POPULATIONS -> Ho: obs=exp (exp = mean value after permutation)   Note: for Rst and Nst, only the alleles found within the compared populations are permuted; for Nij, all the alleles found in the data file are permuted (the alleles from the distance matrix that are not found in the data file are not considered)");
+		else fprintf(fp,"\nINDIVIDUALS PERMUTATION TESTS FOR EACH PAIR OF POPULATIONS -> Ho: obs=exp (exp = mean value after permutation of the individuals between the two populations compared)");
+		fprintf(fp,"\n\tStatistic ->\t\t");
+		for(S=1;S<=NS;S++){
+			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
+			if(Stat[S]==1) sprintf(smess,"\tFst");
+			if(Stat[S]==2) sprintf(smess,"\tFst/(1-Fst)");
+			if(Stat[S]==3) sprintf(smess,"\tRho");
+			if(Stat[S]==4) sprintf(smess,"\tRho/(1-Rho)");
 			if(Stat[S]==5) sprintf(smess,"\tRst");
 			if(Stat[S]==6) sprintf(smess,"\tRst/(1-Rst)");
+			if(Stat[S]==7) sprintf(smess,"\tDs");
 			if(Stat[S]==8) sprintf(smess,"\tdm2");
+			if(Stat[S]==9) sprintf(smess,"\tGst");
+			if(Stat[S]==10) sprintf(smess,"\tGij");
 			if(Stat[S]==11) sprintf(smess,"\tNst");
 			if(Stat[S]==12) sprintf(smess,"\tNij");
 			for(l=linit;l<=m;l++){
-				if(permutdetails==2 || (permutdetails==1 && l==0)) for(k=1;k<=11;k++) write_tofile_only(outputfilename,smess);
-				if(permutdetails==0 || (permutdetails==1 && l!=0)) write_tofile_only(outputfilename,smess);
+				if(permutdetails==2 || (permutdetails==1 && l==0)) for(k=1;k<=11;k++) fprintf(fp,"%s",smess);
+				if(permutdetails==0 || (permutdetails==1 && l!=0)) fprintf(fp,"%s",smess);
 			}
 		}
-		sprintf(smess,"\n\tLocus ->\t\t");
-		write_tofile_only(outputfilename,smess);
-		for(S=1;S<=NS;S++) if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8 || Stat[S]==11 || Stat[S]==12){
+		fprintf(fp,"\n\tLocus ->\t\t");
+		for(S=1;S<=NS;S++){
+			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 			for(l=linit;l<=m;l++){
 				if(l==0) sprintf(smess,"\tALL LOCI");
 				if(l>0) sprintf(smess,"\t%s",namelocus[l]);
-				if(permutdetails==2 || (permutdetails==1 && l==0)) for(k=1;k<=11;k++) write_tofile_only(outputfilename,smess);
-				if(permutdetails==0 || (permutdetails==1 && l!=0)) write_tofile_only(outputfilename,smess);
+				if(permutdetails==2 || (permutdetails==1 && l==0)) for(k=1;k<=11;k++) fprintf(fp,"%s",smess);
+				if(permutdetails==0 || (permutdetails==1 && l!=0)) fprintf(fp,"%s",smess);
 			}
 		}
-		sprintf(smess,"\nName i\tName j\tN°i\tN°j");
-		write_tofile_only(outputfilename,smess);
-		for(S=1;S<=NS;S++) if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8 || Stat[S]==11 || Stat[S]==12){
+		fprintf(fp,"\nName i\tName j\tN°i\tN°j");
+		for(S=1;S<=NS;S++){
+			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 			for(l=linit;l<=m;l++){
-				if(permutdetails==2 || (permutdetails==1 && l==0)) sprintf(smess,"\tObject permuted\tN valid permut\tN different permut val\tObs val\tMean permut val\tSD permut val\t95%%CI-inf\t95%%CI-sup\tP(1-sided test, H1: obs<exp)\tP(1-sided test, H1: obs>exp)\tP(2-sided test, H1: obs<>exp)");
+				if(permutdetails==2 || (permutdetails==1 && l==0)) fprintf(fp,"\tObject permuted\tN valid permut\tN different permut val\tObs val\tMean permut val\tSD permut val\t95%%CI-inf\t95%%CI-sup\tP(1-sided test, H1: obs<exp)\tP(1-sided test, H1: obs>exp)\tP(2-sided test, H1: obs<>exp)");
 				if(permutdetails==0 || (permutdetails==1 && l!=0)){
-					if(Stat[S]==12) sprintf(smess,"\tP(2-sided test, H1: obs<>exp)");
-					else sprintf(smess,"\tP(1-sided test, H1: obs>exp)");
+					if(Stat[S]==12) fprintf(fp,"\tP(2-sided test, H1: obs<>exp)");
+					else fprintf(fp,"\tP(1-sided test, H1: obs>exp)");
 				}
-				write_tofile_only(outputfilename,smess);
 			}
 		}
 	} /*end of if(comp==1)*/
 
 
 
-	sprintf(smess,"\n%s\t%s\t%i\t%i",namepop[p1].n,namepop[p2].n,p1,p2);
-	write_tofile_only(outputfilename,smess);
-	for(S=1;S<=NS;S++)if(Stat[S]==5 || Stat[S]==6 || Stat[S]==8 || Stat[S]==11 || Stat[S]==12){
+	fprintf(fp,"\n%s\t%s\t%i\t%i",namepop[p1].n,namepop[p2].n,p1,p2);
+	for(S=1;S<=NS;S++){
+		if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 		for(l=linit;l<=m;l++){
 			/*write limited analysis*/
 			if(permutdetails==0 || (permutdetails==1 && l!=0)){
-				if(Stat[S]==12){ 
-					if(r_statSlc[S][l][0].pbil==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][0].pbil);
+				if(Stat[S]==10 || Stat[S]==12){ 
+					if(r_statSlc[S][l][0].pbil==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][0].pbil);
 				}
 				else{
-					if(r_statSlc[S][l][0].phigh==MISSVAL) sprintf(smess,"\t"); 
-					else sprintf(smess,"\t%.4f",r_statSlc[S][l][0].phigh);
+					if(r_statSlc[S][l][0].phigh==MISSVAL) fprintf(fp,"\t"); 
+					else fprintf(fp,"\t%.4f",r_statSlc[S][l][0].phigh);
 				}
-				write_tofile_only(outputfilename,smess);
 			}
 			/*write complete analysis*/
 			if(permutdetails==2 || (permutdetails==1 && l==0)){
 				
-				if(r_statSlc[S][0][0].mode<=0 || r_statSlc[S][0][0].mode>=70) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%s",permutmode[r_statSlc[S][0][0].mode]);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][0][0].mode<=0 || r_statSlc[S][0][0].mode>=70) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%s",permutmode[r_statSlc[S][0][0].mode]);
 
-				if(r_statSlc[S][l][0].n==0) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%i",r_statSlc[S][l][0].n);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].n==0) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%i",r_statSlc[S][l][0].n);
 
-				if(r_statSlc[S][l][0].nd==0) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%i",r_statSlc[S][l][0].nd);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].nd==0) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%i",r_statSlc[S][l][0].nd);
 
-				if(r_statSlc[S][l][0].obs==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%G",r_statSlc[S][l][0].obs);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].obs==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%G",r_statSlc[S][l][0].obs);
 			
-				if(r_statSlc[S][l][0].mean==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%G",r_statSlc[S][l][0].mean);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].mean==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%G",r_statSlc[S][l][0].mean);
 			
-				if(r_statSlc[S][l][0].sd==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%G",r_statSlc[S][l][0].sd);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].sd==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%G",r_statSlc[S][l][0].sd);
 			
-				if(r_statSlc[S][l][0].low95==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%G",r_statSlc[S][l][0].low95);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].low95==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%G",r_statSlc[S][l][0].low95);
 			
-				if(r_statSlc[S][l][0].high95==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%G",r_statSlc[S][l][0].high95);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].high95==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%G",r_statSlc[S][l][0].high95);
 			
-				if(r_statSlc[S][l][0].plow==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%.4f",r_statSlc[S][l][0].plow);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].plow==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%.4f",r_statSlc[S][l][0].plow);
 
-				if(r_statSlc[S][l][0].phigh==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%.4f",r_statSlc[S][l][0].phigh);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].phigh==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%.4f",r_statSlc[S][l][0].phigh);
 
-				if(r_statSlc[S][l][0].pbil==MISSVAL) sprintf(smess,"\t"); 
-				else sprintf(smess,"\t%.4f",r_statSlc[S][l][0].pbil);
-				write_tofile_only(outputfilename,smess);
+				if(r_statSlc[S][l][0].pbil==MISSVAL) fprintf(fp,"\t"); 
+				else fprintf(fp,"\t%.4f",r_statSlc[S][l][0].pbil);
 			}
 		}/*end of loop l for variables*/
 	}/*end of loop S*/
+
+	fclose (fp);
+
 
 }/*end of procedure WriteAllelesPermutResForPopPair*/
 

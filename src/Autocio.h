@@ -34,7 +34,7 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct name namecat[],
 		struct name namecati[],int *cati,int ncoord,double *xi,double *yi,double *zi,
 		int m,int ndigit,int ploidy,int ***gila,int *Nallelel,int **allelesizela,
-		int *ploidyi,int Nip[]);
+		int *ploidyi,int Nip[],double *H2);
 void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 		int n,int Ncat,int *Nik,int ncoord,int m,int ndigit,
 		int ploidy,int *ploidyi,int Nip[],char namelocus[] [MAXNOM],
@@ -44,7 +44,7 @@ void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m
 	  int *StatType,int *NS,int Stat[12],int *TypeComp,int *cat1,int *cat2,
 	  struct name *namecat,int *FreqRef,float *givenF,int *writeallelefreq,int *JKest,int *distmatrix,int Npermut[],
 	  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,float *dwidth,
-	  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,
+	  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,int *K,
 	  int *definealleledist,char *alleledistfilename,int *export,long *seed);
 void read_pairwise_spatial_distances(char *inputfile,char *distfile,int n,
 		struct name *namei,double **Mdij);
@@ -52,16 +52,19 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 		char namelocusp[] [MAXNOM],int *Nallelel,int **allelenamela,float ***Mgdlaa);
 void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *Nallelel,
 							 int **allelesizela, float **givenPla,int *Ngivenallelel);
-void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM],int ndigit,
+void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM],int ndigit,int ploidy,
 		int Npop,int *Nip,struct name namepop[],int StatType,int NS,int Stat[],int **allelesizela,
-		int **Nallelepl,float ***Ppla,float **Hepl,float **hTpl,float **uTpl,float **Dmpl,float **Dwmpl,float **Masizepl,float **Vasizepl,
-		int **Nmissinggenotpl,int **Nincompletegenotpl,int **Nvalgenpl,int printallelefreq,int FreqRef,int *Ngivenallelel,float **givenPla);
+		int **Nallelepl,float ***Ppla,float **Nnielsenpl,float **RA, int K,float **Hepl,float **hTpl,float **uTpl,
+		float **Dmpl,float **Dwmpl,float **Masizepl,float **Vasizepl,int **Nmissinggenotpl,int **Nincompletegenotpl,
+		int **Nvalgenpl,int printallelefreq,int FreqRef,int *Ngivenallelel,float **givenPla,float**Fpl,int Npermut,struct resample_stat_type **rstatFlp);
 void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,double *mlndc,
 				 int *npc,float **indexpartic);
 void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus[][MAXNOM],int nc,double *maxc,
-		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,
+		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,double *H2,
 		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSvc[10],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12]);
+void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Npop,struct name namepop[], 
+		int permutdetails,float **Fpl,struct resample_stat_type **r_statFlp,int Npermut,long seedinit);
 void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MAXNOM],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,
 		int StatType,int TypeComp,int cat1,int cat2,struct name *namecat,int NS,int Stat[12],float **corrSlc[],float **FstatSlr[],
@@ -80,7 +83,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 		int nc,int NS,int Stat[],int Npermut[],int permutalleles,
 		int permutdetails,struct resample_stat_type **r_statFSlr[],
 		struct resample_stat_type **r_statSlc[],long seedinit,int PWstat);
-void WriteAllelesPermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM],
+void WritePermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM],
 		int p1,int p2,struct name *namepop,int NS,int Stat[],
 		struct resample_stat_type **r_statSlc[10],int permutdetails,int comp);
 
