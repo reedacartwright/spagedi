@@ -756,8 +756,7 @@ void tutest(float data1[],unsigned long n1,float data2[],unsigned long n2,float 
  with unequal variances and its significance as prob, small values of prob indicating a 
 significant difference of means, numerical recipes p. 617*/
 {
-	unsigned long j,count=0;
-	float var1,var2,ave1,ave2,sd,df,cov=0.0F;
+	float var1,var2,ave1,ave2;
 	
 	if((n1<=1) || (n2<=1)) {
 		if((n1==0) || (n2==0)) 
@@ -779,9 +778,10 @@ significant difference of means, numerical recipes p. 617*/
 	}
     	
     *t=(float)((ave1-ave2)/sqrt(var1/n1+var2/n2));
-    df = (float)(sqr(var1/n1+var2/n2)/(sqr(var1/n1)/(n1-1)+sqr(var2/n2)/(n2-1)));
-    *prob=0.0F;	/*routine betai not yet implemented*/
+    /* df = (float)(sqr(var1/n1+var2/n2)/(sqr(var1/n1)/(n1-1)+sqr(var2/n2)/(n2-1)));*/
 /*    *prob=betai(0.5*df,0.5,df/(df+sqr(*t)));       */
+    *prob=0.0F;	/*routine betai not yet implemented*/
+
 }	/*end procedure tutest*/	
 
 
@@ -1018,7 +1018,6 @@ void resample_analyze(float *r_vector,unsigned long first,unsigned long last,
 	unsigned long low95,high95,low99,high99;
 	unsigned long n,i;
 	double average=0.,var=0.;
-	float ploworequal,phighorequal;
 	
 	r_stat->obs=observed;
 	n=last-first+1;

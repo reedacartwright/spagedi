@@ -45,7 +45,6 @@ int main(int argc,char *argv[])
 	char namelocus[MMAX][MAXNOM];   //identifier of each locus (idem)
  	int ncoord;				//number of spatial coordinates
 	char namecoord[NCOORDMAX+1] [MAXNOM];		//identifier of each variable (idem)
-	int *npc;
 	double *xi,*yi,*zi;			//position in x, y, z coordinates of individuals (i)
 	double **Mdij;
 	int distm;
@@ -65,21 +64,20 @@ int main(int argc,char *argv[])
 	int ndigit;				//number of digits per allele
 	int ploidy,*ploidyi,Niploidy[2+PLOIDYMAX];	//ploidy of the data for F; ploidy of ind i; #ind of ploidy p
 	int maxnal=0;			//max # of alleles
-	float missdat;			//value attributed for missing data
 	int **Nmissinggenotpl,**Nincompletegenotpl;		//number of missing / incomplete genotypes per locus 
 	float dijmin,dijmax,sigmaest,density,dwidth;			//minimal/max distance to take into account for spatial regression
 	int nc;				//number of classes of distance intervals (does not include class=0 which is for Fis),class
 	double maxc[MAXINTERVALS];//max value for each distance interval
 	float givenF;
 
-	int i,p,p1,l,linit,k,newi,*newii,*oldii;	
+	int p,p1,l;	
 
-	int ***gilc,***gilcmix,a1,a2;			//genotype of ind i at locus l and chromosome a
-	int *rl;
+	int ***gilc,***gilcmix;			//genotype of ind i at locus l and chromosome a
+	
 	int **allelesizela;	//allele lenght (number defined in the data file)
 	float ***Mgdlaa;	//genetic distance between alleles at each locus
 	float ***Ppla,**Hepl,**Nnielsenpl,**RA,**hTpl,**vTpl,**Dmpl,**Dwmpl,**Masizepl,**Vasizepl,**Fpl,**Fplmix,***Flpp;		//matrix of expected heterozygosity, allele frequencies, mean of allele size, and variance of allele size for locus l and pop p
-	struct resample_stat_type **r_statFlp;
+	struct resample_stat_type **r_statFlp = NULL;
 	int **Nallelepl,**Nvalgenpl,K=0;	//number of alleles per locus; tot # of defined gene per locus (=ploidy*#ind, except 0 values)
 	int *Nallelel,Ngivenallelel[MMAX];
 	int StatType;	//StatType=1 for pairs of ind, 2 for pairs of spatial groups, 3 for pairs of categorical groups
@@ -100,9 +98,8 @@ int main(int argc,char *argv[])
 	int Rbtwloc;			//=1 if the mean inter-locus correlation coefficients for genetic distances must be computed
 	int permutdetails;
 	int printdistmatrix=0;	// 1 if genetic and spatial distances matrices are to be printed
-	int estinbreeding=0,permutalleles=0;	//=0 if no estimate of inbreeding asked
+	int permutalleles=0;	//=0 if no estimate of inbreeding asked
 
-	FILE *filep;
 	smess=cvector(0,SMAX);
 
 /*
@@ -131,7 +128,6 @@ strcpy(instrfile,"instruction.txt");
 	xi=dvector(0,n);
 	yi=dvector(0,n);
 	zi=dvector(0,n);
-	npc=ivector(0,abs(nc)+2);
 	sgi=ivector(0,n);
 	Nig=ivector(0,n);
 	skgi=ivector(0,n);
@@ -142,7 +138,6 @@ strcpy(instrfile,"instruction.txt");
 
 	gilc=i3tensor(0,n,0,m,0,ploidy-1);
 	allelesizela=imatrix(0,m,0,2+(int)pow(10,ndigit));
-	missdat=0.;
 	if((namei=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(100);
 	if((namecati=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(101);
 	if((namecat=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(101);
@@ -236,7 +231,6 @@ strcpy(instrfile,"instruction.txt");
 	Dwmpl=matrix(0,Npop,0,m);
 	Masizepl=matrix(0,Npop,0,m);
 	Vasizepl=matrix(0,Npop,0,m);
-	rl=ivector(0,m);
 	Fpl=matrix(0,Npop,0,m);
 
 	printf("\n\n\nThe program is now doing the analyses\nTo stop it before the end, press 'Ctrl' + 'c'");
@@ -301,7 +295,7 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[])
 {
 	int c,l,S,r,p1,p2;
-	int linit,estinbreeding,maxnal;
+	int linit,maxnal;
 	
 	double *mdc,*mlndc;
 	int *npc;
@@ -314,8 +308,6 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	double *xpmix,*ypmix,*zpmix,**Mdijmix;
 	struct resample_stat_type **r_statSlc[12],**r_statFSlr[12]; //results of resampling for each loci and each dist class
 	int comp,permutbypairs;
-	char resampfile[50];			//name of file for resampling distrib
-	float missdat=0.F;
 	long seedinit;
 	int F_Rstat,G_Nstat,pairwGst_Nst,pairwGij_Nij;  //=0 or 1 according to computations to do
 
@@ -346,8 +338,6 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	Fpl=matrix(0,Npop,0,m);
 	if(m==1) linit=1;
 	else linit=0;
-
-	if(ploidy>1) estinbreeding=1;
 
 	F_Rstat=G_Nstat=pairwGst_Nst=pairwGij_Nij=0;
 	for(S=1;S<=NS;S++){
@@ -654,7 +644,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[])
 {
 	int i,c,l,S,ni,nf;
-	int linit,estinbreeding,maxnal;
+	int linit,maxnal;
 	
 	double *mdc,*mlndc;
 	int *npc;
@@ -663,12 +653,11 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	float ***corrSlij[12],**corrSlc[12],***RSll[12],***V[12],**R2pl[12];
 
 	float ***corrSlcp[12];
-	int Np,p,Statbis[2],**allelesizelamix,***gilcmix,*sgimix;
-	double *xmix,*ymix,*zmix,*xpmix,*ypmix,*zpmix,**Mdijmix;
+	int Np,p,**allelesizelamix,***gilcmix,*sgimix;
+	double *xmix,*ymix,*zmix,**Mdijmix;
 	float ***Mgdlaamix;
 	struct resample_stat_type **r_statSlc[12]; //results of resampling for each loci and each dist class
 
-	char resampfile[50];			//name of file for resampling distrib
 	float missdat=0.F;
 	long seedinit;
 
@@ -711,8 +700,6 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	if(JKest) for(S=1;S<=NS;S++) corrSlc[S]=matrix(-m,m+4,-28,abs(nc)+2);
 	else for(S=1;S<=NS;S++) corrSlc[S]=matrix(0,m+4,-28,abs(nc)+2);
 	if(Rbtwloc)for(S=1;S<=NS;S++) {RSll[S]=f3tensor(0,1,0,m,0,m); V[S]=f3tensor(0,1,0,5,0,2); R2pl[S]=matrix(0,1,-m,m);}
-	estinbreeding=0;
-	for(S=1;S<=NS;S++) if(ploidy>1 && (Stat[S]==1 || Stat[S]==2 || Stat[S]==5)) estinbreeding=1; 
 	
 	//stat computations
 	printf("\nComputing pairwise statistics between individuals. Please, wait.");
@@ -825,7 +812,6 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 		if((Np=Npermut[4])){ 
 			seed=seedinit;
 			printf("\nPermutations of allele sizes (%i)\n",Np);
-			Statbis[1]=5;
 			maxnal=0;//define the max # of alleles
 			for(l=1;l<=m;l++) if(maxnal<Nallelel[l]) maxnal=Nallelel[l];
 			allelesizelamix=imatrix(0,m,0,maxnal);

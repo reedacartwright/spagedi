@@ -256,7 +256,7 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 	int add_classSup=0;
 	double dij,lndij,dmax;	/*distance btw i & j, ln(dij),maximal distance between individuals*/
 	double sumd[MAXINTERVALS+3],sumlnd[MAXINTERVALS+3];/*sum of distances (or ln(dist)) within class*/
-	int np,nplnc[MAXINTERVALS+3];	   
+	int nplnc[MAXINTERVALS+3];	   
 	int **participic;
 	int p;
 	double *distp;
@@ -386,7 +386,7 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 			int alleledist,float ***Pkla,int **Nallelekl,int **Nmissinggenotkl,int **Nincompletegenotkl,
 			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hekl,float **hTkl,float **vTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl)
 {
-	int i,l,a,a1,a2,ncomp,k,k1,k2,npairs,nallelepairs,nloci;/*counter for individuals (i,j), locus (l), group (g), allele (a), category*/ 
+	int i,l,a,a1,a2,k,k1,k2,npairs,nallelepairs;/*counter for individuals (i,j), locus (l), group (g), allele (a), category*/ 
 	float Navalid,nvalidpop,sumweight;		/*number of individuals with valid data*/
 	float Sasize,SSasize;	/*for estimators of allele size coef*/
 	float **Jkl;
@@ -581,7 +581,7 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	} //end loop over locus
 
 	for(k=0;k<=Ncat;k++){
-		nloci=0;
+		// nloci=0;
 		hTkl[k][0]=vTkl[k][0]=Dmkl[k][0]=Dwmkl[k][0]=0.0f;	
 	/*	for(l=1;l<=m;l++)if(Nvalgenkl[k][l]>1){
 			nloci++;
@@ -645,10 +645,8 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 {
 	int i,j,k,l,linit,g,ci,cj,a,a1,a2,maxa,S,c;//counter for individuals (i,j), locus (l), gene (g), allele (a), max value for a at locus l, type of statistic (S=1 for Loiselle, 2 for Ritland original, 3 for Wright coef of relationship, 4 for Rousset) 
 	int newSumNall; //sums of the number of alleles per locus
-	float Pnew;	//corrected (Ritland original estimator) allele frequency
 	int newNloci;	//number of valid loci excluded those monomorphic
 	int Ncomp,NcompRitl,Ncompasc[MMAX],NcompNij[MMAX];		//comp=1 if there is no missing dat, otherwize=0
-	double Ngivenallele,Nvalidallele;
 	float ***Pkla,**Masizekl,**Vasizekl,**Plak[MMAX];
 	int **Nallelekl,**Nvalgenkl,*Nivalidk,Ncvalid,ploidyi,Nallelel[MMAX];
 	double Sasize,SSasize;
@@ -659,7 +657,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 	int **Nvalidwpairkl;
 	float ascor=(float)MISSVAL,asc,Sasc,SNcomp;	//for estimators of allele size coef
 	float Pa,Pb,Pc,Pd,Sab,Sac,Sad,Sbc,Sbd,Sca,Scb,Scd,Sda,Sdb,rLynch=(float)MISSVAL,dLynch=(float)MISSVAL,rLynch1,rLynch2,dLynch1,dLynch2,WrLynch,WdLynch,WrLynch1,WrLynch2,WdLynch1,WdLynch2,SrLynch1,SrLynch2,SWrLynch,SWrLynch1,SWrLynch2,SWdLynch,SdLynch1,SdLynch2,SWdLynch1,SWdLynch2,*SrLynch1l,*SrLynch2l,*SWrLynch1l,*SWrLynch2l,*SdLynch1l,*SdLynch2l,*SWdLynch1l,*SWdLynch2l;
-	float So[MMAX],Sij,rli,Srli[MMAX],SSrli[MMAX],Nrli[MMAX],Var,MLrli,SumW; 
+	float Sij,rli,Srli[MMAX],SSrli[MMAX],Nrli[MMAX],Var,MLrli,SumW; 
 	float rQueller=(float)MISSVAL,rQueller1,rQueller2,WrQueller,WrQueller1,WrQueller2,SrQueller1,SrQueller2,SWrQueller1,SWrQueller2,*SrQueller1l,*SrQueller2l,*SWrQueller1l,*SWrQueller2l;
 	int Elois,Eritl,Erous,Erela,Easc,ENij,Erlynch,Edlynch,Erqueller,Edwang,Erwang,Ekinshipdom,Erelatdom,Erli;   //define if the statistic is asked (0=no), value>0 = value of S
 	float **Plai[MMAX],***varkla,pi,qi,*Spik,*SSpik,cov,covt,var,vart,Mori=(float)MISSVAL;
@@ -2237,13 +2235,13 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 {	
 	int i,p,l,c,a,a1,a2,r,S,linit;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
 	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
-	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
-	int *nip,*nip2, nc;		//ind no. in pop p (nip=1-Nip[p]; chromosome no. (nc=1-Ncpi[c][i])
+	int **Ncpi,**Ncpi2 = NULL;			//#	chromosomes	with valid gene in ind i from pop  p
+	int *nip = NULL,*nip2 = NULL, nc;		//ind no. in pop p (nip=1-Nip[p]; chromosome no. (nc=1-Ncpi[c][i])
 	int *ploidyi;
 	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
-	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
+	double ***Gpic,***Gpic2 = NULL;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
 	double **NumFlr, **DenFlr, **NumRlr, **DenRlr;	//numerator and denominator for F-stat / R-stat
-	double **NumFpl, **DenFpl;	//numerator and denominator for Fi per pop
+	double **NumFpl = NULL, **DenFpl = NULL;	//numerator and denominator for Fi per pop
 	double SS[4],MS[4],s2[4];
 	float **Flr,**Rlr;		//Flr =Fit (r=1), =Fis (r=2), =Fst (r=3), =Rho (r=4); Rlr =Rit (r=1), Ris (r=2), =Rst (r=3)
 	float *Neil,*dm2l;	//Nei and DelaMuSquare distances
@@ -4518,7 +4516,7 @@ void permut_locations_of_groups_within_cat
 	(int n,int *cati,int Ncat,double *x,double *y,double *z,double **Mdij,int *groupi,
 	double *xmix,double *ymix,double *zmix,double **Mdijmix,long *seed)
 {
-	int i,j,i2,j2,k,*loci;
+	int i,i2,k,*loci;
 	int *locg,*group,newgroup,ng,g;
 
 	loci=ivector(0,n);

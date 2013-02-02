@@ -128,7 +128,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[1000], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
+	char smess[1000], filename[PATH_MAX], outdir[PATH_MAX];
 	int check=1;
 	FILE *fp;
 
@@ -250,10 +250,10 @@ void import_data_file(char *inputfile)
 	int line=0,line3=0,flag;
 	int format,n,i,check;
 	int m=0,Maxallele,ndigit,l;
-	int Npop,npop,nump,pop,labels,numpop[501],popi;
+	int Npop,npop,nump,pop,labels,numpop[501];
 	int genotypel[501];
-	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX],*ptr;
-	char ch,importfile[50],labelfile[50];
+	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX];
+	char importfile[50],labelfile[50];
 	char namelocus[1000][50],popname[501][50],indname[50];
 	double X,Y;
 	FILE *fp,*fp2,*fp3;
@@ -560,14 +560,12 @@ void export_data_file(int StatType,char inputfile[],int n,
 	int *popi,int Npop,int m,int ndigit,int *Nallelel,int ***gilc,int **allelesizela,
 	struct name namei[],struct name namepop[],char namelocus[][MAXNOM])
 {
-	FILE *fp,*fp2,*fp3;
-	int line=0,line3=0,flag;
+	FILE *fp,*fp2;
 	int format,i,check;
 	int Maxallele,l;
-	int pop,labels;
-	int genotypel[201];
-	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX];
-	char ch,exportfile[50],labelfile[50];
+	int pop;
+	char smess[SMAX];
+	char exportfile[50],labelfile[50];
 
 
 	//export for PATRI
@@ -711,7 +709,7 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 {
 	FILE *fp;
 	int i,flag;
-	char *s, *s2,smess[SMAX],ch;
+	char *s, *s2,smess[SMAX];
 	int line=0;
 
 	s=cvector(0,SMAX2);
@@ -831,9 +829,9 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 					 int *ploidyi,int Nip[],double *H2)
 {
 	FILE *fp;
-	int c,i,l,line=0,z,ncatobs,newcat,k,g,nsg;
+	int c,i,l,line=0,z,k,g;
 	int gentemp,maxploidy,ploidyl;
-	char *s, *s2,smess[SMAX],ch,*ptr;
+	char *s, *s2,smess[SMAX],*ptr;
 	char newind[SMAX];
 	int nallele,ok,coordproblem=0;
 	float allelesizea[1000];
@@ -1056,7 +1054,6 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 {
 	int i,k,g,p;
 	int Nikmin,Nikmax,Nigmin,Nigmax,Niskgmin,Niskgmax,Nk1i,Ng1i,Nskg1i;
-	char ch;
 	char smess[SMAX];
 	FILE *fp;
 
@@ -1195,9 +1192,6 @@ void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m
 	char ch,smess[SMAX];
 	int stats,k,k2,Noptions,ok,otherstat=0,S;
 	int permutloc=1,permutind=0,permutgenes=0,permutalleles=0,permutgil,reffreqpossible=0;
-	float ram;
-
-	FILE *stream;
 
 	// Reassign "stdin" (=console) to the instruction file (instrfile) to read options from that file 
 //	if(argc>=4) stream = freopen(instrfile, "r", stdin);
@@ -2358,7 +2352,6 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 				 int *npc,float **indexpartic)
 {
 	int c;
-	char ch,smess[SMAX];
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2395,8 +2388,7 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSlc[],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12])
 {
-	int c,l,S,a;
-	char smess[SMAX];
+	int c,l,S;
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2546,8 +2538,7 @@ void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MA
 		int StatType,int TypeComp,int cat1,int cat2,struct name *namecat,int NS,int Stat[12],float **corrSlc[],float **FstatSlr[],
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12],int PWstat)
 {
-	int c,l,S,a,r;
-	char smess[SMAX];
+	int c,l,S,r;
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2735,7 +2726,6 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 {	
 	int i,j,S,l,indivF,intraPop;
 	char smess[SMAX];
-	char ch;
 	float dij;
 	FILE *fp;
 
@@ -2993,9 +2983,8 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 		int permutdetails,struct resample_stat_type **r_statSlc[],long seedinit)
 
 {
-	int c,l=0,cinit,S;
+	int c,l=0,S;
 	float Pval;
-	char smess[SMAX];
 	char *permutmode[70];
 
 	FILE *fp;
@@ -3058,8 +3047,8 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 			if(Nsg>1) fprintf(fp,"\nLocus\tintra-individual\tintra-group");
 			else fprintf(fp,"\nLocus\tintra-individual\t1");	
 			for(c=2;c<=nc;c++) fprintf(fp,"\t%i",c);
-			if(Nsg>1) cinit=2;
-			else cinit=1;
+			//if(Nsg>1) cinit=2;
+			//else cinit=1;
  			fprintf(fp,"\t\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 			
 		}
@@ -3115,8 +3104,8 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 				
 				for(c=2;c<=nc;c++) fprintf(fp,"\t%i",c);
 					
-				if(Nsg>1) cinit=2;
-				else cinit=1;
+				//if(Nsg>1) cinit=2;
+				//else cinit=1;
  				fprintf(fp,"\t\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 							
 				fprintf(fp,"\nObject permuted");				
@@ -3283,9 +3272,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 		struct resample_stat_type **r_statSlc[],long seedinit,int PWstat)
 
 {
-	int c,l=0,cinit,S,r,ri,rf;
-	float Pval;
-	char smess[SMAX];
+	int c,l=0,S,r;
 	char *permutmode[70];
 
 	FILE *fp;
@@ -3833,11 +3820,12 @@ void readsfromfile(FILE *fp, char *s, char *inputfile, int *line)
 
 void readsfromfile_no_end_of_file_check(FILE *fp, char *s, char *inputfile, int *line)
 {
-	char *flag,smess[SMAX]; 
+	//char *flag; 
 
 
 	(*line)++;
-	flag = fgets(s,SMAX,fp);
+	fgets(s,SMAX,fp);
+	//flag = fgets(s,SMAX,fp);
 /*	if(! flag) {
 		if (feof(fp)) {
 			sprintf(smess,"\nEnd of file unexpected on line %d from file %s",*line,inputfile);
