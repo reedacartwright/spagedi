@@ -173,7 +173,7 @@ INCLUDE(CPack)
 INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(examples)
+ADD_SUBDIRECTORY(example_data)
 
 #INCLUDE(InstallRequiredSystemLibraries)
 
