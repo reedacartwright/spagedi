@@ -1139,7 +1139,7 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 	}
 	if(Nip[0]){	sprintf(smess,"\n  WARNING: There is(are) %i individual(s) without genotype at any locus",Nip[0]);write(outputfilename,smess); }
 	if(ndigit>0)if(Nip[ploidy+1]){	
-		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv n° ",Nip[ploidy+1]);
+		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv no. ",Nip[ploidy+1]);
 		write(outputfilename,smess); 
 		for(i=1;i<=n;i++) if(ploidyi[i]==(ploidy+1)){sprintf(smess,"%i  ",i); write(outputfilename,smess);}
 		sprintf(smess,"\nYou must first resolve this problem. Note that 0's representing missing alleles of incomplete genotypes must be on the RIGHT, whereas 0's representing no information for individuals with a ploidy level inferior to that announced must be on the LEFT.\nPress any key to stop the program now.");
@@ -2840,7 +2840,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 	/*write pairwise results in column form*/
 	printf("\nWriting pairwise distances in column form. Please wait.");
 	fprintf(fp,"\n\n\nPAIRWISE SPATIAL AND GENETIC DISTANCES written in column form");
-	fprintf(fp,"\nName i\tName j\tN°i\tN°j\tSpatial dist");
+	fprintf(fp,"\nName i\tName j\tNo. i\tNo. j\tSpatial dist");
 	if(Mdij[0][0]==-1.) fprintf(fp," (km)");
 	for(S=1;S<=NS;S++){
 		if(StatType==1){
@@ -3675,7 +3675,7 @@ void WritePermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM
 				if(permutdetails==0 || (permutdetails==1 && l!=0)) fprintf(fp,"%s",smess);
 			}
 		}
-		fprintf(fp,"\nName i\tName j\tN°i\tN°j");
+		fprintf(fp,"\nName i\tName j\tNo. i\tNo. j");
 		for(S=1;S<=NS;S++){
 			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 			for(l=linit;l<=m;l++){
