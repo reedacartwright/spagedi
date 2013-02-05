@@ -1,2 +1,2 @@
-#define VERSION "@VERSION@"
+#define PACKAGE_STRING "SPAGeDi @VERSION@"
 

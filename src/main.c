@@ -24,6 +24,8 @@
 #include "Autocio.h"
 #include "Xatools.h"
 
+#include "package.h"
+
 long seed;
 
 

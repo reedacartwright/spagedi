@@ -19,12 +19,6 @@
 #ifndef AUTOCCOMP_H
 #define AUTOCCOMP_H
 
-#ifdef PACKAGE_STRING
-#	define VERSION PACKAGE_STRING
-#else
-#	define  VERSION "SPAGeDi 1.4a (build 11-01-2013)"
-#endif
-
 #define  NMAX 100000	/*max number of individuals*/
 #define  NCOORDMAX 3    /*max number of spatial coordinates*/
 #define  MMAX 10000    /*max number of loci or variables*/

@@ -38,6 +38,8 @@
 #include "Xatools.h"
 #include "compat.h"
 
+#include "package.h"
+
 #define write write_string
 
 char errorfile[PATH_MAX] = ERRORTXT;
