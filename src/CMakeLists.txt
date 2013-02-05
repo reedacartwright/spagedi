@@ -49,10 +49,21 @@ INCLUDE_DIRECTORIES(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
 
 ADD_EXECUTABLE(spagedi ${SPAGEDI_MACOSX_BUNDLE}
   main.c Autoccomp.c Autoccomp.h Xatools.c Xatools.h Autocio.c Autocio.h
-  compat.c compat.h ${CMAKE_CURRENT_BINARY_DIR}/config.h
+  compat.c compat.h
+  ${CMAKE_CURRENT_BINARY_DIR}/config.h
   ${RES_SRCS})
 
 TARGET_LINK_LIBRARIES(spagedi ${CMAKE_REQUIRED_LIBRARIES})
+
+ADD_CUSTOM_TARGET(
+    version
+    ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+                     -D DST=${CMAKE_CURRENT_BINARY_DIR}/version.h
+                     -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
+                     -P ${CMAKE_SOURCE_DIR}/version.cmake
+)
+
+ADD_DEPENDENCIES(spagedi version)
 
 IF(APPLE_BUNDLE_APP)
   SET_TARGET_PROPERTIES(spagedi PROPERTIES OUTPUT_NAME ${SPAGEDI_BUNDLE_NAME})
