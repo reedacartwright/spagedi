@@ -12,6 +12,8 @@
 *.la
 *.a
 
+*~
+
 CMakeCache.txt
 CMakeFiles
 Makefile
