@@ -61,7 +61,10 @@ SET(CMAKE_MAN_DIR "man" CACHE STRING
 MARK_AS_ADVANCED(CMAKE_DATA_DIR CMAKE_DOC_DIR CMAKE_MAN_DIR)
 
 SET(CPACK_SOURCE_IGNORE_FILES
-  "/CVS/" "/\\\\.svn/"  "\\\\.swp$"  "\\\\.#"  "/#"  ".*~$"
+  "/CVS/" /\\\\\\\\.bzr/;/\\\\\\\\.hg/;/\\\\\\\\.git/;\\\\\\\\.swp$;\\\\\\\\.#;/#"
+  "/CVS/" "/\\\\.svn/" "/\\\\.bzr/" "/\\\\.hg/" "/\\\\.git/"  "\\\\.swp$"
+  "\\\\.#"  "/#"  ".*~$"
+  "/releng/" "/build/[^.]"
   "SPAGeDi[-]1"  "spagedi[-]1"
   "spagedi\\\\.exe"  "spagedi$"
   "/CMakeFiles/"  "CMakeCache\\\\.txt"
@@ -70,7 +73,6 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "_CPACK_PACKAGES"  "_CPack_Packages"
   "\\\\.vcproj"  "\\\\.dir"  "\\\\.ncb$"  "\\\\.sln$"  "\\\\.suo$"
   "Makefile$" "\\\\.ilk"  "\\\\.pdb"
-  "/releng/"
 )
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${SPAGEDI_NAME}")
