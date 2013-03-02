@@ -17,28 +17,14 @@ else()
 	SET(PACKAGE "${CPACK_PACKAGE_NAME})
 endif()
 
-MESSAGE("Creating Source Package for ${PACKAGE} ${VERSION}...")
+#MESSAGE("Creating Source Package for ${PACKAGE} ${VERSION}...")
 
-foreach(PKG ${CPACK_SOURCE_GENERATOR})
-	UNSET(EXT)
-	if(PKG STREQUAL "TBZ2")
-		SET(EXT "tar.bz2")
-	elseif(PKG STREQUAL "TGZ")
-		SET(EXT "tar.gz")
-	elseif(PKG STREQUAL "ZIP")
-		SET(EXT "zip")
-	else()
-		MESSAGE("ERROR: new_package_source does not understand CPACK_SOURCE_GENERATOR $PKG")
-	endif()
-	if(DEFINED EXT)
-		EXECUTE_PROCESS(COMMAND ${CMAKE_CPACK_COMMAND} -G ${PKG}
-			-D CPACK_PACKAGE_FILE_NAME=${PACKAGE}-${VERSION}
-			-D VERFILE=${VERFILE}
-			--config CPackSourceConfig.cmake
-			-P "${PACKAGE}"
-			-R "${VERSION}"
-			TIMEOUT 3600
-			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-	endif()
-endforeach()
+EXECUTE_PROCESS(COMMAND ${CMAKE_CPACK_COMMAND}
+	-D CPACK_PACKAGE_FILE_NAME=${PACKAGE}-${VERSION}
+	-D VERFILE=${VERFILE}
+	--config CPackSourceConfig.cmake
+	-P "${PACKAGE}"
+	-R "${VERSION}"
+	TIMEOUT 3600
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
