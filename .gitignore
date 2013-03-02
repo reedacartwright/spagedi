@@ -20,3 +20,5 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 build/*
+src/version.h
+src/config.h
