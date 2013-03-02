@@ -4,7 +4,7 @@ IF(NOT CPACK_INSTALL_CMAKE_PROJECTS)
 		# Copy version.h
 		EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy
 			"${VERFILE}"
-	        "${CMAKE_CURRENT_BINARY_DIR}/src/version.h")
+	        "${CMAKE_CURRENT_BINARY_DIR}/src/spagedi_version.h")
 	ENDIF()
 	
 	# Construct Build Directory

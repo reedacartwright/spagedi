@@ -167,14 +167,15 @@ ENDIF(WIN32 AND NOT UNIX)
 INCLUDE(CPack)
 
 ADD_CUSTOM_TARGET(version
-    ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
-                     -D DST=${CMAKE_CURRENT_BINARY_DIR}/src/version.h
+    ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}
+                     -D DST=${CMAKE_BINARY_DIR}
+                     -D VER=${SPAGEDI_VERSION}
                      -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
                      -P ${CMAKE_SOURCE_DIR}/version.cmake
 )
 
 ADD_CUSTOM_TARGET(new_package_source
-	COMMAND ${CMAKE_COMMAND} -D VERFILE=${CMAKE_CURRENT_BINARY_DIR}/src/version.h
+	COMMAND ${CMAKE_COMMAND} -D VERFILE=${CMAKE_CURRENT_BINARY_DIR}/src/spagedi_version.h
 	                         -P ${CMAKE_SOURCE_DIR}/new_package_source.cmake
 )
 
