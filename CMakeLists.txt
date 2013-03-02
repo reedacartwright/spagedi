@@ -64,7 +64,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "/CVS/" /\\\\\\\\.bzr/;/\\\\\\\\.hg/;/\\\\\\\\.git/;\\\\\\\\.swp$;\\\\\\\\.#;/#"
   "/CVS/" "/\\\\.svn/" "/\\\\.bzr/" "/\\\\.hg/" "/\\\\.git/"  "\\\\.swp$"
   "\\\\.#"  "/#"  ".*~$"
-  "/releng/" "/build/[^.]"
+  "/releng/" "/build/"
   "SPAGeDi[-]1"  "spagedi[-]1"
   "spagedi\\\\.exe"  "spagedi$"
   "/CMakeFiles/"  "CMakeCache\\\\.txt"
