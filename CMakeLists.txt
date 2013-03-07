@@ -74,7 +74,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "\\\\.vcproj"  "\\\\.dir"  "\\\\.ncb$"  "\\\\.sln$"  "\\\\.suo$"
   "Makefile$" "\\\\.ilk"  "\\\\.pdb"
 )
-SET(CPACK_INSTALL_SCRIPT ${CMAKE_SOURCE_DIR}/copy_version.cmake)
+SET(CPACK_INSTALL_SCRIPT ${CMAKE_SOURCE_DIR}/Modules/copy_version.cmake)
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${SPAGEDI_NAME}")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spatial Pattern Analysis of Genetic Diversity")
@@ -171,12 +171,12 @@ ADD_CUSTOM_TARGET(version
                      -D DST=${CMAKE_BINARY_DIR}
                      -D VER=${SPAGEDI_VERSION}
                      -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
-                     -P ${CMAKE_SOURCE_DIR}/version.cmake
+                     -P ${CMAKE_SOURCE_DIR}/Modules/version.cmake
 )
 
 ADD_CUSTOM_TARGET(new_package_source
 	COMMAND ${CMAKE_COMMAND} -D VERFILE=${CMAKE_CURRENT_BINARY_DIR}/src/spagedi_version.h
-	                         -P ${CMAKE_SOURCE_DIR}/new_package_source.cmake
+	                         -P ${CMAKE_SOURCE_DIR}/Modules/new_package_source.cmake
 )
 
 INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
