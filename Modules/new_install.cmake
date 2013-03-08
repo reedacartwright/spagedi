@@ -4,7 +4,7 @@ IF(NOT NEW_PACKAGE)
 		MESSAGE(WARNING "Use 'new_package_source' target instead of 'package_source'.")
 	ELSE()
 		MESSAGE(WARNING "Use 'new_package' target instead of 'package'.")
-	ENDIF()	
+	ENDIF()
 #	RETURN()
 ENDIF()
 
@@ -14,9 +14,10 @@ SET(VERFILE_BASE "src/spagedi_version.h")
 IF(NOT CPACK_INSTALL_CMAKE_PROJECTS)
 	IF(EXISTS "${CPACK_BINARY_DIR}/${VERFILE_BASE}")
 		# Copy Version File
-		EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy
+		EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"${CPACK_BINARY_DIR}/${VERFILE_BASE}"
-	        "${CMAKE_INSTALL_PREFIX}/${VERFILE_BASE}.pkg")
+	        "${CMAKE_INSTALL_PREFIX}/${VERFILE_BASE}.pkg"
+		)
 	ELSE()
 		# Constuct a pkg version file as needed
 		# Version number may be inaccurate
@@ -29,7 +30,8 @@ IF(NOT CPACK_INSTALL_CMAKE_PROJECTS)
 	
 	# Construct Build Directory
 	FILE(MAKE_DIRECTORY "${CMAKE_INSTALL_PREFIX}/build")
-	FILE(WRITE "${CMAKE_INSTALL_PREFIX}/build/build.txt"
-		"Read ../readme.txt for building instructions.\n")
+	EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CPACK_SOURCE_DIR}/readme.txt"
+		"${CMAKE_INSTALL_PREFIX}/build/readme.txt"
+	)
 ENDIF()
-

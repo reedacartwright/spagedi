@@ -89,7 +89,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "Makefile$" "\\\\.ilk"  "\\\\.pdb"
 )
 
-SET(CPACK_INSTALL_SCRIPT ${CMAKE_SOURCE_DIR}/Modules/copy_version.cmake)
+SET(CPACK_INSTALL_SCRIPT "${CMAKE_SOURCE_DIR}/Modules/new_install.cmake")
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${SPAGEDI_NAME}")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spatial Pattern Analysis of Genetic Diversity")
