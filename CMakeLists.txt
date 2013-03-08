@@ -35,6 +35,11 @@ IF(SPAGEDI_VERSION MATCHES "([0-9]+)\\.([0-9]+)([a-z]+)-?(.*)")
 	SET(SPAGEDI_VERSION_MINOR ${CMAKE_MATCH_2})
 	SET(SPAGEDI_VERSION_PATCH ${CMAKE_MATCH_3})
 	SET(SPAGEDI_VERSION_BUILD ${CMAKE_MATCH_4})
+	SET(SPAGEDI_VERSION_MAIN "${SPAGEDI_VERSION_MAJOR}.${SPAGEDI_VERSION_MINOR}${SPAGEDI_VERSION_PATCH}")
+	
+	SET(LETTERS a b c d e f g h i j k l m n o p q r s t u v w x y z)
+	LIST(FIND LETTERS ${SPAGEDI_VERSION_PATCH} SPAGEDI_VERSION_PATCH_NUM)
+	SET(SPAGEDI_VERSION_NUMBERED "${SPAGEDI_VERSION_MAJOR}.${SPAGEDI_VERSION_MINOR}.${SPAGEDI_VERSION_PATCH_NUM}.0")
 ENDIF()
 
 IF(APPLE)
@@ -141,13 +146,26 @@ IF(WIN32 AND NOT UNIX)
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
   #SET(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
+  SET(CPACK_SOURCE_GENERATOR "ZIP")
   SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\spagedi.exe")
-  SET(CPACK_NSIS_DISPLAY_NAME "${SPAGEDI_NAME} ${SPAGEDI_VERSION_MAJOR}.${SPAGEDI_VERSION_MINOR}${SPAGEDI_VERSION_PATCH}")
+  SET(CPACK_NSIS_DISPLAY_NAME "${SPAGEDI_NAME} ${SPAGEDI_VERSION_MAIN}")
   SET(CPACK_NSIS_HELP_LINK "http:\\\\\\\\www.ulb.ac.be\\\\sciences\\\\ecoevol\\\\spagedi.html")
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.ulb.ac.be\\\\sciences\\\\ecoevol\\\\spagedi.html")
   SET(CPACK_NSIS_CONTACT "ohardy@ulb.ac.be")
   SET(CPACK_NSIS_MODIFY_PATH ON)
-  SET(CPACK_SOURCE_GENERATOR "ZIP")
+  SET(CPACK_NSIS_DEFINES "
+		VIProductVersion ${SPAGEDI_VERSION_NUMBERED}
+		VIAddVersionKey ProductName \\\"${SPAGEDI_NAME}\\\"
+		VIAddVersionKey FileDescription \\\"Spatial Pattern Analysis of Genetic Diversity\\\"
+		VIAddVersionKey Comments \\\"A binary installer for ${SPAGEDI_NAME}.\\\"
+		VIAddVersionKey CompanyName \\\"${CPACK_PACKAGE_VENDOR}\\\"
+		VIAddVersionKey LegalCopyright \\\"${CPACK_PACKAGE_VENDOR}\\\"
+		VIAddVersionKey InternalName \\\"${SPAGEDI_NAME} Installer\\\"
+		VIAddVersionKey LegalTrademarks \\\"\\\"
+		VIAddVersionKey OriginalFilename \\\"${CPACK_PACKAGE_FILE_NAME}.exe\\\"
+		VIAddVersionKey FileVersion ${SPAGEDI_VERSION_NUMBERED}
+		VIAddVersionKey ProductVersion ${SPAGEDI_VERSION_NUMBERED}
+	")
 ELSEIF(APPLE)
   SET(CPACK_SOURCE_GENERATOR "TBZ2") 
   SET(CPACK_GENERATOR "PackageMaker")
