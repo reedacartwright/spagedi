@@ -3,32 +3,28 @@
 #    message(STATUS "${_variableName}=${${_variableName}}")
 #endforeach()
 
-SET(VERFILE "src/spagedi_version.h")
-
-# If VERFILE exists in src, copy it to build
-IF(EXISTS "${SRC}/${VERFILE}")
-	EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy
-		"${SRC}/${VERFILE}"
-	    "${DST}/${VERFILE}")
-ENDIF()
+SET(VERFILE_BASE "src/spagedi_version.h")
 
 # Update version if we can
 IF(GIT_EXECUTABLE AND EXISTS "${SRC}/.git") 
 	EXECUTE_PROCESS(
-	     COMMAND ${GIT_EXECUTABLE} describe --tags
-	     OUTPUT_VARIABLE VERSION
+	     COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
+	     RESULT_VARIABLE GIT_RESULT
+	     OUTPUT_VARIABLE PKG_VERSION
 	     OUTPUT_STRIP_TRAILING_WHITESPACE
+	     ERROR_QUIET
 	)
-	CONFIGURE_FILE(${SRC}/${VERFILE}.in
-                   ${DST}/${VERFILE}
-                   @ONLY)
+	IF(GIT_RESULT EQUAL 0)
+		SET(PACKAGE_VERSION "${PKG_VERSION}")
+	ENDIF()
 ENDIF()
 
-# Use Default version if it doesn't exist
-IF(NOT EXISTS "${DST}/${VERFILE}")
-	SET(VERSION ${VER})
-	CONFIGURE_FILE(${SRC}/${VERFILE}.in
-                   ${DST}/${VERFILE}
-                   @ONLY)	
+# Prefer .pkg which
+IF(EXISTS ${SRC}/${VERFILE_BASE}.pkg)
+	SET(INFILE ${SRC}/${VERFILE_BASE}.pkg)
+ELSE()
+	SET(INFILE ${SRC}/${VERFILE_BASE}.in)
 ENDIF()
+
+CONFIGURE_FILE(${INFILE} ${DST}/${VERFILE_BASE} @ONLY)
 

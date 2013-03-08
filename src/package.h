@@ -1,7 +1,7 @@
 #ifndef PACKAGE_H
 
 #ifdef HAVE_VERSION_H
-#	include <spagedi_version.h>
+#	include "spagedi_version.h"
 #endif
 
 #ifdef PACKAGE_STRING

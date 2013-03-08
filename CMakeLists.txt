@@ -1,27 +1,41 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+SET(CMAKE_VERBOSE_MAKEFILE OFF)
 SET(CMAKE_BUILD_TYPE_INIT "RelWithDebInfo")
 SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
 
 PROJECT(SPAGeDi)
 
+# Default Version Numbers
 SET(SPAGEDI_NAME "SPAGeDi")
 SET(SPAGEDI_VERSION "1.4a-CUSTOM")
-SET(SPAGEDI_VERSION_MAJOR "1")
-SET(SPAGEDI_VERSION_MINOR "4")
-SET(SPAGEDI_VERSION_PATCH "a")
 
+# Automatic Version Numbers
 FIND_PACKAGE(Git)
 
-IF(GIT_FOUND)
-  EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
-    RESULT_VARIABLE res_var OUTPUT_VARIABLE GIT_COM_ID
-     ERROR_QUIET)
-  IF(${res_var} EQUAL 0 )
-   	STRING( REPLACE "\n" "" GIT_COMMIT_ID "${GIT_COM_ID}" )
-  ENDIF()
+INCLUDE("${CMAKE_SOURCE_DIR}/src/spagedi_version.h.pkg" OPTIONAL
+	RESULT_VARIABLE VERSION_FOUND)
+
+IF(VERSION_FOUND)
+	SET(SPAGEDI_VERSION "${PACKAGE_VERSION}")	
+ELSEIF(GIT_FOUND)
+	EXECUTE_PROCESS(
+	     COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
+	     RESULT_VARIABLE GIT_RESULT
+	     OUTPUT_VARIABLE PKG_VERSION
+	     OUTPUT_STRIP_TRAILING_WHITESPACE
+	     ERROR_QUIET
+	)
+	IF(GIT_RESULT EQUAL 0)
+		SET(SPAGEDI_VERSION "${PKG_VERSION}")
+	ENDIF()
 ENDIF()
 
-SET(CMAKE_VERBOSE_MAKEFILE OFF)
+IF(SPAGEDI_VERSION MATCHES "([0-9]+)\\.([0-9]+)([a-z]+)-?(.*)")
+	SET(SPAGEDI_VERSION_MAJOR ${CMAKE_MATCH_1})
+	SET(SPAGEDI_VERSION_MINOR ${CMAKE_MATCH_2})
+	SET(SPAGEDI_VERSION_PATCH ${CMAKE_MATCH_3})
+	SET(SPAGEDI_VERSION_BUILD ${CMAKE_MATCH_4})
+ENDIF()
 
 IF(APPLE)
   IF(NOT DEFINED APPLE_BUNDLE)
@@ -65,7 +79,6 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "/CVS/" "/\\\\.svn/" "/\\\\.bzr/" "/\\\\.hg/" "/\\\\.git/"  "\\\\.swp$"
   "\\\\.#"  "/#"  ".*~$"
   "/releng/" "/build/"
-  "SPAGeDi[-]1"  "spagedi[-]1"
   "spagedi\\\\.exe"  "spagedi$"
   "/CMakeFiles/"  "CMakeCache\\\\.txt"
   "CPack.*Config\\\\.cmake"  "cmake_install\\\\.cmake"
@@ -74,6 +87,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   "\\\\.vcproj"  "\\\\.dir"  "\\\\.ncb$"  "\\\\.sln$"  "\\\\.suo$"
   "Makefile$" "\\\\.ilk"  "\\\\.pdb"
 )
+
 SET(CPACK_INSTALL_SCRIPT ${CMAKE_SOURCE_DIR}/Modules/copy_version.cmake)
 
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${SPAGEDI_NAME}")
@@ -164,19 +178,23 @@ ELSE(WIN32 AND NOT UNIX)
   SET(CPACK_STRIP_FILES "bin/spagedi")
 ENDIF(WIN32 AND NOT UNIX)
 
+
+SET(CPACK_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+SET(CPACK_BINARY_DIR ${CMAKE_BINARY_DIR})
 INCLUDE(CPack)
 
 ADD_CUSTOM_TARGET(version
     ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}
                      -D DST=${CMAKE_BINARY_DIR}
-                     -D VER=${SPAGEDI_VERSION}
                      -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
+                     -D PACKAGE_NAME=${SPAGEDI_NAME}
+                     -D PACKAGE_VERSION=${SPAGEDI_VERSION}
                      -P ${CMAKE_SOURCE_DIR}/Modules/version.cmake
 )
 
 ADD_CUSTOM_TARGET(new_package_source
-	COMMAND ${CMAKE_COMMAND} -D VERFILE=${CMAKE_CURRENT_BINARY_DIR}/src/spagedi_version.h
-	                         -P ${CMAKE_SOURCE_DIR}/Modules/new_package_source.cmake
+	COMMAND ${CMAKE_COMMAND} 
+		-P ${CMAKE_SOURCE_DIR}/Modules/new_package_source.cmake
 )
 
 INSTALL(FILES manual.pdf copying.txt readme.txt DESTINATION ${CMAKE_DOC_DIR})
