@@ -19,7 +19,7 @@ IF(GIT_EXECUTABLE AND EXISTS "${SRC}/.git")
 	ENDIF()
 ENDIF()
 
-# Prefer .pkg which
+# Prefer .pkg
 IF(EXISTS ${SRC}/${VERFILE_BASE}.pkg)
 	SET(INFILE ${SRC}/${VERFILE_BASE}.pkg)
 ELSE()
