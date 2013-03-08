@@ -2,11 +2,6 @@
 
 INCLUDE(CPackSourceConfig.cmake)
 
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
-
 SET(PACKAGE_VERSION "${CPACK_PACKAGE_VERSION})
 SET(PACKAGE_NAME "${CPACK_PACKAGE_NAME})
 

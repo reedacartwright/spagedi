@@ -8,11 +8,6 @@ IF(NOT NEW_PACKAGE)
 #	RETURN()
 ENDIF()
 
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    message("    ${_variableName}=${${_variableName}}")
-#endforeach()
-
 SET(VERFILE_BASE "src/spagedi_version.h")
 
 # Test if we are doing a source install
