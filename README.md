@@ -1,14 +1,14 @@
 SPAGeDi
 =======
 
-SPAGeDi: Spatial Pattern Analysis of Genetic Diversity
+SPAGeDi: Spatial Pattern Analysis of Genetic Diversity  
 Copyright &copy; 2002&ndash;2009 Olivier Hardy (<ohardy@ulb.ac.be>) and Xavier Vekemans
 
 Portable/Unix source code maintained by Reed A. Cartwright (<cartwright@asu.edu>).
 
-Website: <http://ebe.ulb.ac.be/ebe/SPAGeDi.html>
-GitHub: <https://github.com/reedacartwright/spagedi>
-Downloads: <http://scit.us/spagedi/>
+Website: <http://ebe.ulb.ac.be/ebe/SPAGeDi.html>  
+GitHub: <https://github.com/reedacartwright/spagedi>  
+Downloads: <http://scit.us/spagedi/>  
 
 License
 -------
