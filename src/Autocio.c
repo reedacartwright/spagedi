@@ -130,13 +130,9 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[1000], filename[PATH_MAX], outdir[PATH_MAX];
+	char smess[PATH_MAX], filename[PATH_MAX], outdir[PATH_MAX];
 	int check=1;
 	FILE *fp;
-
-	// printf("\n%s",argv[0]);
-	// if(argc>1)printf("\n%s",argv[1]);
-	// if(argc>2)printf("\n%s",argv[2]);
 	
 	printf("\n\n\n\nDATA / RESULTS FILE NAMES");
 		
@@ -172,14 +168,17 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	fclose(fp);
 
-	// Find base name
-	strlcpy(filename, basename(inputfile), PATH_MAX);
-	printf("\n\n  Data file: %s\n    full path: %s\n", filename, inputfile);
-	
-	// find directory of input file name, will be used as initial outdir
-	// use filename as initial buffer in case dirname modifies it
-	strlcpy(filename, inputfile, PATH_MAX);
-	strlcpy(outdir, dirname(filename), PATH_MAX);
+	// Find basename and dirname
+	// Copy inputfile as some implementations modify the string.
+	strlcpy(smess, inputfile, PATH_MAX);
+	strlcpy(filename, basename(smess), PATH_MAX);
+	strlcpy(smess, inputfile, PATH_MAX);
+	strlcpy(outdir, dirname(smess), PATH_MAX);
+	// Put inputfile back together
+	strlcpy(inputfile, outdir, PATH_MAX);
+	strlcat(inputfile, DIR_SEPARATOR_STR, PATH_MAX);
+	strlcat(inputfile, filename, PATH_MAX);
+	printf("\n\n  Data file: %s\n    full path: %s\n", filename, inputfile);	
 	
 	// Determine Outputfile
 	if( argc > 2) {
@@ -233,11 +232,13 @@ void get_input_output_file_names(int argc,char *argv[],char inputfile[],char out
 	}
 	
 	// Find base name
-	strlcpy(filename, basename(outputfile), PATH_MAX);
+	strlcpy(smess, outputfile, PATH_MAX);
+	strlcpy(filename, basename(smess), PATH_MAX);
 	printf("\n\n  Results file: %s\n    full path: %s\n", filename, outputfile);	
 	
 	// Use outdir of output
-	strlcpy(outdir, dirname(outputfile), PATH_MAX);
+	strlcpy(smess, outputfile, PATH_MAX);
+	strlcpy(outdir, dirname(smess), PATH_MAX);
 	
 	// Create error.txt in outputdir
 	strlcpy(errorfile, outdir, PATH_MAX);
