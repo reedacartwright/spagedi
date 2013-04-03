@@ -23,9 +23,10 @@ message(STATUS "Downloading SPAGeDi Archive '${ARCHIVE_TAG}' from Github...")
 file(DOWNLOAD "${GITHUB_URL}${ARCHIVE_TAG}" "${RELENG_DIR}${ARCHIVE}" LOG GIT_LOG STATUS GIT_STATUS SHOW_PROGRESS)
 list(GET GIT_STATUS 0 GIT_STATUS_0)
 list(GET GIT_STATUS 1 GIT_STATUS_1)
-if(GET_STATUS_0)
+if(NOT EXISTS "${RELENG_DIR}${ARCHIVE}" )
 	message(ERROR "Download Failed: ${GIT_STATUS_1}")
 endif()
+
 
 # Extract version tag from the download log
 if(GIT_LOG MATCHES "Content-Disposition: attachment; filename=${GITHUB_USER}-${GITHUB_PROJECT}-(.*).tar.gz")
@@ -37,13 +38,13 @@ if(GIT_LOG MATCHES "Content-Disposition: attachment; filename=${GITHUB_USER}-${G
 endif()
 
 message(STATUS "Extracting archive ...")
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E tar xzf "${ARCHIVE}"
+execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf "${ARCHIVE}"
 	WORKING_DIRECTORY "${RELENG_DIR}")
 file(GLOB ARCHIVE_DIR "${RELENG_DIR}${GITHUB_USER}-${GITHUB_PROJECT}*")
 
 message(STATUS "Configuring SPAGeDi version ${PROJECT_VERSION} ...")
 set(CMAKE_DEFS
-#	-DCMAKE_BUILD_TYPE=Release
+	-DCMAKE_BUILD_TYPE=Release
 	-DUSE_STATIC_LIBS=on
 	-DSPAGEDI_VERSION_GIT=${PROJECT_VERSION}
 )
@@ -54,24 +55,24 @@ if(WIN32 AND NOT UNIX)
 	set(MAKE_BIN nmake)
 endif()
 
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ${CMAKE_ARGS} .. ${CMAKE_DEFS}
+execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_ARGS} .. ${CMAKE_DEFS}
 	WORKING_DIRECTORY "${ARCHIVE_DIR}/build")
 
 message(STATUS "Building packages ...")
 
-EXECUTE_PROCESS(COMMAND ${MAKE_BIN} ${PROJECT_NAME} WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
-EXECUTE_PROCESS(COMMAND ${MAKE_BIN} new_package WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
-EXECUTE_PROCESS(COMMAND ${MAKE_BIN} new_package_source WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
+execute_process(COMMAND ${MAKE_BIN} ${PROJECT_NAME} WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
+execute_process(COMMAND ${MAKE_BIN} new_package WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
+execute_process(COMMAND ${MAKE_BIN} new_package_source WORKING_DIRECTORY "${ARCHIVE_DIR}/build")	
 
 message(STATUS "Relocating packages ...")
 file(GLOB DISTS "${ARCHIVE_DIR}/build/${PROJECT_DISTS}")
 foreach(dist ${DISTS})
-	EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dist} ${CMAKE_CURRENT_BINARY_DIR})
+	execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dist} ${CMAKE_CURRENT_BINARY_DIR})
 endforeach()
 
 if(NOT NO_CLEAN)
 	message(STATUS "Cleaning up ...")
-	EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E remove_directory "${RELENG_DIR}")
+	execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory "${RELENG_DIR}")
 endif()
 
 #get_cmake_property(_variableNames VARIABLES)
