@@ -64,7 +64,7 @@ echo Configuring Source ...
 
 if test $build_mingw32; then
 	$CMAKE .. -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_TOOLCHAIN_FILE="${SOURCE_DIR}/releng/i586-mingw32msvc.cmake" \
+		-DCMAKE_TOOLCHAIN_FILE="../releng/mingw32.cmake" \
 		-DUSE_STATIC_LIBS=on \
 		-DSPAGEDI_VERSION="${version}"
 elif test $build_m32; then
