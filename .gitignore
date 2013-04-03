@@ -19,6 +19,12 @@ CMakeFiles
 Makefile
 cmake_install.cmake
 install_manifest.txt
-build/*
 src/version.h
 src/config.h
+
+# Ignore the build directory
+build/*
+!build/.gitkeep
+
+# Ignore distribution files in the releng directory
+releng/SPAGeDi*
