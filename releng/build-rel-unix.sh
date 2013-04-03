@@ -54,7 +54,7 @@ version_len=`expr $version : '.*'`
 
 if [ $version_len -eq 40 ]; then
 	version=`echo $version | cut -c1-7`
-	version=`grep "# Default Version Number" CMakeLists.txt | sed -e 's/^.*"\(.*\)".*$/\1/' -e "s/CUSTOM/$version/"`
+	version=`grep "# Default Version Number" CMakeLists.txt | sed -e 's/^.*"\(.*\)".*$/\1/' -e "s/CUSTOM/g$version/"`
 	echo "    Archive" is commit $version.
 else
 	echo "    Archive" is tag $version.
