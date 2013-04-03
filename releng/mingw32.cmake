@@ -3,7 +3,7 @@ SET(COMPILER_PREFIX i486-mingw32) # Arch Linux
 
 # the name of the target operating system
 SET(CMAKE_SYSTEM_NAME Windows)
-#SET(CMAKE_SYSTEM_PROCESSOR x86)
+SET(CMAKE_SYSTEM_PROCESSOR x86)
  
 # which compilers to use for C and C++
 find_program(CMAKE_RC_COMPILER  NAMES ${COMPILER_PREFIX}-windres)

@@ -8,8 +8,13 @@ set(GITHUB_PROJECT "${PROJECT_NAME}")
 set(GITHUB_URL "http://nodeload.github.com/${GITHUB_USER}/${GITHUB_PROJECT}/legacy.tar.gz/")
 
 # Script Options
-if(NOT ARCHIVE_TAG)
-	set(ARCHIVE_TAG "HEAD")
+# RELENG_TAG
+# RELENG_M32
+# RELENG_M64
+# RELENG_TOOLCHAIN
+
+if(NOT RELENG_TAG)
+	set(RELENG_TAG "HEAD")
 endif()
 
 string(RANDOM TMP)
@@ -19,14 +24,13 @@ message(STATUS "Using ${RELENG_DIR} to build packages ...")
 file(MAKE_DIRECTORY "${RELENG_DIR}")
 
 set(ARCHIVE "${PROJECT_NAME}.tar.gz")
-message(STATUS "Downloading SPAGeDi Archive '${ARCHIVE_TAG}' from Github...")
-file(DOWNLOAD "${GITHUB_URL}${ARCHIVE_TAG}" "${RELENG_DIR}${ARCHIVE}" LOG GIT_LOG STATUS GIT_STATUS SHOW_PROGRESS)
+message(STATUS "Downloading SPAGeDi Archive '${RELENG_TAG}' from Github...")
+file(DOWNLOAD "${GITHUB_URL}${RELENG_TAG}" "${RELENG_DIR}${ARCHIVE}" LOG GIT_LOG STATUS GIT_STATUS SHOW_PROGRESS)
 list(GET GIT_STATUS 0 GIT_STATUS_0)
 list(GET GIT_STATUS 1 GIT_STATUS_1)
 if(NOT EXISTS "${RELENG_DIR}${ARCHIVE}" )
 	message(ERROR "Download Failed: ${GIT_STATUS_1}")
 endif()
-
 
 # Extract version tag from the download log
 if(GIT_LOG MATCHES "Content-Disposition: attachment; filename=${GITHUB_USER}-${GITHUB_PROJECT}-(.*).tar.gz")
@@ -49,10 +53,21 @@ set(CMAKE_DEFS
 	-DSPAGEDI_VERSION_GIT=${PROJECT_VERSION}
 )
 set(CMAKE_ARGS "")
-set(MAKE_BIN make)
 if(WIN32 AND NOT UNIX)
 	set(CMAKE_ARGS -G "NMake Makefiles" ${CMAKE_ARGS})
 	set(MAKE_BIN nmake)
+else()
+	set(MAKE_BIN make)	
+endif()
+
+if(RELENG_M32)
+	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_C_FLAGS=-m32)
+endif()
+if(RELENG_M64)
+	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_C_FLAGS=-m64)
+endif()
+if(RELENG_TOOLCHAIN)
+	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_TOOLCHAIN_FILE=${RELENG_TOOLCHAIN})
 endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_ARGS} .. ${CMAKE_DEFS}
