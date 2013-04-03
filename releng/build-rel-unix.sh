@@ -40,27 +40,30 @@ echo Downloading SPAGeDi Archive from GitHub ...
 
 wget -nv -O ${archive} "${GH}${build_archive}.tar.gz" || exit 1
 
-echo 
-echo Identifying Archive ...
-
-version=`tar -tf ${archive} --exclude='*/*' | sed "s/^${PROJ}-\(.*\)\/\$/\1/"`
-version_len=`expr $version : '.*'`
-
-if [ $version_len -eq 40 ]; then
-	version=`echo $version | cut -c1-7`
-	echo "    Archive" is commit $version.
-else
-	echo "    Archive" is tag $version.
-fi
 
 echo 
 echo Extracting Archive ...
 
 tar xzf ${archive} && cd ${PROJ}-* || exit 1
-mkdir -p build && cd build
+
+echo 
+echo Identifying Archive ...
+
+version=`pwd | sed "s/^.*\/${PROJ}-\(.*\)\$/\1/"`
+version_len=`expr $version : '.*'`
+
+if [ $version_len -eq 40 ]; then
+	version=`echo $version | cut -c1-7`
+	version=`grep "# Default Version Number" CMakeLists.txt | sed -e 's/^.*"\(.*\)".*$/\1/' -e "s/CUSTOM/$version/"`
+	echo "    Archive" is commit $version.
+else
+	echo "    Archive" is tag $version.
+fi
 
 echo
 echo Configuring Source ...
+
+mkdir -p build && cd build
 
 if test $build_mingw32; then
 	$CMAKE .. -DCMAKE_BUILD_TYPE=Release \

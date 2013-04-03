@@ -6,9 +6,8 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
 PROJECT(SPAGeDi)
 SET(SPAGEDI_NAME "SPAGeDi")
 
-# Default Version Numbers
 IF(NOT SPAGEDI_VERSION)
-	SET(SPAGEDI_VERSION "1.4a-CUSTOM")
+	SET(SPAGEDI_VERSION "1.4a-CUSTOM") # Default Version Number
 ENDIF()
 
 # Automatic Version Numbers
