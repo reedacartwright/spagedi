@@ -4,24 +4,22 @@
 CMAKE=cmake
 
 # Process command line arguments
-TEMP=`getopt -o t: --long toolchain: -n $0 -- "$@"`
-if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
-eval set -- "$TEMP"
 build_toolchain=
-while true ; do
-	case "$1" in
-		-t|--toolchain) build_toolchain=$2 ; shift 2 ;;
-		--) shift ; break ;;
-		*) echo "Internal error!" ; exit 1 ;;
+while getopts t: name; do
+	case $name in
+		t) build_toolchain="$OPTARG" ;;
+		?) printf "Usage: %s [-t toolchain] [tag]\n" $0
+		   exit 2;;
 	esac
 done
+shift `expr $OPTIND - 1`
 
 # Determine the archive tag
 build_archive=${1-HEAD}
 build_args="-DRELENG_TAG=${build_archive}"
 
 # if toolchain is m32 or m64 use the flags and not a toolchain
-if [ -n "${build_toolchain}" ]; then
+if [ ! -z "${build_toolchain}" ]; then
 	case "${build_toolchain}" in
 		m32|M32) build_args="${build_args} -DRELENG_M32=on" ;;
 		m64|M64) build_args="${build_args} -DRELENG_M64=on" ;;
