@@ -5,7 +5,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
 
 PROJECT(SPAGeDi)
 SET(SPAGEDI_NAME "SPAGeDi")
-SET(SPAGEDI_VERSION "1.4a-CUSTOM") # Default Version Number
+SET(SPAGEDI_VERSION "1.4b-CUSTOM") # Default Version Number
 
 # Automatic Version Numbers
 FIND_PACKAGE(Git)
