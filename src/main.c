@@ -248,8 +248,8 @@ strcpy(instrfile,"instruction.txt");
 		r_statFlp=resample_stat_type_matrix(0,m,0,Npop);
 		Flpp=f3tensor(0,m,0,Npop,0,Npermut[3]);
 		Fplmix=matrix(0,Npop,0,m);
-		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[p1][l].n=r_statFlp[p1][l].nd=0;
-		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[p1][l].obs=r_statFlp[p1][l].mean=r_statFlp[p1][l].sd=r_statFlp[p1][l].low95=r_statFlp[p1][l].high95=r_statFlp[p1][l].plow=r_statFlp[p1][l].phigh=r_statFlp[p1][l].pbil=(float)MISSVAL;;
+		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[l][p1].n=r_statFlp[l][p1].nd=0;
+        for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[l][p1].obs=r_statFlp[l][p1].mean=r_statFlp[l][p1].sd=r_statFlp[l][p1].low95=r_statFlp[l][p1].high95=r_statFlp[l][p1].plow=r_statFlp[l][p1].phigh=r_statFlp[l][p1].pbil=(float)MISSVAL;		
 		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) Flpp[l][p1][0]=Fpl[p1][l];
 
 		printf("\nTesting inbreeding coef: permutations of gene copies among individuals (%i)\n",Np);
