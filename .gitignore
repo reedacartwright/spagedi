@@ -13,6 +13,7 @@
 *.a
 
 *~
+.DS_Store
 
 CMakeCache.txt
 CMakeFiles
