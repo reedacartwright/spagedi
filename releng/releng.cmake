@@ -1,6 +1,6 @@
 # Portable Release Engineering Script
 
-set(PROJECT_VERSION "1.4a-CUSTOM") # Default Version
+set(PROJECT_VERSION "1.4b-CUSTOM") # Default Version
 set(PROJECT_NAME "spagedi")
 set(PROJECT_DISTS "SPAGeDi-1*")
 set(GITHUB_USER "reedacartwright")
