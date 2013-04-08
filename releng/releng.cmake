@@ -56,6 +56,13 @@ set(CMAKE_ARGS "")
 if(WIN32 AND NOT UNIX)
 	set(CMAKE_ARGS -G "NMake Makefiles" ${CMAKE_ARGS})
 	set(MAKE_BIN nmake)
+elseif(APPLE)
+	SET(CMAKE_DEFS ${CMAKE_DEFS} 
+		-DCMAKE_OSX_ARCHITECTURES=x86_64;i386
+		-DCMAKE_OSX_DEPLOYMENT_TARGET=10.5
+		-DCPACK_SYSTEM_NAME=Darwin64-universal
+	)
+	set(MAKE_BIN make)
 else()
 	set(MAKE_BIN make)	
 endif()
