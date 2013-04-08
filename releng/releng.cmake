@@ -58,7 +58,7 @@ if(WIN32 AND NOT UNIX)
 	set(MAKE_BIN nmake)
 elseif(APPLE)
 	SET(CMAKE_DEFS ${CMAKE_DEFS} 
-		-DCMAKE_OSX_ARCHITECTURES=x86_64;i386
+		"-DCMAKE_OSX_ARCHITECTURES=x86_64\\;i386"
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=10.5
 		-DCPACK_SYSTEM_NAME=Darwin64-universal
 	)
@@ -66,6 +66,8 @@ elseif(APPLE)
 else()
 	set(MAKE_BIN make)	
 endif()
+
+message(status "${CMAKE_DEFS}")
 
 if(RELENG_M32)
 	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_C_FLAGS=-m32)
