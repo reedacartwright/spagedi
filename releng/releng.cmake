@@ -31,7 +31,7 @@ else()
 endif()
 
 string(RANDOM TMP)
-set(RELENG_DIR "${TMPDIR}/SPAGeDi-temp/${TMP}/")
+set(RELENG_DIR "${TMPDIR}/spagedi-releng-${TMP}/")
 
 message(STATUS "Using ${RELENG_DIR} to build packages ...")
 file(MAKE_DIRECTORY "${RELENG_DIR}")
