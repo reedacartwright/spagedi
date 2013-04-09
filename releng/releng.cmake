@@ -67,8 +67,6 @@ else()
 	set(MAKE_BIN make)	
 endif()
 
-message(status "${CMAKE_DEFS}")
-
 if(RELENG_M32)
 	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_C_FLAGS=-m32)
 endif()
