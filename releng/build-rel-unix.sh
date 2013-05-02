@@ -3,6 +3,8 @@
 
 CMAKE=cmake
 
+umask 077
+
 # Process command line arguments
 build_toolchain=
 while getopts t: name; do

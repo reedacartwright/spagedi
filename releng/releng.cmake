@@ -17,8 +17,21 @@ if(NOT RELENG_TAG)
 	set(RELENG_TAG "HEAD")
 endif()
 
+# Identify Temporary Directory
+if(WIN32 AND NOT UNIX)
+	set(TMPDIR $ENV{TEMP})
+	if(NOT TMPDIR)
+		set(TMPDIR "c:/Temp")
+	endif()
+else()
+	set(TMPDIR $ENV{TMPDIR})
+	if(NOT TMPDIR)
+		set(TMPDIR "/tmp")
+	endif()
+endif()
+
 string(RANDOM TMP)
-set(RELENG_DIR "${CMAKE_CURRENT_BINARY_DIR}/SPAGeDi-temp/${TMP}/")
+set(RELENG_DIR "${TMPDIR}/spagedi-releng-${TMP}/")
 
 message(STATUS "Using ${RELENG_DIR} to build packages ...")
 file(MAKE_DIRECTORY "${RELENG_DIR}")
@@ -66,8 +79,6 @@ elseif(APPLE)
 else()
 	set(MAKE_BIN make)	
 endif()
-
-message(status "${CMAKE_DEFS}")
 
 if(RELENG_M32)
 	set(CMAKE_DEFS ${CMAKE_DEFS} -DCMAKE_C_FLAGS=-m32)
