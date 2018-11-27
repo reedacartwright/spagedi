@@ -250,8 +250,6 @@ pop6-18	pop6	150146	163153	174168	102102	145131	122100
 pop6-19	pop6	172146	163163	168168	102102	141141	118118
 pop6-20	pop6	150146	163153	174168	102102	141131	118118
 END	
-// the word END is compulsory at the end of the list of individuals data		
-//
 // The next matrix gives inter-population distances
 // On the first line, M indicates that its a matrix and 6 that it contains 6 elements.
 // Names for rows and columns must be the same as those given above (category names in this case).			

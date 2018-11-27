@@ -653,5 +653,3 @@ Ind	SubPop	X	Y	E1	E2	E3	E5	E7	E8
 278	SP15-2	319550	153289.5	606	606	606	505	707	707
 280	SP15-2	319550	153290	606	606	606	505	606	707
 END
-// the word END is compulsory at the end of the list of individuals data
-
