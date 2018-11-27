@@ -52,6 +52,7 @@ int *ivector(long int nl, long int nh)
 	v=(int *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(int))); 
 	if (!v) {
 		write(ERRORFILE,"\nallocation failure in ivector()");
+		wait_a_char();
 		exit(1);
 	}
 	return v-nl+NR_END;
@@ -73,6 +74,7 @@ long *lvector(long int nl, long int nh)
 	v=(long *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(long))); 
 	if (!v) {
 		write(ERRORFILE,"\nallocation failure in lvector()");
+		wait_a_char();
 		exit(1);
 	}
 	return v-nl+NR_END;
@@ -94,6 +96,7 @@ float *vector(long int nl, long int nh)
 	v=(float *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(float))); 
 	if (!v) {
 		write(ERRORFILE,"\nallocation failure in vector()");
+		wait_a_char();
 		exit(1);
 	}
 	return v-nl+NR_END;
@@ -114,6 +117,7 @@ double *dvector(long int nl, long int nh)
 	v=(double *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(double))); 
 	if (!v) {
 		write(ERRORFILE,"\nallocation failure in dvector()");
+		wait_a_char();
 		exit(1);
 	}
 	return v-nl+NR_END;
@@ -134,6 +138,7 @@ char *cvector(long int nl, long int nh)
 	v=(char *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(char))); 
 	if (!v) {
 		write(ERRORFILE,"\nallocation failure in dvector()");
+		wait_a_char();
 		exit(1);
 	}
 	return v-nl+NR_END;
@@ -156,6 +161,7 @@ int **imatrix(long nrl, long nrh,long ncl, long nch)
 	m=(int **) malloc((size_t)((nrow+NR_END)*sizeof(int*)));
 	if (!m) {
 		write(ERRORFILE,"\nallocation failure 1 in imatrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m += NR_END;
@@ -165,6 +171,7 @@ int **imatrix(long nrl, long nrh,long ncl, long nch)
 	m[nrl]=(int *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(int)));
 	if (!m[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in imatrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m[nrl] += NR_END;
@@ -196,6 +203,7 @@ float **matrix(long nrl, long nrh,long ncl, long nch)
 
 	if (!m) {
 		write(ERRORFILE,"\nallocation failure 1 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m += NR_END;
@@ -205,6 +213,7 @@ float **matrix(long nrl, long nrh,long ncl, long nch)
 	m[nrl]=(float *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(float)));
 	if (!m[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m[nrl] += NR_END;
@@ -234,6 +243,7 @@ double **dmatrix(long nrl, long nrh,long ncl, long nch)
 	m=(double **) malloc((size_t)((nrow+NR_END)*sizeof(double *)));
 	if (!m) {
 		write(ERRORFILE,"\nallocation failure 1 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m += NR_END;
@@ -243,6 +253,7 @@ double **dmatrix(long nrl, long nrh,long ncl, long nch)
 	m[nrl]=(double *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(double)));
 	if (!m[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m[nrl] += NR_END;
@@ -273,6 +284,7 @@ char **cmatrix(long nrl, long nrh,long ncl, long nch)
 	m=(char **) malloc((size_t)((nrow+NR_END)*sizeof(char *)));
 	if (!m) {
 		write(ERRORFILE,"\nallocation failure 1 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m += NR_END;
@@ -282,6 +294,7 @@ char **cmatrix(long nrl, long nrh,long ncl, long nch)
 	m[nrl]=(char *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(char)));
 	if (!m[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m[nrl] += NR_END;
@@ -311,6 +324,7 @@ float ***fpmatrix(long nrl, long nrh,long ncl, long nch)
 	m=(float ***) malloc((size_t)((nrow+NR_END)*sizeof(float **)));
 	if (!m) {
 		write(ERRORFILE,"\nallocation failure 1 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m += NR_END;
@@ -320,6 +334,7 @@ float ***fpmatrix(long nrl, long nrh,long ncl, long nch)
 	m[nrl]=(float **) malloc((size_t)((nrow*ncol+NR_END)*sizeof(float*)));
 	if (!m[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in matrix()");
+		wait_a_char();
 		exit(1);
 	}
 	m[nrl] += NR_END;
@@ -350,6 +365,7 @@ float ***f3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t=(float ***) malloc((size_t)((nrow+NR_END)*sizeof(float **)));
 	if (!t) {
 		write(ERRORFILE,"\nallocation failure 1 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t += NR_END;
@@ -359,6 +375,7 @@ float ***f3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl]=(float **) malloc((size_t)((nrow*ncol+NR_END)*sizeof(float *)));
 	if (!t[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl] += NR_END;
@@ -368,6 +385,7 @@ float ***f3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl][ncl]=(float *) malloc((size_t)((nrow*ncol*ndep+NR_END)*sizeof(float )));
 	if (!t[nrl][ncl]) {
 		write(ERRORFILE,"\nallocation failure 3 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl][ncl] += NR_END;
@@ -405,6 +423,7 @@ double ***d3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t=(double ***) malloc((size_t)((nrow+NR_END)*sizeof(double **)));
 	if (!t) {
 		write(ERRORFILE,"\nallocation failure 1 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t += NR_END;
@@ -414,6 +433,7 @@ double ***d3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl]=(double **) malloc((size_t)((nrow*ncol+NR_END)*sizeof(double *)));
 	if (!t[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl] += NR_END;
@@ -423,6 +443,7 @@ double ***d3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl][ncl]=(double *) malloc((size_t)((nrow*ncol*ndep+NR_END)*sizeof(double )));
 	if (!t[nrl][ncl]) {
 		write(ERRORFILE,"\nallocation failure 3 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl][ncl] += NR_END;
@@ -459,6 +480,7 @@ int ***i3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t=(int ***) malloc((size_t)((nrow+NR_END)*sizeof(int **)));
 	if (!t) {
 		write(ERRORFILE,"\nallocation failure 1 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t += NR_END;
@@ -468,6 +490,7 @@ int ***i3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl]=(int **) malloc((size_t)((nrow*ncol+NR_END)*sizeof(int *)));
 	if (!t[nrl]) {
 		write(ERRORFILE,"\nallocation failure 2 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl] += NR_END;
@@ -477,6 +500,7 @@ int ***i3tensor(long nrl, long nrh,long ncl, long nch,long ndl,long ndh)
 	t[nrl][ncl]=(int *) malloc((size_t)((nrow*ncol*ndep+NR_END)*sizeof(int )));
 	if (!t[nrl][ncl]) {
 		write(ERRORFILE,"\nallocation failure 3 in f3tensor()");
+		wait_a_char();
 		exit(1);
 	}
 	t[nrl][ncl] += NR_END;
@@ -756,7 +780,8 @@ void tutest(float data1[],unsigned long n1,float data2[],unsigned long n2,float 
  with unequal variances and its significance as prob, small values of prob indicating a 
 significant difference of means, numerical recipes p. 617*/
 {
-	float var1,var2,ave1,ave2;
+	unsigned long j,count=0;
+	float var1,var2,ave1,ave2,sd,df,cov=0.0F;
 	
 	if((n1<=1) || (n2<=1)) {
 		if((n1==0) || (n2==0)) 
@@ -778,10 +803,9 @@ significant difference of means, numerical recipes p. 617*/
 	}
     	
     *t=(float)((ave1-ave2)/sqrt(var1/n1+var2/n2));
-    /* df = (float)(sqr(var1/n1+var2/n2)/(sqr(var1/n1)/(n1-1)+sqr(var2/n2)/(n2-1)));*/
-/*    *prob=betai(0.5*df,0.5,df/(df+sqr(*t)));       */
+    df = (float)(sqr(var1/n1+var2/n2)/(sqr(var1/n1)/(n1-1)+sqr(var2/n2)/(n2-1)));
     *prob=0.0F;	/*routine betai not yet implemented*/
-
+/*    *prob=betai(0.5*df,0.5,df/(df+sqr(*t)));       */
 }	/*end procedure tutest*/	
 
 
@@ -1018,6 +1042,7 @@ void resample_analyze(float *r_vector,unsigned long first,unsigned long last,
 	unsigned long low95,high95,low99,high99;
 	unsigned long n,i;
 	double average=0.,var=0.;
+	float ploworequal,phighorequal;
 	
 	r_stat->obs=observed;
 	n=last-first+1;

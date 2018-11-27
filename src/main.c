@@ -1,5 +1,5 @@
 /************************************************************************* 
- * Copyright (c) 2002-2009 Olivier Hardy and Xavier Vekemans             *
+ * Copyright (c) 2002-2015 Olivier Hardy and Xavier Vekemans             *
  *                                                                       *
  * This program is free software: you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -24,8 +24,6 @@
 #include "Autocio.h"
 #include "Xatools.h"
 
-#include "package.h"
-
 long seed;
 
 
@@ -44,9 +42,10 @@ int main(int argc,char *argv[])
 	char catname[MAXNOM];	//identifier of each category name
 	int *cati;					//categ of ind i; categ of spatial group g
 	int m;							//number of loci
-	char namelocus[MMAX][MAXNOM];   //identifier of each locus (idem)
+//	char **namelocus;   //identifier of each locus (idem)
  	int ncoord;				//number of spatial coordinates
 	char namecoord[NCOORDMAX+1] [MAXNOM];		//identifier of each variable (idem)
+	int *npc;
 	double *xi,*yi,*zi;			//position in x, y, z coordinates of individuals (i)
 	double **Mdij;
 	int distm;
@@ -59,29 +58,30 @@ int main(int argc,char *argv[])
 	int *Niskg;
 	int Npop,*popi,*Nip,*catp;
 	double *xp,*yp,*zp;
-	double *H2;
-	struct name *namei,*namecat,*namecati,*namesg,*nameskg,*namepop;
+	double *H2,*alpha;
+	struct name *namei,*namecat,*namecati,*namesg,*nameskg,*namepop,*namelocus;
 	int export;		//=1 if data to be exported to Genepop or Fstat format
 
 	int ndigit;				//number of digits per allele
 	int ploidy,*ploidyi,Niploidy[2+PLOIDYMAX];	//ploidy of the data for F; ploidy of ind i; #ind of ploidy p
 	int maxnal=0;			//max # of alleles
+	float missdat;			//value attributed for missing data
 	int **Nmissinggenotpl,**Nincompletegenotpl;		//number of missing / incomplete genotypes per locus 
 	float dijmin,dijmax,sigmaest,density,dwidth;			//minimal/max distance to take into account for spatial regression
 	int nc;				//number of classes of distance intervals (does not include class=0 which is for Fis),class
 	double maxc[MAXINTERVALS];//max value for each distance interval
 	float givenF;
 
-	int p,p1,l;	
+	int i,p,p1,l,linit,k,newi,*newii,*oldii;	
 
-	int ***gilc,***gilcmix;			//genotype of ind i at locus l and chromosome a
-	
+	int ***gilc,***gilcmix,a1,a2;			//genotype of ind i at locus l and chromosome a
+	int *rl;
 	int **allelesizela;	//allele lenght (number defined in the data file)
 	float ***Mgdlaa;	//genetic distance between alleles at each locus
-	float ***Ppla,**Hepl,**Nnielsenpl,**RA,**hTpl,**vTpl,**Dmpl,**Dwmpl,**Masizepl,**Vasizepl,**Fpl,**Fplmix,***Flpp;		//matrix of expected heterozygosity, allele frequencies, mean of allele size, and variance of allele size for locus l and pop p
-	struct resample_stat_type **r_statFlp = NULL;
+	float ***Ppla,**Hepl,**Hopl,**Nnielsenpl,**RA,**hTpl,**vTpl,**Dmpl,**Dwmpl,**Masizepl,**Vasizepl,**Fpl,**Fplmix,***Flpp;		//matrix of expected heterozygosity, allele frequencies, mean of allele size, and variance of allele size for locus l and pop p
+	struct resample_stat_type **r_statFlp;
 	int **Nallelepl,**Nvalgenpl,K=0;	//number of alleles per locus; tot # of defined gene per locus (=ploidy*#ind, except 0 values)
-	int *Nallelel,Ngivenallelel[MMAX];
+	int *Nallelel,*Ngivenallelel;
 	int StatType;	//StatType=1 for pairs of ind, 2 for pairs of spatial groups, 3 for pairs of categorical groups
 	int FreqRef;	//FreqRef=-1 when ref allele frequencies are given in data file, =0 when it refers to the whole sample, =1 when it refers to a given category, =-2 when allele freq = unweighted mean freq over categories 
 	float **givenPla = NULL;//reference allele frequencies given
@@ -100,8 +100,9 @@ int main(int argc,char *argv[])
 	int Rbtwloc;			//=1 if the mean inter-locus correlation coefficients for genetic distances must be computed
 	int permutdetails;
 	int printdistmatrix=0;	// 1 if genetic and spatial distances matrices are to be printed
-	int permutalleles=0;	//=0 if no estimate of inbreeding asked
+	int estinbreeding=0,permutalleles=0,estselfing=0;	//=0 if no estimate of inbreeding asked
 
+	FILE *filep;
 	smess=cvector(0,SMAX);
 
 /*
@@ -121,7 +122,7 @@ strcpy(instrfile,"instruction.txt");
 	//write common errors in error file
 	commom_errors();
 
-	readbasicinfoF(inputfile,&n,&Ncat,&ncoord,&m,&ndigit,&ploidy,catname,namecoord,namelocus,&nc,maxc);
+	readbasicinfoF(inputfile,&n,&Ncat,&ncoord,&m,&ndigit,&ploidy,&nc,maxc);
 	if(ndigit<=0) ploidy=1; //case of a dominant marker. ndigit is the value attributed to missing data
     // initializations
 	ploidyi=ivector(0,n);
@@ -130,6 +131,7 @@ strcpy(instrfile,"instruction.txt");
 	xi=dvector(0,n);
 	yi=dvector(0,n);
 	zi=dvector(0,n);
+	npc=ivector(0,abs(nc)+2);
 	sgi=ivector(0,n);
 	Nig=ivector(0,n);
 	skgi=ivector(0,n);
@@ -137,21 +139,24 @@ strcpy(instrfile,"instruction.txt");
 	catskg=ivector(0,n);
 	Nallelel=ivector(0,m);
 	H2=dvector(0,m);
+	alpha=dvector(0,m);
 
 	gilc=i3tensor(0,n,0,m,0,ploidy-1);
 	allelesizela=imatrix(0,m,0,2+(int)pow(10,ndigit));
+	missdat=0.;
 	if((namei=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(100);
 	if((namecati=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(101);
 	if((namecat=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(101);
 	if((namesg=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(102);
 	if((nameskg=(struct name*) malloc((n+1)*sizeof(struct name)))==NULL) exit(103);
+	if((namelocus=(struct name*) malloc((m+1)*sizeof(struct name)))==NULL) exit(104);
 
-	readsecondinfoF(inputfile,n,namei,Ncat,namecat,namecati,cati,ncoord,xi,yi,zi,m,ndigit,ploidy,gilc,Nallelel,allelesizela,ploidyi,Niploidy,H2);
+	readsecondinfoF(inputfile,n,namei,catname,namecoord,Ncat,namecat,namelocus,namecati,cati,ncoord,xi,yi,zi,m,ndigit,ploidy,gilc,Nallelel,allelesizela,ploidyi,Niploidy,H2,alpha);
 	for(l=1;l<=m;l++) if(maxnal<Nallelel[l]) maxnal=Nallelel[l];   //define the max # of alleles
 	define_groups(n,namei,xi,yi,zi,Ncat,namecat,namecati,cati,Nik,&Nsg,namesg,sgi,Nig,&Nskg,nameskg,skgi,catskg,Niskg,1);
 	displaybasicinfoF(argc,inputfile,outputfile,n,Ncat,Nik,ncoord,m,ndigit,ploidy,ploidyi,Niploidy,namelocus,namecoord,namecat,nc,maxc,Nsg,Nig,Nskg,Niskg);	
 	
-	define_analysisF(argc,instrfile,n,ploidy,ndigit,m,Ncat,Nsg,Nskg,ncoord,&StatType,&NS,Stat,&TypeComp,&cat1,&cat2,namecat,&FreqRef,&givenF,&printallelefreq,&JKest,&printdistmatrix,Npermut,&dijmin,&dijmax,&writeresampdistr,&regdetails,&varcoef,&Rbtwloc,&sigmaest,&density,&dwidth,&permutdetails,&distm,inputfile,distfile,freqfile,&K,&alleledist,alleledistfile,&export,&seed);
+	define_analysisF(argc,instrfile,n,ploidy,ndigit,m,Ncat,Nsg,Nskg,ncoord,&StatType,&NS,Stat,&TypeComp,&cat1,&cat2,namecat,&FreqRef,&givenF,&printallelefreq,&JKest,&printdistmatrix,Npermut,&dijmin,&dijmax,&writeresampdistr,&regdetails,&varcoef,&Rbtwloc,&estselfing,&sigmaest,&density,&dwidth,&permutdetails,&distm,inputfile,distfile,freqfile,&K,&alleledist,alleledistfile,&export,&seed);
 	
 	
 	
@@ -207,6 +212,7 @@ strcpy(instrfile,"instruction.txt");
 	//read reference allele frequencies
 	if(FreqRef==-1){
 		givenPla=matrix(1,m,0,2+(int)pow(10,ndigit));
+		Ngivenallelel=ivector(0,m);
 		read_allele_frequencies(freqfile,m,namelocus,Nallelel,allelesizela,givenPla,Ngivenallelel);
 	}
 
@@ -227,17 +233,19 @@ strcpy(instrfile,"instruction.txt");
 	Nvalgenpl=imatrix(0,Npop,0,m);
 	RA=matrix(0,Npop,0,m);
 	Hepl=matrix(0,Npop,0,m);
+	Hopl=matrix(0,Npop,0,m);
 	hTpl=matrix(0,Npop,0,m);
 	vTpl=matrix(0,Npop,0,m);
 	Dmpl=matrix(0,Npop,0,m);
 	Dwmpl=matrix(0,Npop,0,m);
 	Masizepl=matrix(0,Npop,0,m);
 	Vasizepl=matrix(0,Npop,0,m);
+	rl=ivector(0,m);
 	Fpl=matrix(0,Npop,0,m);
 
 	printf("\n\n\nThe program is now doing the analyses\nTo stop it before the end, press 'Ctrl' + 'c'");
 	printf("\n\nComputing allele frequencies. Please, wait.");
-	compute_allele_freq(n,Npop,popi,m,ndigit,ploidy,gilc,ploidyi,Nallelel,allelesizela,Mgdlaa,alleledist,Ppla,Nallelepl,Nmissinggenotpl,Nincompletegenotpl,Nvalgenpl,Nnielsenpl,RA,&K,Hepl,hTpl,vTpl,Dmpl,Dwmpl,Masizepl,Vasizepl);
+	compute_allele_freq(n,Npop,popi,m,ndigit,ploidy,gilc,ploidyi,Nallelel,allelesizela,Mgdlaa,alleledist,Ppla,Nallelepl,Nmissinggenotpl,Nincompletegenotpl,Nvalgenpl,Nnielsenpl,RA,&K,Hopl,Hepl,hTpl,vTpl,Dmpl,Dwmpl,Masizepl,Vasizepl);
 	
 //	compute_F_R_stat(n,Npop,0,0,popi,m,Nallelel,ploidy,gilc,allelesizela,NS,Stat,FstatSlr,corrSlij,Fpl,0,0,1);
 	compute_FiPop(n,Npop,popi,m,Nallelel,ploidy,gilc,allelesizela,Fpl);
@@ -248,8 +256,8 @@ strcpy(instrfile,"instruction.txt");
 		r_statFlp=resample_stat_type_matrix(0,m,0,Npop);
 		Flpp=f3tensor(0,m,0,Npop,0,Npermut[3]);
 		Fplmix=matrix(0,Npop,0,m);
-		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[p1][l].n=r_statFlp[p1][l].nd=0;
-		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[p1][l].obs=r_statFlp[p1][l].mean=r_statFlp[p1][l].sd=r_statFlp[p1][l].low95=r_statFlp[p1][l].high95=r_statFlp[p1][l].plow=r_statFlp[p1][l].phigh=r_statFlp[p1][l].pbil=(float)MISSVAL;;
+		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[l][p1].n=r_statFlp[l][p1].nd=0;
+		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) r_statFlp[l][p1].obs=r_statFlp[l][p1].mean=r_statFlp[l][p1].sd=r_statFlp[l][p1].low95=r_statFlp[l][p1].high95=r_statFlp[l][p1].plow=r_statFlp[l][p1].phigh=r_statFlp[l][p1].pbil=(float)MISSVAL;
 		for(l=0;l<=m;l++)for(p1=0;p1<=Npop;p1++) Flpp[l][p1][0]=Fpl[p1][l];
 
 		printf("\nTesting inbreeding coef: permutations of gene copies among individuals (%i)\n",Np);
@@ -269,14 +277,17 @@ strcpy(instrfile,"instruction.txt");
 		free_matrix(Fplmix,0,Npop,0,m);
 	} 
 	else Npermut[3]=0;
-	write_allele_freq(outputfile,n,m,namelocus,ndigit,ploidy,Npop,Nip,namepop,StatType,NS,Stat,allelesizela,Nallelepl,Ppla,Nnielsenpl,RA,K,Hepl,hTpl,vTpl,Dmpl,Dwmpl,Masizepl,Vasizepl,Nmissinggenotpl,Nincompletegenotpl,Nvalgenpl,printallelefreq,FreqRef,Ngivenallelel,givenPla,Fpl,Npermut[3],r_statFlp);
-	
+	write_allele_freq(outputfile,n,m,namelocus,ndigit,ploidy,Npop,Nip,namepop,StatType,NS,Stat,allelesizela,Nallelepl,Ppla,Nnielsenpl,RA,K,Hopl,Hepl,hTpl,vTpl,Dmpl,Dwmpl,Masizepl,Vasizepl,Nmissinggenotpl,Nincompletegenotpl,Nvalgenpl,printallelefreq,FreqRef,Ngivenallelel,givenPla,Fpl,Npermut[3],r_statFlp);
+
+	//estimate selfing rate within pop assuming Mixed Mating Model using identity disequilibrium
+	if(estselfing) selfing_estimation(n,Npop,popi,m,ploidy,gilc,ploidyi,alpha,outputfile,namelocus,namepop,Npermut[3],&seed);
+
 	ntot=n;	//restrict n (#indiv) to the indiv used
 	if(cat1 && !cat2) { n=Nik[cat1]; for(p=1;p<=Npop;p++) if(catp[p]>1) Npop=p-1; }
 	if(cat1 && cat2) { n=Nik[cat1]+Nik[cat2];	for(p=1;p<=Npop;p++) if(catp[p]>2) Npop=p-1; }
 
-	if(StatType==1) mainAnalysisBtwInd(argc,n,ntot,xi,yi,zi,Mdij,sgi,Nsg,skgi,Nskg,catskg,cati,Ncat,Nik,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nallelepl,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,givenF,H2,namei,namelocus,namecat,TypeComp,cat1,cat2,FreqRef,givenPla,Ngivenallelel,JKest,NS,Stat,printdistmatrix,sigmaest,density,dwidth,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
-	if(StatType>=2) mainAnalysisBtwPop(argc,StatType,n,xp,yp,zp,Mdij,popi,Npop,catp,cati,Ncat,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,namepop,namelocus,namecat,PWstat,TypeComp,cat1,cat2,FreqRef,JKest,NS,Stat,printdistmatrix,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
+	if(StatType==1 && NS>0) mainAnalysisBtwInd(argc,n,ntot,xi,yi,zi,Mdij,sgi,Nsg,skgi,Nskg,catskg,cati,Ncat,Nik,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nallelepl,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,givenF,H2,namei,namelocus,namecat,TypeComp,cat1,cat2,FreqRef,givenPla,Ngivenallelel,JKest,NS,Stat,printdistmatrix,sigmaest,density,dwidth,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
+	if(StatType>=2 && NS>0) mainAnalysisBtwPop(argc,StatType,n,xp,yp,zp,Mdij,popi,Npop,catp,cati,Ncat,nc,maxc,dijmin,dijmax,m,ndigit,ploidy,ploidyi,Nallelel,Nvalgenpl,gilc,Ppla,allelesizela,Masizepl,Vasizepl,Mgdlaa,namepop,namelocus,namecat,PWstat,TypeComp,cat1,cat2,FreqRef,JKest,NS,Stat,printdistmatrix,Npermut,permutalleles,writeresampdistr,regdetails,varcoef,Rbtwloc,permutdetails,outputfile);
 
 	sprintf(smess,"\n\n ");
 	write_tofile_only(outputfile,smess);
@@ -292,12 +303,12 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	int *catp,int *cati,int Ncat,int nc,double *maxc,float dijmin,float dijmax,
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nvalgenkl,int ***gilc,
 	float ***Ppla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,
-	struct name namepop[],char namelocus[][MAXNOM],struct name namecat[],
+	struct name namepop[],struct name namelocus[],struct name namecat[],
 	int PWstat,int TypeComp,int cat1,int cat2,int FreqRef,int JKest,int NS,int Stat[],int printdistmatrix,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[])
 {
 	int c,l,S,r,p1,p2;
-	int linit,maxnal;
+	int linit,estinbreeding,maxnal;
 	
 	double *mdc,*mlndc;
 	int *npc;
@@ -310,6 +321,8 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	double *xpmix,*ypmix,*zpmix,**Mdijmix;
 	struct resample_stat_type **r_statSlc[12],**r_statFSlr[12]; //results of resampling for each loci and each dist class
 	int comp,permutbypairs;
+	char resampfile[50];			//name of file for resampling distrib
+	float missdat=0.F;
 	long seedinit;
 	int F_Rstat,G_Nstat,pairwGst_Nst,pairwGij_Nij;  //=0 or 1 according to computations to do
 
@@ -340,6 +353,8 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	Fpl=matrix(0,Npop,0,m);
 	if(m==1) linit=1;
 	else linit=0;
+
+	if(ploidy>1) estinbreeding=1;
 
 	F_Rstat=G_Nstat=pairwGst_Nst=pairwGij_Nij=0;
 	for(S=1;S<=NS;S++){
@@ -641,12 +656,12 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	int *catskg,int *cati,int Ncat,int *Nik,int nc,double *maxc,float dijmin,float dijmax,
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nallelekl,int **Nvalgenkl,int ***gilc,
 	float ***Ppla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,double *H2,
-	struct name namei[],char namelocus[][MAXNOM],struct name namecat[],
+	struct name namei[],struct name namelocus[],struct name namecat[],
 	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,int NS,int Stat[],int printdistmatrix,float sigmaest,float density,float dwidth,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[])
 {
 	int i,c,l,S,ni,nf;
-	int linit,maxnal;
+	int linit,estinbreeding,maxnal;
 	
 	double *mdc,*mlndc;
 	int *npc;
@@ -655,11 +670,12 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	float ***corrSlij[12],**corrSlc[12],***RSll[12],***V[12],**R2pl[12];
 
 	float ***corrSlcp[12];
-	int Np,p,**allelesizelamix,***gilcmix,*sgimix;
-	double *xmix,*ymix,*zmix,**Mdijmix;
+	int Np,p,Statbis[2],**allelesizelamix,***gilcmix,*sgimix;
+	double *xmix,*ymix,*zmix,*xpmix,*ypmix,*zpmix,**Mdijmix;
 	float ***Mgdlaamix;
 	struct resample_stat_type **r_statSlc[12]; //results of resampling for each loci and each dist class
 
+	char resampfile[50];			//name of file for resampling distrib
 	float missdat=0.F;
 	long seedinit;
 
@@ -686,7 +702,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	if(JKest) linit=-m;
 	if(m==1) linit=1;
 	if(TypeComp!=1){
-		if(NS*(m-linit+1)*n*n*4 > 250000000) {printf("\n\nSPAGeDi will attempt to allocate ca. %i Mo of RAM and may fail,\nin which case you should use a computer with more memory,\nselect just one statistic, or reduce your data set\nPress RETURN to go on",(int)(NS*(m-linit+1)*n*n*4./1000000.)); wait_a_char();}  
+		if(NS*(m-linit+1)*n*n*4. > 250000000) {printf("\n\nSPAGeDi will attempt to allocate ca. %i Mo of RAM and may fail,\nin which case you should use a computer with more memory,\nselect just one statistic, or reduce your data set\nPress RETURN to go on",(int)(NS*(m-linit+1)*n*n*4./1000000.)); wait_a_char();}  
 		for(S=1;S<=NS;S++) corrSlij[S]=f3tensor(linit,m,0,n,0,n);
 	}
 	if(TypeComp==1) for(S=1;S<=NS;S++){//create set of small matrices for within cat i,j pairs
@@ -702,6 +718,8 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	if(JKest) for(S=1;S<=NS;S++) corrSlc[S]=matrix(-m,m+4,-28,abs(nc)+2);
 	else for(S=1;S<=NS;S++) corrSlc[S]=matrix(0,m+4,-28,abs(nc)+2);
 	if(Rbtwloc)for(S=1;S<=NS;S++) {RSll[S]=f3tensor(0,1,0,m,0,m); V[S]=f3tensor(0,1,0,5,0,2); R2pl[S]=matrix(0,1,-m,m);}
+	estinbreeding=0;
+	for(S=1;S<=NS;S++) if(ploidy>1 && (Stat[S]==1 || Stat[S]==2 || Stat[S]==5)) estinbreeding=1; 
 	
 	//stat computations
 	printf("\nComputing pairwise statistics between individuals. Please, wait.");
@@ -814,6 +832,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 		if((Np=Npermut[4])){ 
 			seed=seedinit;
 			printf("\nPermutations of allele sizes (%i)\n",Np);
+			Statbis[1]=5;
 			maxnal=0;//define the max # of alleles
 			for(l=1;l<=m;l++) if(maxnal<Nallelel[l]) maxnal=Nallelel[l];
 			allelesizelamix=imatrix(0,m,0,maxnal);
@@ -822,7 +841,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 				if(Np>=100){if((p%(Np/10))==0 || (p<=(Np/10) && (p%(Np/100))==0) ) printf(" %i",p);}
 				else if((p%(Np/10))==0) printf(" %i",p);
 				permut_allelesizes(m,Nallelel,allelesizela,allelesizelamix,&seed);
-				permut_genetic_distances(m,Nallelel,Mgdlaa,Mgdlaamix,&seed);
+				if(Mgdlaa[0][0][0]) permut_genetic_distances(m,Nallelel,Mgdlaa,Mgdlaamix,&seed);
 				compute_pairwise_corr_F(n,ntot,Ncat,cati,m,ndigit,ploidy,missdat,gilc,Nallelel,allelesizelamix,Mgdlaamix,corrSlij,NS,Stat,FreqRef,givenPla,Ngivenallelel,TypeComp,givenF,H2,0,0);
 				for(S=1;S<=NS;S++)if(Stat[S]==5 || Stat[S]==14){
 					compute_corr_per_dist_class (n,m,nc,maxc,Ncat,cati,1,TypeComp,FreqRef,0,xi,yi,zi,Mdij,sgi,dijmin,dijmax,corrSlij[S],corrSlc[S],RSll[S],0,V[S],R2pl[S],&seed,0);
