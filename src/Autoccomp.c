@@ -43,6 +43,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
  		nsg=1;
 		Nig[1]=1;
 		strncpy(namesg[1].n,namei[1].n,MAXNOM-1);
+		namesg[1].n[MAXNOM-1] = '\0';
 		for(i=2;i<=n;i++){
 			if(xi[i]!=xi[i-1] || yi[i]!=yi[i-1] || zi[i]!=zi[i-1]){
 				nsg++;
@@ -50,6 +51,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 				Nig[nsg]=1;
 				sprintf(smess,namei[i].n,nsg);
 				strncpy(namesg[nsg].n,smess,MAXNOM-1);
+				namesg[nsg].n[MAXNOM-1] = '\0';
 			}
 			else{
 				sgi[i]=nsg;
@@ -67,11 +69,13 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 		newgroup[sgi[1]]=1;
 		nsg=1;
 		strncpy(namesg[1].n,namei[1].n,MAXNOM-1);
+		namesg[1].n[MAXNOM-1] = '\0';
 		for(i=2;i<=n;i++){
 			if(newgroup[sgi[i]]==0){
 				nsg++;
 				newgroup[sgi[i]]=nsg;
 				strncpy(namesg[nsg].n,namei[i].n,MAXNOM-1);
+				namesg[nsg].n[MAXNOM-1] = '\0';
 			}
 		}
 		*Nsg=nsg;
@@ -93,6 +97,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 		ncatobs=1;
 		cati[1]=1;
 		strncpy(namecat[1].n,namecati[1].n,MAXNOM-1);
+		namecat[1].n[MAXNOM-1] = '\0';
 		for(i=2;i<=n;i++){
 			newcat=1;
 			for(k=1;k<=ncatobs;k++){
@@ -101,6 +106,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 			if(newcat){
 				ncatobs++;
 				strncpy(namecat[ncatobs].n,namecati[i].n,MAXNOM-1);
+				namecat[ncatobs].n[MAXNOM-1] = '\0';
 				cati[i]=ncatobs;
 			}
 		}
@@ -134,6 +140,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 		catskg[1]=cati[1];
 		sprintf(smess,"%s-%s",namesg[1].n,namecat[1].n);
 		strncpy(nameskg[1].n,smess,MAXNOM-1);
+		nameskg[1].n[MAXNOM-1] = '\0';
 
 		for(i=2;i<=n;i++){
 			skgi[i]=0;
@@ -154,6 +161,7 @@ void define_groups(int n,struct name namei[],double *xi,double *yi,double *zi,
 				Niskg[nskg]=1;
 				sprintf(smess,"%s-%s",namesg[sgi[i]].n,namecat[cati[i]].n);
 				strncpy(nameskg[nskg].n,smess,MAXNOM-1);
+				nameskg[nskg].n[MAXNOM-1] = '\0';
 			}
 		}
 		*Nskg=nskg;
@@ -293,9 +301,12 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 	}
 
 	/*initialization*/
-	for(c=0;c<=(*nc)+1;c++){
+	for(c=0;c<MAXINTERVALS+3;c++){
 		sumd[c]=sumlnd[c]=0.0F;
-		npc[c]=nplnc[c]=0;
+		nplnc[c]=0;
+	}
+	for(c=0;c<=(*nc)+1;c++){
+		npc[c]=0;
 	}
 	dmax=0.0F;
  	participic=imatrix(0,n,0,(*nc)+1);
@@ -386,7 +397,7 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 			int alleledist,float ***Pkla,int **Nallelekl,int **Nmissinggenotkl,int **Nincompletegenotkl,
 			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hokl,float **Hekl,float **hTkl,float **vTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl)
 {
-	int i,l,a,a1,a2,k,k1,k2,npairs,nallelepairs,nloci;/*counter for individuals (i,j), locus (l), group (g), allele (a), category*/ 
+	int i,l,a,a1,a2,k,k1,k2,npairs,nallelepairs;/*counter for individuals (i,j), locus (l), group (g), allele (a), category*/ 
 	float Navalid,nvalidpop,**NvalidHokl,sumweight;		/*number of individuals with valid data*/
 	float Sasize,SSasize;	/*for estimators of allele size coef*/
 	float **Jkl;
@@ -618,9 +629,9 @@ void compute_allele_freq(int n,int Ncat,int *cati,int m,
 	} //end loop over locus
 
 	for(k=0;k<=Ncat;k++){
-		nloci=0;
 		hTkl[k][0]=vTkl[k][0]=Dmkl[k][0]=Dwmkl[k][0]=0.0f;	
-	/*	for(l=1;l<=m;l++)if(Nvalgenkl[k][l]>1){
+	/*	nloci=0;
+		for(l=1;l<=m;l++)if(Nvalgenkl[k][l]>1){
 			nloci++;
 			hTkl[k][0]+=hTkl[k][l];
 			vTkl[k][0]+=vTkl[k][l];
@@ -677,7 +688,7 @@ void selfing_estimation(int n,int Npop,int *popi,int m,int ploidy,int ***gilc,in
 	double **estSgchsomsegC,**estSgchtidsegC,**estSpchsomsegC,**estSpchtidsegC;
 	double X,Y,Z,***estSgllp,***estSpllp,meanalpha;
 
-	double **rhgil,**rhpil,***rsumh2gllp,***rsumh2pllp,***Pvalh2gllp,***Pvalh2pllp;
+	double **rhgil,**rhpil,***rsumh2gllp,***rsumh2pllp,***Pvalh2gllp=NULL,***Pvalh2pllp=NULL;
 	int rep,**nvalidglp,**nvalidplp,**rnvalidglp,**rnvalidplp,***rigpli,***rippli;
 
 	double hforNallelein2ploid[3]={MISSVAL,0,1};
@@ -798,7 +809,7 @@ void selfing_estimation(int n,int Npop,int *popi,int m,int ploidy,int ***gilc,in
 					//correction to account for double reduction (-> g2 estimates are then near equivalent to expected values in the absence of double reduction)
 					numgllp[l1][l2][p]=(sumh2gllp[l1][l2][p]-den)/(1+(ploidyp[p]-2)*alpha[l1])*(1+(ploidyp[p]-2)*alpha[l2]);
 					numgllp[0][0][p]+=numgllp[l1][l2][p];
-					g2=g2gllp[l1][l2][p]=numgllp[l1][l2][p]/den;
+					//g2=g2gllp[l1][l2][p]=numgllp[l1][l2][p]/den;
 
 					sumh2gllp[0][0][p]+=sumh2gllp[l1][l2][p];
 //					g2=g2gllp[l1][l2][p]=sumh2gllp[l1][l2][p]/den -1.;
@@ -822,7 +833,7 @@ void selfing_estimation(int n,int Npop,int *popi,int m,int ploidy,int ***gilc,in
 					//correction to account for double reduction (-> g2 estimates are then near equivalent to expected values in the absence of double reduction)
 					numpllp[l1][l2][p]=(sumh2pllp[l1][l2][p]-den) / (1+(ploidyp[p]-2)*alpha[l1])*(1+(ploidyp[p]-2)*alpha[l2]);
 					numpllp[0][0][p]+=numpllp[l1][l2][p];
-					g2=g2pllp[l1][l2][p]=numpllp[l1][l2][p]/den;
+					//g2=g2pllp[l1][l2][p]=numpllp[l1][l2][p]/den;
 
 					sumh2pllp[0][0][p]+=sumh2pllp[l1][l2][p];
 //					g2=g2pllp[l1][l2][p]=sumh2pllp[l1][l2][p]/den -1.;
@@ -1198,7 +1209,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 	int **Nvalidwpairkl,nQij;
 	float ascor=(float)MISSVAL,asc,Sasc,SNcomp;	//for estimators of allele size coef
 	float Pa,Pb,Pc,Pd,Sab,Sac,Sad,Sbc,Sbd,Sca,Scb,Scd,Sda,Sdb,rLynch=(float)MISSVAL,dLynch=(float)MISSVAL,rLynch1,rLynch2,dLynch1,dLynch2,WrLynch,WdLynch,WrLynch1,WrLynch2,WdLynch1,WdLynch2,SrLynch1,SrLynch2,SWrLynch,SWrLynch1,SWrLynch2,SWdLynch,SdLynch1,SdLynch2,SWdLynch1,SWdLynch2,*SrLynch1l,*SrLynch2l,*SWrLynch1l,*SWrLynch2l,*SdLynch1l,*SdLynch2l,*SWdLynch1l,*SWdLynch2l;
-	float *So,Sij,rli,*Srli,*SSrli,*Nrli,Var,MLrli,SumW; 
+	float Sij,rli,*Srli,*SSrli,*Nrli,Var,MLrli,SumW; 
 	float rQueller=(float)MISSVAL,rQueller1,rQueller2,WrQueller,WrQueller1,WrQueller2,SrQueller1,SrQueller2,SWrQueller1,SWrQueller2,*SrQueller1l,*SrQueller2l,*SWrQueller1l,*SWrQueller2l;
 	int Eq,Elois,Eritl,Erous,Erela,Easc,ENij,Erlynch,Edlynch,Erqueller,Edwang,Erwang,Ekinshipdom,Erelatdom,Erli;   //define if the statistic is asked (0=no), value>0 = value of S
 	float **Plai[MMAX],***varkla,pi,qi,*Spik,*SSpik,cov,covt,var,vart,Mori=(float)MISSVAL;
@@ -1213,7 +1224,6 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 	Ncompasc=ivector(0,m);
 	NcompNij=ivector(0,m);
 	Nallelel=ivector(0,m);
-	So=vector(0,m);
 	Srli=vector(0,m);
 	SSrli=vector(0,m);
 	Nrli=vector(0,m);
@@ -2433,7 +2443,7 @@ void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,
 				for(j=(i+1);j<=n;j++){
 					if(TypeComp==1)if(cati[i]!=cati[j]) continue;
 					if(TypeComp==2)if(cati[i]==cati[j]) continue;
-					if(FreqRef==1 && cati[i]==cati[j]) k=cati[i];
+					//if(FreqRef==1 && cati[i]==cati[j]) k=cati[i];
 
 					//multilocus estimates
 					MLrli=SumW=0.;
@@ -2838,13 +2848,13 @@ void compute_F_R_stat(int n,int Npop,int pop1,int pop2,int *popi,int m,int *Nall
 {	
 	int i,p,l,c,a,a1,a2,r,S,linit;	//counters for indv(i=1 to n), pop (p=1 to Npop), loci(l=1 to m), chromosomes (c=0 to ploidyi[i]-1), alleles (a=1 to Nallelel[l], statistic (r=1 to 4)
 	int *Nip,Nipmax;	//# ind in pop i; max # over all pop
-	int **Ncpi,**Ncpi2;			//#	chromosomes	with valid gene in ind i from pop  p
-	int *nip,*nip2, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
+	int **Ncpi,**Ncpi2=NULL;			//#	chromosomes	with valid gene in ind i from pop  p
+	int *nip,*nip2=NULL, nc;		//ind n° in pop p (nip=1-Nip[p]; chromosome n° (nc=1-Ncpi[c][i])
 	int *ploidyi;
 	int **Nlpa[MMAX];		//# of allele a at locus l in pop p (totals for p=0 and a=0)
-	double ***Gpic,***Gpic2;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
+	double ***Gpic,***Gpic2=NULL;		//value of the gene (indicator variable or allele size or breeding value) on chromosome a from ind i of pop p
 	double **NumFlr, **DenFlr, **NumRlr, **DenRlr;	//numerator and denominator for F-stat / R-stat
-	double **NumFpl, **DenFpl;	//numerator and denominator for Fi per pop
+	double **NumFpl=NULL, **DenFpl=NULL;	//numerator and denominator for Fi per pop
 	double SS[4],MS[4],s2[4];
 	float **Flr,**Rlr;		//Flr =Fit (r=1), =Fis (r=2), =Fst (r=3), =Rho (r=4); Rlr =Rit (r=1), Ris (r=2), =Rst (r=3)
 	float *Neil,*dm2l;	//Nei and DelaMuSquare distances
@@ -4247,7 +4257,7 @@ void compute_corr_per_dist_class (int n,int m,int nc,double *maxc,int Ncat,int *
 			if(Mdij[0][0]!=1.)if((xi[i]==xi[j]) && (yi[i]==yi[j]) && (zi[i]==zi[j])) dij=0.;
 
 		
- 			if(StatType==1 && Mdij[0][0]<=0 && (sgi[i]==sgi[j])) {c=1; dij=-1.;}	/*intra-group class*/
+ 			if(StatType==1 && Mdij[0][0]<=0 && (sgi[i]==sgi[j])) {c=1; /*dij=-1.;*/}	/*intra-group class*/
 			else{c=1; while(dij>maxc[c] && c<=nc) c++;}
 
 			//get residuals
@@ -4575,7 +4585,7 @@ void inter_locus_corr(int n,int m,float ***corrlij,float **Rll,float **V,float *
 	}
 
 	//jackknife
-	nJK=0;
+	//nJK=0;
 //	for(l=1;l<=m;l++) if(Rll[0][l]!=(float)MISSVAL) nJK++;
 	nJK=m;
 
@@ -4723,6 +4733,8 @@ void estimate_sigma_2D_kinship (int n,int m,double *xi,double *yi,double *zi,dou
 			}
 			else b=MISSVAL;
 
+			Nb[niter]=MISSVAL;
+			sigmaest[niter]=MISSVAL;
 			if(Stat==1 || Stat==2 || Stat==11){ //for kinship estimators
 				if(b<0. && b!=MISSVAL){
 				//	Nb[niter]=1./(  (corrlc[l][cneighb]-1.)/b  );
