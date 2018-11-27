@@ -2,6 +2,8 @@
 #ifndef SPAGEDI_CONFIG_H
 #define SPAGEDI_CONFIG_H
 
+#define SPAGEDI_VERSION "@SPAGEDI_VERSION@"
+
 #cmakedefine  HAVE_UNISTD_H 1
 #cmakedefine  HAVE_DIRECT_H 1
 #cmakedefine  HAVE_LIBGEN_H 1

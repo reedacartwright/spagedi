@@ -38,8 +38,6 @@
 #include "Xatools.h"
 #include "compat.h"
 
-#include "package.h"
-
 #define write write_string
 
 char errorfile[PATH_MAX] = ERRORTXT;
@@ -130,7 +128,7 @@ void copy_file_name(char *to, const char *from, const char *outdir) {
 
 void get_input_output_file_names(int argc,char *argv[],char inputfile[],char outputfile[],char instrfile[])
 {
-	char smess[PATH_MAX], filename[PATH_MAX], outdir[PATH_MAX];
+	char smess[PATH_MAX], filename[PATH_MAX], outdir[PATH_MAX], ch,*ptr, *ptrt;
 	int check=1;
 	FILE *fp;
 	
@@ -253,10 +251,10 @@ void import_data_file(char *inputfile)
 	int line=0,line3=0,flag;
 	int format,n,i,check;
 	int m=0,Maxallele,ndigit,l;
-	int Npop,npop,nump,pop,labels,numpop[501];
+	int Npop,npop,nump,pop,labels,numpop[501],popi;
 	int genotypel[501];
-	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX];
-	char importfile[50],labelfile[50];
+	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX],*ptr;
+	char ch,importfile[50],labelfile[50];
 	char namelocus[1000][50],popname[501][50],indname[50];
 	double X,Y;
 	FILE *fp,*fp2,*fp3;
@@ -274,14 +272,20 @@ void import_data_file(char *inputfile)
 	while((fp=fopen(importfile,"rt"))==NULL){
 		printf("\nWARNING: Cannot open the file \"%s\".\n  If it is being used by another application, close it first.\n  If it does not exist in the right directory, bring it first and press RETURN.\n  Otherwise enter a new name for the data file to import\n  To stop the programm now, press Ctrl+c.\n",importfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\0') strncpy(importfile,smess,MAXNOM-1);
+		if(smess[0]!='\0') {
+			strncpy(importfile,smess,MAXNOM-1);
+			importfile[MAXNOM-1] = '\0';
+		}
 	}
 
 	/*define the name of the data file in SPAGeDi format*/
 	printf("\nEnter the name of the data file in format SPAGeDi: ");
 	do{
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\0') strncpy(inputfile,smess,MAXNOM-1);
+		if(smess[0]!='\0') {
+			strncpy(inputfile,smess,MAXNOM-1);
+			inputfile[MAXNOM-1] = '\0';
+		}
 //		scanf("%s",inputfile);
 	}while(inputfile[0]=='\0'); 
 	do{
@@ -294,7 +298,11 @@ void import_data_file(char *inputfile)
 			if(!strcmp(smess,"e") || !strcmp(smess,"E")) {
 				if((fp2=fopen(inputfile,"wt"))!=NULL) fclose(fp2);
 			}
-			else {strncpy(inputfile,smess,MAXNOM-1);check=1;}
+			else {
+				strncpy(inputfile,smess,MAXNOM-1);
+				inputfile[MAXNOM-1] = '\0';
+				check=1;
+			}
 		}
 	}while(check);
 
@@ -370,6 +378,7 @@ void import_data_file(char *inputfile)
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0'){
 			strncpy(labelfile,smess,MAXNOM-1);
+			labelfile[MAXNOM-1] = '\0';
 			while((fp3=fopen(labelfile,"rt"))==NULL){
 				printf("\nWARNING: Cannot open the labels file \"%s\".\nIf it is being used by another application, close it first.\nIf it does not exist in the specified directory, bring it first.\nThen press RETURN.\nPress Ctrl+c twice to stop the programm now.\n",labelfile);
 				wait_a_char();
@@ -441,13 +450,14 @@ void import_data_file(char *inputfile)
 		/*write 2 comment lines*/
 		sprintf(smess,"// Data file in SPAGeDi format imported from file \"%s\" in GENEPOP format",importfile);
 		write_tofile_only(inputfile,smess);
-		sprintf(smess,"\n// %s",s);
+		snprintf(smess,SMAX,"\n// %s",s);
+
 		write_tofile_only(inputfile,smess);
 
 		/*read locus names*/
 		readsfromfile(fp,s,importfile,&line);
 		if(strchr(s,',')){	/*locus names written on a line and separated by comma*/
-			s2=s3=&s[0];
+			s3=&s[0];
 			for(l=1;l<=MMAX;l++){
  				s2=strchr(s3,',');
 				if(s2){
@@ -478,12 +488,14 @@ void import_data_file(char *inputfile)
 				s2=strrchr(smess,',');
 				if(s2) *s2='\0';
 				strncpy(popname[Npop],smess,MAXNOM-1);
+				popname[Npop][MAXNOM-1] = '\0';
 				break;
 			}
 			if(!sscanf(s,"%s",sbis) || !strncmp(s,"POP",3) || !strncmp(s,"Pop",3) || !strncmp(s,"pop",3)){
 				s2=strrchr(smess,',');
 				if(s2) *s2='\0';
 				strncpy(popname[Npop],smess,MAXNOM-1);
+				popname[Npop][MAXNOM-1] = '\0';
 				if(!sscanf(s,"%s",sbis)) break;
 				Npop++;
 			}
@@ -516,6 +528,7 @@ void import_data_file(char *inputfile)
 			*s2='\0';
 			s2++;
 			strncpy(indname,s,MAXNOM-1);
+			indname[MAXNOM-1] = '\0';
 
 			/*get genotypes*/
 			s2=strpbrk(s2,"0123456789");
@@ -561,14 +574,16 @@ void import_data_file(char *inputfile)
 void export_data_file(int StatType,char inputfile[],int n,
 	double *xi,double *yi,double *zi,double *xp,double *yp,double *zp,double **Mdij,
 	int *popi,int Npop,int m,int ndigit,int *Nallelel,int ***gilc,int **allelesizela,
-	struct name namei[],struct name namepop[],char namelocus[][MAXNOM])
+	struct name namei[],struct name namepop[],struct name namelocus[])
 {
-	FILE *fp,*fp2;
+	FILE *fp,*fp2,*fp3;
+	int line=0,line3=0,flag;
 	int format,i,check;
 	int Maxallele,l;
-	int pop;
-	char smess[SMAX];
-	char exportfile[50],labelfile[50];
+	int pop,labels;
+	int genotypel[201];
+	char s[SMAX], *s2,*s3,smess[SMAX],sbis[SMAX];
+	char ch,exportfile[50],labelfile[50];
 
 
 	//export for PATRI
@@ -639,7 +654,7 @@ void export_data_file(int StatType,char inputfile[],int n,
 
 		if(StatType>=2) fprintf(fp,"%i  %i  %i  %i",Npop,m,Maxallele,ndigit);
 		if(StatType==1) fprintf(fp,"1  %i  %i  %i",m,Maxallele,ndigit);
-		for(l=1;l<=m;l++) fprintf(fp,"\n%s",namelocus[l]);
+		for(l=1;l<=m;l++) fprintf(fp,"\n%s",namelocus[l].n);
 
 		for(i=1;i<=n;i++){
 			if(StatType>=2) fprintf(fp,"\n%i ",popi[i]);
@@ -682,7 +697,7 @@ void export_data_file(int StatType,char inputfile[],int n,
 	if(format==1){/*write Genepop data file*/
 
 		fprintf(fp,"Data file imported from \"%s\" (SPAGeDi format)",inputfile);
-		for(l=1;l<=m;l++) fprintf(fp,"\n%s",namelocus[l]);
+		for(l=1;l<=m;l++) fprintf(fp,"\n%s",namelocus[l].n);
 
 		if(StatType>=2) for(pop=1;pop<=Npop;pop++){
 			fprintf(fp,"\nPop");
@@ -706,13 +721,11 @@ void export_data_file(int StatType,char inputfile[],int n,
 	fclose(fp);
 }
 /*************************************************************************************/
-void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *ndigit,int *ploidy,
-					char catname[MAXNOM],char namecoord[] [MAXNOM],char namelocusp[] [MAXNOM],
-					int *nc,double *maxc)
+void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *ndigit,int *ploidy,int *nc,double *maxc)
 {
 	FILE *fp;
 	int i,flag;
-	char *s, *s2,smess[SMAX];
+	char *s, *s2,smess[SMAX],ch;
 	int line=0;
 
 	s=cvector(0,SMAX2);
@@ -802,22 +815,6 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
  		}  /*end of for, loop for max values of intervals*/
 	}
 
-	readsfromfile(fp,s,inputfile,&line);	/*read third non comment line*/
-	while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comments   */
-
-	s2=&s[0];
-	if(*ncat){
-		s2=nexttab(s2,inputfile,line);
-		readsfromstring(s2,catname,MAXNOM-1,inputfile,line);
-	}
-	for(i=1;i<=abs(*ncoord);i++) {
-		s2=nexttab(s2,inputfile,line);
-		readsfromstring(s2,namecoord[i],MAXNOM-1,inputfile,line);
- 	}  /*end of for, loop for loci names*/
-	for(i=1;i<=*mp;i++) {
-		s2=nexttab(s2,inputfile,line);
-		readsfromstring(s2,namelocusp[i],MAXNOM-1,inputfile,line);
- 	}  /*end of for, loop for loci names*/
 
 	fclose(fp);
 
@@ -826,15 +823,16 @@ void readbasicinfoF(char *inputfile,int *n,int *ncat,int *ncoord,int *mp,int *nd
 
 /***********************************************************************/
 
-void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct name namecat[],
+void readsecondinfoF(char *inputfile,int n,struct name namei[],char catname[MAXNOM],char namecoord[][MAXNOM],
+					 int Ncat,struct name namecat[],struct name namelocus[],
 					 struct name namecati[],int *cati,int ncoord,double *xi,double *yi,double *zi,
 					 int m,int ndigit,int ploidy,int ***gilc,int *Nallelel,int **allelesizela,
-					 int *ploidyi,int Nip[],double *H2)
+					 int *ploidyi,int Nip[],double *H2,double *alpha)
 {
 	FILE *fp;
-	int c,i,l,line=0,z,k,g;
+	int c,i,l,line=0,z,ncatobs,newcat,k,g,nsg;
 	int gentemp,maxploidy,ploidyl;
-	char *s, *s2,smess[SMAX],*ptr;
+	char *s, *s2,smess[SMAX],ch,*ptr;
 	char newind[SMAX];
 	int nallele,ok,coordproblem=0;
 	float allelesizea[1000];
@@ -847,14 +845,32 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 		wait_a_char();
 	}
 
-	/*skip over 3 first non comment lines*/
-	for(i=0;i<3;i++){
+	/*skip over 2 first non comment lines*/
+	for(i=0;i<2;i++){
 		readsfromfile(fp,s,inputfile,&line);  
 		while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comments   */
 	}
 
+	readsfromfile2(fp,s,inputfile,&line);	/*read third non comment line*/
+	while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comments   */
+
+	s2=&s[0];
+	if(Ncat){
+		s2=nexttab(s2,inputfile,line);
+		readsfromstring(s2,catname,MAXNOM-1,inputfile,line);
+	}
+	for(i=1;i<=abs(ncoord);i++) {
+		s2=nexttab(s2,inputfile,line);
+		readsfromstring(s2,namecoord[i],MAXNOM-1,inputfile,line);
+ 	}  /*end of for, loop for loci names*/
+	for(i=1;i<=m;i++) {
+		s2=nexttab(s2,inputfile,line);
+		readsfromstring(s2,namelocus[i].n,MAXNOM-1,inputfile,line);
+ 	}  /*end of for, loop for loci names*/
+
+
 	for(i=1;i<=n;i++) {  /*loop over total number of individuals in data file*/
-		readsfromfile(fp,s,inputfile,&line);  /*read next line*/
+		readsfromfile2(fp,s,inputfile,&line);  /*read next line*/
 		while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comments   */
 		s2=&s[0];  
 
@@ -872,7 +888,10 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 			printf("\nCheck in file %s the list of individuals successfully found.\nPress any key to stop the program.",ERRORFILE);
 			wait_a_char();exit(1);					
 		} 
-		else strncpy(namei[i].n,newind,MAXNOM-1);
+		else {
+			strncpy(namei[i].n,newind,MAXNOM-1);
+			namei[i].n[MAXNOM-1] = '\0';
+		}
 		
 		/*read indiv category*/
 		if(Ncat){  
@@ -974,20 +993,46 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 		wait_a_char();exit(1);
 	}
 
-	if(ndigit<=0){ //read H2 values (broad-sense heritability) per locus in case of dominant markers
-		readsfromfile(fp,s,inputfile,&line);  /*read next line*/
-		while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comment   */
-		if(strncmp(s,"H2",2)==0){
-			s2=&s[0];
-			for(l=1;l<=m;l++) {
-				s2=nexttab(s2,inputfile,line);
-				readdoublefromstring(s2,&H2[l],inputfile,line);
+	//read H2 values (broad-sense heritability) per locus in case of dominant markers
+	if(ndigit<=0){ 
+		for(l=1;l<=m;l++) H2[l]=1.;
+		if(fgets(s,SMAX,fp)){
+			line++;
+			//readsfromfile(fp,s,inputfile,&line);  /*read next line*/
+			while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comment   */
+			if(strncmp(s,"H2",2)==0){
+				s2=&s[0];
+				s2=strchr(s2,'\t')+1;
+				while(s2[0]=='\t') s2=strchr(s2,'\t')+1;
+				s2--;
+				for(l=1;l<=m;l++) {
+					s2=nexttab(s2,inputfile,line);
+					readdoublefromstring(s2,&H2[l],inputfile,line);
+				}
 			}
 		}
-		else for(l=1;l<=m;l++) H2[l]=1.;
 	}
 				
-
+	//read double reduction rate values per locus in case of polyploid
+	if(ploidy>2){ 
+		for(l=1;l<=m;l++) alpha[l]=0.;
+		if(fgets(s,SMAX,fp)){
+			line++;
+			//readsfromfile(fp,s,inputfile,&line);  /*read next line*/
+			while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,inputfile,&line);  /*skip over lines beggining with comment   */
+			if(strncmp(s,"ALPHA",5)==0){
+				s2=&s[0];
+				s2=strchr(s2,'\t')+1;
+				while(s2[0]=='\t') s2=strchr(s2,'\t')+1;
+				s2--;
+				for(l=1;l<=m;l++) {
+					s2=nexttab(s2,inputfile,line);
+					readdoublefromstring(s2,&alpha[l],inputfile,line);
+				}
+			}
+		}
+	}
+	
 
 
 
@@ -1051,12 +1096,13 @@ void readsecondinfoF(char *inputfile,int n,struct name namei[],int Ncat,struct n
 
 void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 					int n,int Ncat,int *Nik,int ncoord,int m,int ndigit,
-					int ploidy,int *ploidyi,int Nip[],char namelocus[] [MAXNOM],
+					int ploidy,int *ploidyi,int Nip[],struct name namelocus[],
 					char namecoord[] [MAXNOM],struct name *namecat,
 					int nc,double *maxc,int Nsg,int *Nig,int Nskg,int *Niskg)
 {
 	int i,k,g,p;
 	int Nikmin,Nikmax,Nigmin,Nigmax,Niskgmin,Niskgmax,Nk1i,Ng1i,Nskg1i;
+	char ch;
 	char smess[SMAX];
 	FILE *fp;
 
@@ -1120,10 +1166,16 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 		sprintf(smess,", %s",namecoord[i]);
 		write(outputfilename,smess);
 	}
-	sprintf(smess,"\n%i loci: %s",m,namelocus[1]);
+	sprintf(smess,"\n%i loci: %s",m,namelocus[1].n);
 	write(outputfilename,smess);
-	for(i=2;i<=m;i++) {
-		sprintf(smess,", %s",namelocus[i]);
+	if(m<=100){
+		for(i=2;i<=m;i++) {
+			sprintf(smess,", %s",namelocus[i].n);
+			write(outputfilename,smess);
+		}
+	}
+	else{
+		sprintf(smess,",....... , %s",namelocus[m].n);
 		write(outputfilename,smess);
 	}
 	if(ndigit>0) sprintf(smess,"\n%i digits per allele",ndigit);
@@ -1139,7 +1191,7 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 	}
 	if(Nip[0]){	sprintf(smess,"\n  WARNING: There is(are) %i individual(s) without genotype at any locus",Nip[0]);write(outputfilename,smess); }
 	if(ndigit>0)if(Nip[ploidy+1]){	
-		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv no. ",Nip[ploidy+1]);
+		sprintf(smess,"\n  WARNING: There is(are) %i individual(s) showing different ploidy levels according to the locus: indiv no ",Nip[ploidy+1]);
 		write(outputfilename,smess); 
 		for(i=1;i<=n;i++) if(ploidyi[i]==(ploidy+1)){sprintf(smess,"%i  ",i); write(outputfilename,smess);}
 		sprintf(smess,"\nYou must first resolve this problem. Note that 0's representing missing alleles of incomplete genotypes must be on the RIGHT, whereas 0's representing no information for individuals with a ploidy level inferior to that announced must be on the LEFT.\nPress any key to stop the program now.");
@@ -1188,13 +1240,16 @@ void displaybasicinfoF(int argc,char *inputfilename,char *outputfilename,
 void define_analysisF(int argc,char *instrfile,int n,int ploidy,int ndigit,int m,int Ncat,int Nsg,int Nskg,int ncoord,
 					  int *StatType,int *NS,int Stat[],int *TypeComp,int *cat1,int *cat2,
 					  struct name *namecat,int *FreqRef,float *givenF,int *writeallelefreq,int *JKest,int *distmatrix,int Npermut[],
-					  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,float *sigmaest,float *density,float *dwidth,
+					  float *dijmin,float *dijmax,int *writeresampdistr,int *regdetails,int *varcoef,int *Rbtwloc,int *estselfing,float *sigmaest,float *density,float *dwidth,
 					  int *permutdetails,int *distm,char *inputfilename,char *distfilename,char *freqfilename,int *K,int *definealleledist,char *alleledistfilename,
 					  int *export,long *seed)
 {
 	char ch,smess[SMAX];
 	int stats,k,k2,Noptions,ok,otherstat=0,S;
-	int permutloc=1,permutind=0,permutgenes=0,permutalleles=0,permutgil,reffreqpossible=0;
+	int permutloc=1,permutind=0,permutgenes=0,permutalleles=0,permutgil,reffreqpossible=0,MoransI=0;
+	float ram;
+
+	FILE *stream;
 
 	// Reassign "stdin" (=console) to the instruction file (instrfile) to read options from that file 
 //	if(argc>=4) stream = freopen(instrfile, "r", stdin);
@@ -1241,14 +1296,17 @@ startagain:
 					printf("\n   9- FRATERNITY coefficient ('delta' in Wang, 2002)");
 				}
 				if(ploidy>1) printf("\n   A- Aij: Rousset's distance ('a' in Rousset, 2000)");
+				printf("\n   Q- Qij: proportion of identical alleles");
 				printf("\n\n Statistic based on allele size (cf. microsatellites) :");
 				printf("\n   R- Rij: Allele size correlation coefficient (I' in Streiff et al., 1998)");
 				printf("\n\n Statistics based on distances between alleles (matrix to define) :");
 				printf("\n   N- Nij: kinship coefficient for ordered alleles (OJ Hardy, unpublished)");
+				printf("\n\n   0- no pairwise statistics");
 			}
 			else{//dominant marker
 				printf("\n\n 1- KINSHIP coefficient for dominant marker in diploids (Hardy, 2003)");
 				printf("\n\n 2- RELATIONSHIP coefficient for dominant marker in diploids (Hardy, 2003)");
+				printf("\n\n 0- no pairwise statistics");
 			}
 //			if(Ncat>0 || Nsg>1) printf("\n\nEnter 'R' to return to the first menu");
 			printf("\n");
@@ -1258,11 +1316,12 @@ startagain:
 //				if(smess[0]=='r' || smess[0]=='R')  goto startagain;
 				(*NS)=strlen(smess);
 			}while(smess[0]=='\0' || *NS>11 || *NS<1);
-
+			
+			MoransI=0;
 			for(k=1;k<=(*NS);k++){
 				if(smess[k-1]=='1') Stat[k]=1;
 				else if(smess[k-1]=='2') Stat[k]=2;
-				else if(smess[k-1]=='3') Stat[k]=3;
+				else if(smess[k-1]=='3') {Stat[k]=3; MoransI=1;}
 				else if(smess[k-1]=='4') Stat[k]=8;
 				else if(smess[k-1]=='5') Stat[k]=6;
 				else if(smess[k-1]=='6') Stat[k]=9;
@@ -1270,6 +1329,7 @@ startagain:
 				else if(smess[k-1]=='8') Stat[k]=7;
 				else if(smess[k-1]=='9') Stat[k]=10;
 				else if(smess[k-1]=='A' || smess[k]=='a') Stat[k]=4;
+				else if(smess[k-1]=='Q' || smess[k]=='q') Stat[k]=15;
 				else if(smess[k-1]=='R' || smess[k]=='r') Stat[k]=5;
 				else if(smess[k-1]=='N' || smess[k]=='n') {Stat[k]=14; *definealleledist=1;}
 				else Stat[k]=0;
@@ -1280,15 +1340,15 @@ startagain:
 			}									  
 
 			/*remove stat not allowed*/
-			for(k=1;k<=(*NS);k++)if(Stat[k]<1 || Stat[k]>14 || (ploidy==1 && Stat[k]==4) || (ploidy!=2 && (Stat[k]==6 || Stat[k]==7 || Stat[k]==8 || Stat[k]==9 || Stat[k]==10 || Stat[k]==13)) || (ndigit<=0 && (Stat[k]>12 || Stat[k]<11))){
+			for(k=1;k<=(*NS);k++)if(Stat[k]<1 || Stat[k]>15 || (ploidy==1 && Stat[k]==4) || (ploidy!=2 && (Stat[k]==6 || Stat[k]==7 || Stat[k]==8 || Stat[k]==9 || Stat[k]==10 || Stat[k]==13)) || (ndigit<=0 && (Stat[k]>12 || Stat[k]<11))){
 				(*NS)--;
 				for(k2=k;k2<=(*NS);k2++) Stat[k2]=Stat[k2+1];
 			}
-		}while((*NS)<1);
+		}while((*NS)< /*1*/ 0);
 
 		permutgenes=permutalleles=permutind=reffreqpossible=0;
 		permutloc=1;
-		if(ploidy>1 && ndigit>0)for(k=1;k<=(*NS);k++)if(Stat[k]==1 || Stat[k]==2 || Stat[k]==5) permutgenes=1;
+		if(ploidy>1 && ndigit>0)/*for(k=1;k<=(*NS);k++)if(Stat[k]==1 || Stat[k]==2 || Stat[k]==5)*/ permutgenes=1;
 		for(k=1;k<=(*NS);k++)if(Stat[k]==5 || Stat[k]==14) permutalleles=1;
 		if(Nsg>1) permutind=1;
 		for(k=1;k<=(*NS);k++)if(Stat[k]==1 || Stat[k]==2 || Stat[k]==5 || Stat[k]==6 || Stat[k]==7 || Stat[k]==8 || Stat[k]==9 || Stat[k]==10 || Stat[k]==11 || Stat[k]==12 || Stat[k]==13) reffreqpossible=1;
@@ -1319,14 +1379,16 @@ startagain:
 			printf("\n\n Statistics based on distances between alleles (matrix to define) :");
 			printf("\n\n   8- global Nst and pairwise Nst  (Pons & Petit 1996)");
 			printf("\n   9- global Nst and pairwise Nij  (OJ Hardy, unpubl)");
-			printf("\n\nEnter 'R' to return to the first menu\n\n");   
+			printf("\n\n   0- no pairwise statistics");
+			printf("\n\nEnter 'R' to return to the first menu\n");   
 
 			do{	
 				fgets_chomp(smess, sizeof(smess), stdin);
 				if(smess[0]=='r' || smess[0]=='R')  goto startagain;
 				ok=sscanf(smess,"%i",&stats);
 				(*NS)=1+(int)log10(stats);
-			}while(ok!=1 || *NS>9 || *NS<1);
+				if(smess[0]=='0') (*NS)=0;
+			}while(ok!=1 || *NS>9   || *NS< 0/*1*/  );
 
 			/*Chosen statistics, put in Stat[k] with k=1 to #different stat*/
 			for(k=(*NS);k>0;k--){
@@ -1348,7 +1410,7 @@ startagain:
 			}
 
 
-		}while((*NS)<1);
+		}while((*NS)</*1*/0);
 
 		permutalleles=permutgenes=0;
 		permutind=permutloc=1;
@@ -1368,8 +1430,8 @@ startagain:
 	(*JKest)=Npermut[0]=(*distm)=(*TypeComp)=0;
 	(*dijmin)=(*dijmax)=0.0f;
 	printf("\n\n\n\n\n\n\n\nCOMPUTATIONAL OPTIONS\n\nSelect among the following options (you can select several) or press RETURN :");
-	printf("\n\n 1- Use a matrix to define pairwise spatial distances");
-	printf("\n\n 2- Make restricted regression analyses (i.e. over limited distance range)");
+	if((*NS)>0)printf("\n\n 1- Use a matrix to define pairwise spatial distances");
+	if((*NS)>0)printf("\n\n 2- Make restricted regression analyses (i.e. over limited distance range)");
 	printf("\n\n 3- Make permutation tests");
 	if(m>1) printf("\n\n 4- Jackknife over loci");
 	if(Ncat>1 && (*StatType==1 || *StatType==4)) printf("\n\n 5- Restrict pairwise comparisons within or among (selected) categories");
@@ -1462,7 +1524,7 @@ startagain:
 			printf("\n\nSelect the reference allele frequencies to compute pairwise statistics:");
 			printf("\n\n 1- whole sample (enter '1' or press RETURN)");
 			printf("\n\n 2- unweighted average allele frequencies over categories (enter '2')\n");
-			if(*TypeComp==1) printf("\n 3- sample within category (enter '3')\n");
+			if(*TypeComp==1 || MoransI) printf("\n 3- sample within category (enter '3')\n");
 			fgets_chomp(smess, sizeof(smess), stdin);
 			if(smess[0]=='2') *FreqRef=-2;
 			else if(smess[0]=='3') *FreqRef=1;
@@ -1473,7 +1535,7 @@ startagain:
 	
 	
 	/*if no pairwise dist computable, ask again*/
- 	if(!ncoord && !(*distm)){
+ 	if(!ncoord && !(*distm) && (*NS)>0){
 		printf("\n\n\nWARNING: There is no spatial coordinates in the data file. \nPress RETURN to go on without spatial information \nor enter the name of the file containing pairwise distances: ");
 		fgets_chomp(smess, sizeof(smess), stdin);
 		if(smess[0]!='\0'){
@@ -1517,7 +1579,7 @@ startagain:
 	/*define parameters for permutation tests*/
 	(*writeresampdistr)=*permutdetails=*seed=0;
 	if(Npermut[0]){
-		printf("\n\n\n\n\n\n\n\nPERMUTATION OPTIONS\n\nSelect among the following options (you can select several) or press RETURN");
+		if((*NS)>0) printf("\n\n\n\n\n\n\n\nPERMUTATION OPTIONS\n\nSelect among the following options (you can select several) or press RETURN");
 		
 		if(permutalleles){
 //			printf("\n\n 1- Tests of genetic structuring (permuting gene copies, individuals and/or locations)");
@@ -1541,32 +1603,33 @@ startagain:
   		}
 		else permutgil=1;
 
-		if(permutgil==0) permutloc=permutind=permutgenes=0;
+		if(permutgil==0) permutloc=permutind=/*permutgenes=*/0;
 		*permutdetails=2;
 
-		if(permutalleles)printf("\n\nSelect among the following additional options (you can select several) or press RETURN");
-		printf("\n\n 1- Report only P-values (otherwise details of permutation tests are reported)");
-		if(permutgil) printf("\n\n 2- Define # of permutations for each randomised unit (otherwise same #)");
-		printf("\n\n 3- Initialise random number generator (otherwise initialisation on clock)");
-		if(*StatType>=2) printf("\n\n 4- Perform tests of genetic differentiation on each population pair\n\n");
-		else printf("\n\n");
+		if((*NS)>0){
+			if(permutalleles)printf("\n\nSelect among the following additional options (you can select several) or press RETURN");
+			printf("\n\n 1- Report only P-values (otherwise details of permutation tests are reported)");
+			if(permutgil) printf("\n\n 2- Define # of permutations for each randomised unit (otherwise same #)");
+			printf("\n\n 3- Initialise random number generator (otherwise initialisation on clock)");
+			if(*StatType>=2) printf("\n\n 4- Perform tests of genetic differentiation on each population pair\n\n");
+			else printf("\n\n");
 
-		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\0'){	
-			sscanf(smess,"%i",&stats);
-			Noptions=1+(int)log10(stats);
-			for(k=1;k<=Noptions;k++){
-				if(stats%10==1) *permutdetails=0;
-				if(stats%10==2 && permutgil) Npermut[0]=2;
-				if(stats%10==3) *seed=1;
-				if(stats%10==4){
-					if(permutalleles) permutalleles=2;
-					if(permutgil) permutgil=2;
+			fgets_chomp(smess, sizeof(smess), stdin);
+			if(smess[0]!='\0'){	
+				sscanf(smess,"%i",&stats);
+				Noptions=1+(int)log10(stats);
+				for(k=1;k<=Noptions;k++){
+					if(stats%10==1) *permutdetails=0;
+					if(stats%10==2 && permutgil) Npermut[0]=2;
+					if(stats%10==3) *seed=1;
+					if(stats%10==4){
+						if(permutalleles) permutalleles=2;
+						if(permutgil) permutgil=2;
+					}
+					stats=(int)(stats/10);
 				}
-				stats=(int)(stats/10);
 			}
 		}
-
 
 		/*define # permutations*/
 		if(Npermut[0]==1){
@@ -1606,7 +1669,7 @@ startagain:
 				printf("\n\nEnter a number for the initial seed: ");
 				fgets_chomp(smess, sizeof(smess), stdin);
 				ok=sscanf(smess,"%li",seed);
-				*seed=abs(*seed)*(-1);
+				*seed=labs(*seed)*(-1);
 			}while(ok!=1);
 		}
 		else{	/*initialisation on local time*/
@@ -1638,8 +1701,9 @@ startagain:
 		if((*sigmaest)){ printf("\n\n 6- Estimate gene dispersal sigma"); (*sigmaest)=0.0f;}
 	}
 	if(m>1){
-		printf("\n\n 7- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
-//		printf("\n\n 8- Report inter-locus correlation for pairwise genetic coefficients");
+		if(ploidy>=2)printf("\n\n 7- Estimate selfing rate from standardized identity disequilibrium");
+		printf("\n\n 8- Report actual variance of pairwise genetic coefficients (Ritland 2000)");
+//		printf("\n\n 9- Report inter-locus correlation for pairwise genetic coefficients");
 	}
 
 	printf("\n\nEnter 'R' to return to the first menu\n\n");
@@ -1658,8 +1722,9 @@ startagain:
 			if(stats%10==4) (*distmatrix)=1;
 			if(stats%10==5) (*export)=1;
 			if(stats%10==6) (*sigmaest)=1.;
-			if(stats%10==7) (*varcoef)=1;
-			if(stats%10==8) (*Rbtwloc)=1;
+			if(stats%10==7) (*estselfing)=1;
+			if(stats%10==8) (*varcoef)=1;
+			if(stats%10==9) (*Rbtwloc)=1;
 			stats=(int)(stats/10);
 		}
 	}
@@ -1933,7 +1998,7 @@ void read_pairwise_spatial_distances(char *inputfile,char *distfile,int n,
 
 
 void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
-		char namelocusp[] [MAXNOM],int *Nallelel,int **allelenamela,float ***Mgdlaa)
+		struct name namelocus[],int *Nallelel,int **allelenamela,float ***Mgdlaa)
 {
 	int a1=0,a2,loc,loc2,line=0;
 	int nameallele,nlocusread,nallelerecogn,nallelegiven;
@@ -1947,10 +2012,10 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 
 
 	//check that all locus names are different
-	for(loc=1;loc<m;loc++)for(loc2=loc+1;loc2<=m;loc2++)if(!strncmp(namelocusp[loc],namelocusp[loc2],MAXNOM-1)){
+	for(loc=1;loc<m;loc++)for(loc2=loc+1;loc2<=m;loc2++)if(!strncmp(namelocus[loc].n,namelocus[loc2].n,MAXNOM-1)){
 		printf("\n\nWARNING: Not all locus names are different.\nTo define pairwise genetic distances, all locus names must be different.\nCheck in the file \"%s\" the list of names found.\nPress any key to stop the program.",ERRORFILE);
 		for(loc=1;loc<=m;loc++) {
-			sprintf(smess,"\n%s",namelocusp[loc]);
+			sprintf(smess,"\n%s",namelocus[loc].n);
 			write(ERRORFILE,smess);
 		}
 		wait_a_char(); exit(0);
@@ -1983,7 +2048,7 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 		do{
 			fgets(s,SMAX,fp); line++;
 			if(sscanf(s,"%s",nameloc)>0){
-				for(loc=1;loc<=m;loc++) if(!strncmp(nameloc,namelocusp[loc],MAXNOM-1)) break;
+				for(loc=1;loc<=m;loc++) if(!strncmp(nameloc,namelocus[loc].n,MAXNOM-1)) break;
 			}
 		}while(loc>m && !feof(fp));
 
@@ -2015,7 +2080,7 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 
 		//check that all alleles from data file were encountered
 		if(nallelerecogn!=Nallelel[loc]){
-			printf("\n\nGenetic distances between alleles at locus \"%s\" in file \"%s\" not found for all alleles given in the data file\nPress any key to stop",namelocusp[loc],distfile);
+			printf("\n\nGenetic distances between alleles at locus \"%s\" in file \"%s\" not found for all alleles given in the data file\nPress any key to stop",namelocus[loc].n,distfile);
 			wait_a_char(); exit(0);
 		}
   
@@ -2025,8 +2090,8 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 			readsfromfile(fp,s,distfile,&line);
 			while(strncmp(s,"/*",2)==0 || strncmp(s,"//",2)==0 || s[0]=='"' || sscanf(s,"%s",smess)<1) readsfromfile(fp,s,distfile,&line);  /*skip over lines beggining with comments   */
 
-			if(strncmp(s,"END",3)==0 || feof(fp)) {	//if END is encountered or the end of the file
-				printf("\nERROR: END message or end of file encountered after only %d alleles of the genetic distance matrix between alleles at locus \"%s\" from file %s for %d expected\nCheck that you defined a squared matrix with the same orders of alleles in lines and columns\nPress any key to stop the program",a1-1,namelocusp[loc],distfile,nallelegiven);
+			if(strncmp(s,"END",3)==0 || (feof(fp) && l<nallelegiven)) {	//if END is encountered or the end of the file
+				printf("\nERROR: END message or end of file encountered after only %d alleles of the genetic distance matrix between alleles at locus \"%s\" from file %s for %d expected\nCheck that you defined a squared matrix with the same orders of alleles in lines and columns\nPress any key to stop the program",l-1,namelocus[loc].n,distfile,nallelegiven);
 				wait_a_char(); exit(0);					
 			} 
 
@@ -2036,7 +2101,7 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 			//read allele name and check it is the expected one
 			readintfromstring(s,&nameallele,distfile,line);
 			if(nameallele!=allelenamela[loc][aLine[l]]){
-				printf("\nFATAL ERROR: The line for allele %d of the genetic distance matrix between alleles at locus \"%s\" in file %s was expected to be for allele %d\nCheck that you defined a squared matrix with the same orders of alleles in lines and columns\nPress any key to stop the program",nameallele,namelocusp[loc],distfile,allelenamela[loc][aLine[l]]);
+				printf("\nFATAL ERROR: The line for allele %d of the genetic distance matrix between alleles at locus \"%s\" in file %s was expected to be for allele %d\nCheck that you defined a squared matrix with the same orders of alleles in lines and columns\nPress any key to stop the program",nameallele,namelocus[loc].n,distfile,allelenamela[loc][aLine[l]]);
 				wait_a_char(); exit(0);					
 			} 
 
@@ -2056,19 +2121,19 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 
 				if(Mgdlaa[loc][a1][a2]==MISSVAL) Mgdlaa[loc][a1][a2]=Mgdlaa[loc][a2][a1]=d;
 				else if(Mgdlaa[loc][a1][a2]!=d){
-					printf("\nERROR: In data for pairwise genetic distances between alleles for locus \"%s\" in file \"%s\", the distance between alleles %d and %d is redefined: first value= %g, second value= %g",namelocusp[loc],distfile,allelenamela[loc][a1],allelenamela[loc][a2],Mgdlaa[loc][a1][a2],d);
+					printf("\nERROR: In data for pairwise genetic distances between alleles for locus \"%s\" in file \"%s\", the distance between alleles %d and %d is redefined: first value= %g, second value= %g",namelocus[loc].n,distfile,allelenamela[loc][a1],allelenamela[loc][a2],Mgdlaa[loc][a1][a2],d);
 					wait_a_char(); exit(0);
 				}
 			}
 		}
 		for(a1=1;a1<Nallelel[loc];a1++)for(a2=a1+1;a2<=Nallelel[loc];a2++) if(Mgdlaa[loc][a1][a2]==MISSVAL){
-			printf("\nERROR: The genetic distance between alleles %d and %d at locus \"%s\" in file \"%s\" was undefined\nPress any key to stop the program",allelenamela[loc][a1],allelenamela[loc][a2],namelocusp[loc],distfile);
+			printf("\nERROR: The genetic distance between alleles %d and %d at locus \"%s\" in file \"%s\" was undefined\nPress any key to stop the program",allelenamela[loc][a1],allelenamela[loc][a2],namelocus[loc].n,distfile);
 			wait_a_char(); exit(0);					
 		} 
 		for(a1=1;a1<=Nallelel[loc];a1++){
 			if(Mgdlaa[loc][a1][a1]==MISSVAL) Mgdlaa[loc][a1][a1]=0.;
 			if(Mgdlaa[loc][a1][a1]!=0.){
-				printf("\nERROR: The genetic distance between allele %d and itself at locus \"%s\" in file \"%s\" was set as %g whereas it must be set as 0 (or undefined)\nPress any key to stop the program",allelenamela[loc][a1],namelocusp[loc],distfile,Mgdlaa[loc][a1][a1]);
+				printf("\nERROR: The genetic distance between allele %d and itself at locus \"%s\" in file \"%s\" was set as %g whereas it must be set as 0 (or undefined)\nPress any key to stop the program",allelenamela[loc][a1],namelocus[loc].n,distfile,Mgdlaa[loc][a1][a1]);
 				wait_a_char(); exit(0);	
 			}
 		} 
@@ -2087,17 +2152,19 @@ void read_pairwise_genetic_distances(char *inputfile,char *distfile,int m,
 }	//end of read_pairwise_genetic_distances
 
 /***************************************************************************/
-void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *Nallelel,
+void read_allele_frequencies(char *freqfile,int m,struct name namelocus[],int *Nallelel,
 							 int **allelesizela, float **givenPla,int *Ngivenallelel)
 {
-	int line=0,a,allele,allelename,nallelel[MMAX],Nallelemax;
-	int locus[MMAX],loc,loc2,l,Nloc;
+	int line=0,a,allele,allelename,*nallelel,Nallelemax;
+	int *locus,loc,loc2,l,Nloc;
 	int error=0,error1,error2;
 	float freq;
 	char *s,smess[SMAX],locusname[MAXNOM],*s2;
 
 	FILE *fp;
 	s=cvector(0,SMAX2);
+	nallelel=ivector(0,MMAX);
+	locus=ivector(0,MMAX);
 
 
 	printf("\n\nReading reference allele frequencies."); 
@@ -2105,7 +2172,10 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 	while((fp=fopen(freqfile,"rt"))==NULL){
 		printf("\n\nWARNING: Cannot open reference allele frequency file \"%s\"\n  If it is being used by another application, close it first, then press RETURN\n  Otherwise enter the correct file name\n  Close the window if you wish to stop the program now\n",freqfile);
 		fgets_chomp(smess, sizeof(smess), stdin);
-		if(smess[0]!='\0') strncpy(freqfile,smess,MAXNOM-1);
+		if(smess[0]!='\0') {
+			strncpy(freqfile,smess,MAXNOM-1);
+			freqfile[MAXNOM-1] = '\0';
+		}
 	}
 
 	//read first line with locus names and number of alleles
@@ -2118,20 +2188,20 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 	while(s2){
 		sscanf(s2,"%s",locusname);
 		loc++;
-		for(l=1;l<=m;l++) if(strcmp(namelocus[l],locusname)==0) break;
+		for(l=1;l<=m;l++) if(strcmp(namelocus[l].n,locusname)==0) break;
 		if((s2=strpbrk(s2,"\t"))){
 			s2++;
 			if(l<=m){sscanf(s2,"%d",&Ngivenallelel[l]); locus[loc]=l;}
 			else locus[loc]=0;
 		}
-		if((s2=strpbrk(s2,"\t"))) s2++;
+		if(s2 != NULL && (s2=strpbrk(s2,"\t"))) s2++;
 	}
 	Nloc=loc;//number of loci in the allele freq file
 
 	//check that all loci of the data file are represented
 	error=0;
 	for(l=1;l<=m;l++) if(Ngivenallelel[l]==0){
-		printf("\nERROR: Reference allele frequencies not given for locus \"%s\".",namelocus[l]);
+		printf("\nERROR: Reference allele frequencies not given for locus \"%s\".",namelocus[l].n);
 //		error=1;
 	}
 	if(error){
@@ -2179,7 +2249,7 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 		freq=0.;
 		for(a=1;a<=Ngivenallelel[l];a++) freq+=givenPla[l][a];
 		if(freq<0.999 || freq>1.001){
-			printf("\nERROR: Sum of reference allele frequencies for locus \"%s\" different\nfrom one (=%g).",namelocus[l],freq);
+			printf("\nERROR: Sum of reference allele frequencies for locus \"%s\" different\nfrom one (=%g).",namelocus[l].n,freq);
 			error1=1;
 		}
 	}
@@ -2189,7 +2259,7 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 	for(l=1;l<=m;l++){
 		for(a=1;a<=Nallelel[l];a++) if(givenPla[l][a]==0.){
 			if(error2==0) printf("\nWARNING: the following alleles found in the data file have a zero frequency in the reference allele frequency file. \nThis currently not allowed.");
-			printf("\n\tlocus \"%s\", allele \"%d\"",namelocus[l],allelesizela[l][a]);
+			printf("\n\tlocus \"%s\", allele \"%d\"",namelocus[l].n,allelesizela[l][a]);
 			error2=1;
 		}
 	}
@@ -2203,9 +2273,9 @@ void read_allele_frequencies(char *freqfile,int m,char namelocus[][MAXNOM],int *
 
 
 /**************************************************************************************/
-void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM],int ndigit,int ploidy,
+void write_allele_freq(char *outputfilename,int n,int m,struct name namelocus[],int ndigit,int ploidy,
 		int Npop,int *Nip,struct name namepop[],int StatType,int NS,int Stat[],int **allelesizela,
-		int **Nallelepl,float ***Ppla,float **Nnielsenpl,float **RA, int K,float **Hepl,float **hTpl,float **vTpl,
+		int **Nallelepl,float ***Ppla,float **Nnielsenpl,float **RA, int K,float **Hopl,float **Hepl,float **hTpl,float **vTpl,
 		float **Dmpl,float **Dwmpl,float **Masizepl,float **Vasizepl,int **Nmissinggenotpl,int **Nincompletegenotpl,
 		int **Nvalgenpl,int printallelefreq,int FreqRef,int *Ngivenallelel,float **givenPla,float**Fpl,int Npermut,struct resample_stat_type **r_statFlp)
 {
@@ -2230,7 +2300,7 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 		if(StatType==1)fprintf(fp,"\nLocus\tCategory");
 		else fprintf(fp,"\nLocus\tPopulation");
 		fprintf(fp,"\tSample size\t# missing genotypes (%%)\t# incomplete genotypes (%%)\t# of defined gene copies\tNA: # alleles\tNAe: Effective # alleles (Nielsen et al. 2003)\tAR(k=%i): Allelic richness (expected number of alleles among %i gene copies)\tHe (gene diversity corrected for sample size, Nei 1978)",K,K);
-		if(ploidy>1){fprintf(fp,"\tFi (individual inbreeding coefficient)");Ntab++;}
+		if(ploidy>1){fprintf(fp,"\tHo (observed heterozygosity)\tFi (individual inbreeding coefficient)");Ntab+=2;}
 		if(Npermut>=40) {fprintf(fp,"\tPval(Fi<>0) after %i randomization of gene copies among individuals",Npermut);Ntab++;}
 		if(StatType>1){
 			Ntab++;
@@ -2243,14 +2313,14 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 	}
 	else {fprintf(fp,"\nLocus\tCategory\tSample size\t# missing phenotypes (%%)\tFrequency of dominant phenotype"); Ntab=5;}
 
-	strcpy(namelocus[0],"Multilocus average");
+	strcpy(namelocus[0].n,"Multilocus average");
 	for(l=0;l<=m;l++){
 		if(ndigit>0){
 			if(printallelefreq!=0)fprintf(fp,"\n");
-			fprintf(fp,"\n%s",namelocus[l]);
+			fprintf(fp,"\n%s",namelocus[l].n);
 			for(t=1;t<Ntab;t++) fprintf(fp,"\t");
 			if(l && Nvalgenpl[0][l]){
-				fprintf(fp,"\t%s alleles:",namelocus[l]);
+				fprintf(fp,"\t%s alleles:",namelocus[l].n);
 				for(a=1;a<=Nallelepl[0][l];a++) fprintf(fp,"\t%i",allelesizela[l][a]);
 			}
 		}
@@ -2258,11 +2328,11 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 
 		for(p=0;p<=Npop;p++){
 			if(p==0){
-				if(StatType==1) fprintf(fp,"\n%s\tAll categories confounded\t%i",namelocus[l],Nip[p]);
-				else fprintf(fp,"\n%s\tAll populations confounded\t%i",namelocus[l],Nip[p]);
+				if(StatType==1) fprintf(fp,"\n%s\tAll categories confounded\t%i",namelocus[l].n,Nip[p]);
+				else fprintf(fp,"\n%s\tAll populations confounded\t%i",namelocus[l].n,Nip[p]);
 			}
 			if((printallelefreq==0 || Npop<2) && p>0) break;
-			if(p) fprintf(fp,"\n%s\t%s\t%i",namelocus[l],namepop[p].n,Nip[p]);
+			if(p) fprintf(fp,"\n%s\t%s\t%i",namelocus[l].n,namepop[p].n,Nip[p]);
 
 			if(ndigit>0){
 				if(l) fprintf(fp,"\t%i (%.1f%%)\t%i (%.1f%%)\t%i",Nmissinggenotpl[p][l],(float)(Nmissinggenotpl[p][l]*100./Nip[p]),Nincompletegenotpl[p][l],(float)(Nincompletegenotpl[p][l]*100./Nip[p]),Nvalgenpl[p][l]);
@@ -2288,6 +2358,8 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 					else fprintf(fp,"\t");
 					fprintf(fp,"\t%.4f",Hepl[p][l]);
 					if(ploidy>1){
+						if(Hopl[p][l]!=MISSVAL) fprintf(fp,"\t%.3f",Hopl[p][l]);
+						else fprintf(fp,"\t");
 						if(Fpl[p][l]!=MISSVAL) fprintf(fp,"\t%.3f",Fpl[p][l]);
 						else fprintf(fp,"\t");
 						if(Npermut>=40){
@@ -2335,7 +2407,7 @@ void write_allele_freq(char *outputfilename,int n,int m,char namelocus[][MAXNOM]
 		fprintf(fp,"\n\nREFERENCE ALLELE FREQUENCIES");
 
 		for(l=1;l<=m;l++){
-			fprintf(fp,"\n%s",namelocus[l]);
+			fprintf(fp,"\n%s",namelocus[l].n);
 			/*write allele names and freq*/
 			if(ndigit>0){
 				for(a=1;a<=Ngivenallelel[l];a++) fprintf(fp,"\t%i",allelesizela[l][a]);
@@ -2355,6 +2427,7 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 				 int *npc,float **indexpartic)
 {
 	int c;
+	char ch,smess[SMAX];
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2386,12 +2459,13 @@ void displaydist(int argc,char *outputfilename,int nc,double *maxc,double *mdc,d
 
 /**************************************************************************************/
 
-void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus[][MAXNOM],int nc,double *maxc,
+void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,struct name namelocus[],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,float givenF,double *H2,
 		int TypeComp,int cat1,int cat2,struct name *namecat,int FreqRef,int NS,int Stat[12],float **corrSlc[],float density,float dwidth,
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12])
 {
-	int c,l,S;
+	int c,l,S,a;
+	char smess[SMAX];
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2411,7 +2485,8 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 	}
 	if(TypeComp || FreqRef){
 		if(FreqRef==0) fprintf(fp," (reference sample (allele frequencies) = WHOLE SAMPLE)");
-		if(FreqRef==1) fprintf(fp," (reference sample (allele frequencies) = SAMPLE WITHIN CATEGORY)");	
+		if(FreqRef==1 && TypeComp!=2) fprintf(fp," (reference sample (allele frequencies) = SAMPLE WITHIN CATEGORY)");	
+		if(FreqRef==1 && TypeComp==2) fprintf(fp," (reference sample (allele frequencies) = SAMPLES WITHIN CATEGORIES for Moran's I statistic, or WHOLE SAMPLE for other metrics)");	
 		if(FreqRef==-2) fprintf(fp," (reference allele frequencies = UNWEIGHTED MEAN FREQUENCIES OVER CATEGORIES)");	
 	}
  	if(FreqRef==-1) fprintf(fp," (relative to GIVEN REFERENCE ALLELE FREQUENCIES (except for Moran's I relationship coef and Rousset's 'a' coef))");
@@ -2447,6 +2522,7 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 		if(Stat[S]==12) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003; Ley & Hardy, 2013)",givenF);
 		if(Stat[S]==13) fprintf(fp,"\n\nPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 		if(Stat[S]==14) fprintf(fp,"\n\nPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+		if(Stat[S]==15) fprintf(fp,"\n\nPairwise Qij (proportion of identical pairs of alleles)");
 		
 		for(c=0;c<=nc+2;c++) fprintf(fp,"\t");
 		fprintf(fp,"distance range for regression analyses");
@@ -2468,7 +2544,7 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 		for(l=0;l<=m+4;l++){
 			if(m==1 && l==0) l=1;
 			if(l==0) fprintf(fp,"\nALL LOCI");
-			if(l>0 && l<=m) fprintf(fp,"\n%s",namelocus[l]);
+			if(l>0 && l<=m) fprintf(fp,"\n%s",namelocus[l].n);
 			if(m==1 && l>m) break;
 			if(JKest==0 && l>m && l!=m+3) continue;
 			if(varcoef==0 && l>m+2) break;
@@ -2479,7 +2555,7 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 
 			for(c=0;c<=nc+1;c++){
 				if((Stat[S]==11 || Stat[S]==12)  && c==0 && l>0 && l<=m) fprintf(fp,"\t%G",H2[l]);
-				else if(((Stat[S]!=1 && Stat[S]!=2 && Stat[S]!=5 && Stat[S]!=14) && c==0) || corrSlc[S][l][c]==MISSVAL) fprintf(fp,"\t");
+				else if(((Stat[S]!=1 && Stat[S]!=2 && Stat[S]!=5 && Stat[S]!=14 && Stat[S]!=15) && c==0) || corrSlc[S][l][c]==MISSVAL) fprintf(fp,"\t");
 				else if(l<=m+2) fprintf(fp,"\t%.4f",corrSlc[S][l][c]);
 				else fprintf(fp,"\t%G",corrSlc[S][l][c]);
 				if(nc==1 && c==nc+1) fprintf(fp,"\t");				
@@ -2536,12 +2612,13 @@ void writeIndStatresults(char *outputfilename,int n,int Nsg,int m,char namelocus
 
 
 /**************************************************************************************/
-void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MAXNOM],int nc,double *maxc,
+void writePopStatresults(char *outputfilename,int Npop,int m,struct name namelocus[],int nc,double *maxc,
 		int *npc,float **indexpartic,double *mdc,double *mlndc,float dijmin,float dijmax,
 		int StatType,int TypeComp,int cat1,int cat2,struct name *namecat,int NS,int Stat[12],float **corrSlc[],float **FstatSlr[],
 		int JKest,int regdetails,int varcoef,int Rbtwloc,float ***RSll[12],float ***V[12],float **R2pl[12],int PWstat)
 {
-	int c,l,S,r;
+	int c,l,S,a,r;
+	char smess[SMAX];
 	FILE *fp;
 
 	while((fp=fopen(outputfilename,"a"))==NULL){
@@ -2648,7 +2725,7 @@ void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MA
 		for(l=0;l<=m+4;l++){
 			if(m==1 && l==0) l=1;
 			if(l==0) fprintf(fp,"\nALL LOCI");
-			if(l>0 && l<=m) fprintf(fp,"\n%s",namelocus[l]);
+			if(l>0 && l<=m) fprintf(fp,"\n%s",namelocus[l].n);
 			if(m==1 && l>m) break;
 			if(JKest==0 && l>m && l!=m+3) continue;
 			if(l>m+2 && (varcoef==0 || Stat[S]==7 || Stat[S]==8)) break;
@@ -2724,11 +2801,11 @@ void writePopStatresults(char *outputfilename,int Npop,int m,char namelocus[][MA
 
 void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeComp, int *cati,
 		int printdistmatrix,double *xi,double *yi,double *zi,double **Mdij,int *sgi,
-		int StatType,int NS,int Stat[12],float ***corrSlij[],struct name namei[],
-		char namelocus[][MAXNOM])
+		int StatType,int NS,int Stat[12],float ***corrSlij[],struct name namei[],struct name namelocus[])
 {	
 	int i,j,S,l,indivF,intraPop;
 	char smess[SMAX];
+	char ch;
 	float dij;
 	FILE *fp;
 
@@ -2780,6 +2857,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 				if(Stat[S]==12) sprintf(smess,"\n\nPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
 				if(Stat[S]==13) sprintf(smess,"\n\nPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 				if(Stat[S]==14) sprintf(smess,"\n\nPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+				if(Stat[S]==15) sprintf(smess,"\n\nPairwise Qij (proportion of identical pairs of alleles)");
 			}
 			else{
 				if(Stat[S]==1) sprintf(smess,"\n\nPairwise Fst (ANOVA approach)");
@@ -2802,7 +2880,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 				if(m==1) l=1;
 				if(abs(printdistmatrix)==1 && m>1 && l>0) break;
 				if(l==0) sprintf(smess,"\nALL LOCI");
-				if(l>0) sprintf(smess,"\n%s",namelocus[l]);
+				if(l>0) sprintf(smess,"\n%s",namelocus[l].n);
 				fprintf(fp,"\n%s",smess);
 
 				for(i=1;i<=n;i++) fprintf(fp,"\t%s",namei[i].n);
@@ -2833,7 +2911,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 	/*write pairwise results in column form*/
 	printf("\nWriting pairwise distances in column form. Please wait.");
 	fprintf(fp,"\n\n\nPAIRWISE SPATIAL AND GENETIC DISTANCES written in column form");
-	fprintf(fp,"\nName i\tName j\tNo. i\tNo. j\tSpatial dist");
+	fprintf(fp,"\nName i\tName j\tNoi\tNoj\tSpatial dist");
 	if(Mdij[0][0]==-1.) fprintf(fp," (km)");
 	for(S=1;S<=NS;S++){
 		if(StatType==1){
@@ -2851,6 +2929,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 			if(Stat[S]==12) sprintf(smess,"\tPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
 			if(Stat[S]==13) sprintf(smess,"\tPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 			if(Stat[S]==14) sprintf(smess,"\tPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+			if(Stat[S]==15) sprintf(smess,"\tPairwise Qij (proportion of identical pairs of alleles)");
 		}
 		if(StatType>=2){
 			if(Stat[S]==1) sprintf(smess,"\tFst");
@@ -2869,11 +2948,11 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 		}
 		fprintf(fp,"%s",smess);
 		if(m>1) fprintf(fp,"\tALL LOCI");
-		if(m==1 || abs(printdistmatrix)==2) for(l=1;l<=m;l++) fprintf(fp,"\t%s",namelocus[l]);
+		if(m==1 || abs(printdistmatrix)==2) for(l=1;l<=m;l++) fprintf(fp,"\t%s",namelocus[l].n);
 	}/*end of loop S*/
 /*	for(i=1;i<n;i++)for(j=i+1;j<=n;j++){	*/
 	indivF=intraPop=0;
-	if(StatType==1) for(S=1;S<=NS;S++)if(Stat[S]==1 || Stat[S]==2 || Stat[S]==5) indivF=1;
+	if(StatType==1) for(S=1;S<=NS;S++)if(Stat[S]==1 || Stat[S]==2 || Stat[S]==5  || Stat[S]==15) indivF=1;
 	if(StatType>1) for(S=1;S<=NS;S++)if(Stat[S]==10 || Stat[S]==12) intraPop=1;
 	for(i=1;i<=n;i++)for(j=i;j<=n;j++){
 
@@ -2928,6 +3007,7 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 				if(Stat[S]==12) sprintf(smess,"\n\nPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
 				if(Stat[S]==13) sprintf(smess,"\n\nPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 				if(Stat[S]==14) sprintf(smess,"\n\nPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+				if(Stat[S]==15) sprintf(smess,"\n\nPairwise Qij (proportion of identical pairs of alleles)");
 			}
 			else{
 				if(Stat[S]==1) sprintf(smess,"\n\nPairwise Fst (ANOVA approach)");
@@ -2981,13 +3061,14 @@ void writedistmatrices (char *outputfilename,int n,int m,float givenF,int TypeCo
 
 
 void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
-		double *maxc,int m,char namelocus[][MAXNOM],int TypeComp,float givenF,
+		double *maxc,int m,struct name namelocus[],int TypeComp,float givenF,
 		int nc,int Nsg,int NS,int Stat[],int Npermut[],int permutalleles,
 		int permutdetails,struct resample_stat_type **r_statSlc[],long seedinit)
 
 {
 	int c,l=0,S;
 	float Pval;
+	char smess[SMAX];
 	char *permutmode[70];
 
 	FILE *fp;
@@ -3019,7 +3100,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
  	
 	if(TypeComp==2 && !permutalleles) fprintf(fp,"\nWARNING: Significant tests for spatial structuring (location permutations) in the case of pairwise comparisons among categories cannot be interpreted as a demonstration that gene flow occurs among categories (Hardy and Vekemans 2001)");		
 
-	fprintf(fp,"\nInitial seed= %i",abs(seedinit));
+	fprintf(fp,"\nInitial seed= %li",labs(seedinit));
  	
 	if(permutdetails==0){
 		if(permutalleles) fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of allele sizes",Npermut[4]);
@@ -3044,14 +3125,15 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 			if(Stat[S]==12) fprintf(fp,"\tPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
 			if(Stat[S]==13) fprintf(fp,"\tPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 			if(Stat[S]==14) fprintf(fp,"\tPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+			if(Stat[S]==15) fprintf(fp,"\tPairwise Qij (proportion of identical pairs of alleles)");
 
 			for(c=1;c<=nc+2;c++){fprintf(fp,"\t");}
 			fprintf(fp,"\tSlopes of regression analyses");
 			if(Nsg>1) fprintf(fp,"\nLocus\tintra-individual\tintra-group");
 			else fprintf(fp,"\nLocus\tintra-individual\t1");	
 			for(c=2;c<=nc;c++) fprintf(fp,"\t%i",c);
-			//if(Nsg>1) cinit=2;
-			//else cinit=1;
+			// if(Nsg>1) cinit=2;
+			// else cinit=1;
  			fprintf(fp,"\t\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 			
 		}
@@ -3061,7 +3143,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 
 			if(permutdetails==0 || (permutdetails==1 && l!=0)){
 				if(l==0) fprintf(fp,"\nALL LOCI");
-				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
+				if(l>0) fprintf(fp,"\n%s",namelocus[l].n);
 				
 				for(c=0;c<=nc;c++){
 					if(r_statSlc[S][l][c].pbil==MISSVAL) fprintf(fp,"\t"); 
@@ -3082,7 +3164,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 			if(permutdetails==2 || (permutdetails==1 && l==0)){
 
 				if(l==0) fprintf(fp,"\n\nALL LOCI");
-				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
+				if(l>0) fprintf(fp,"\n%s",namelocus[l].n);
 				
 				if(Stat[S]==1) fprintf(fp,"\tPairwise KINSHIP coefficients (Loiselle et al., 1995)");
 				if(Stat[S]==2) fprintf(fp,"\tPairwise KINSHIP coefficients (Ritland, 1996)");
@@ -3098,6 +3180,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 				if(Stat[S]==12) fprintf(fp,"\tPairwise RELATIONSHIP coefficients for a DOMINANT marker, assuming inbreeding coef=%.4f (Hardy, 2003)",givenF);
 				if(Stat[S]==13) fprintf(fp,"\tPairwise RELATIONSHIP coefficients (Li et al., 1993)");
 				if(Stat[S]==14) fprintf(fp,"\tPairwise KINSHIP coefficients for ORDERED alleles (OJ Hardy, unpublished)");
+				if(Stat[S]==15) fprintf(fp,"\tPairwise Qij (proportion of identical pairs of alleles)");
 				
 				for(c=1;c<=nc+2;c++) fprintf(fp,"\t");
 				fprintf(fp,"\tSlopes of regression analyses");
@@ -3107,8 +3190,8 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 				
 				for(c=2;c<=nc;c++) fprintf(fp,"\t%i",c);
 					
-				//if(Nsg>1) cinit=2;
-				//else cinit=1;
+				// if(Nsg>1) cinit=2;
+				// else cinit=1;
  				fprintf(fp,"\t\t\tb-lin (slope linear dist)\tb-log (slope ln(dist))");
 							
 				fprintf(fp,"\nObject permuted");				
@@ -3201,7 +3284,7 @@ void WriteIndPermutRes(char *outputfilename,int n,int ploidy,int Ncat,
 
 /*************************************************************************************/
 
-void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Npop,struct name namepop[], 
+void WriteFiPermutRes(char *outputfilename,int m,struct name namelocus[],int Npop,struct name namepop[], 
 		int permutdetails,float **Fpl,struct resample_stat_type **r_statFlp,int Npermut,long seedinit)
 
 {
@@ -3217,7 +3300,7 @@ void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Np
 	printf("\nWriting permutation results. Please, wait.");
 
 	fprintf(fp,"\n\nGENE PERMUTATION TESTS for INBREEDING COEFFICIENT within EACH POPULATION -> Ho: obs=exp (exp = mean value after permutation)");
-	fprintf(fp,"\nInitial seed= %i",abs(seedinit));
+	fprintf(fp,"\nInitial seed= %li",labs(seedinit));
 	if(permutdetails==0){
 		fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of gene copies among individuals within each population",Npermut);
 	}
@@ -3230,7 +3313,7 @@ void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Np
 		if(m==1) l=1;
 		for(p=1;p<=Npop;p++){
 			if(l==0) fprintf(fp,"\nALL LOCI\t%s\t%f",namepop[p].n,Fpl[p][l]);
-			if(l>0) fprintf(fp,"\n%s\t%s\t%f",namelocus[l],namepop[p].n,Fpl[p][l]);
+			if(l>0) fprintf(fp,"\n%s\t%s\t%f",namelocus[l].n,namepop[p].n,Fpl[p][l]);
 			if(permutdetails==0){
 				if(r_statFlp[p][l].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFlp[p][l].pbil);
 				else fprintf(fp,"\t");
@@ -3269,13 +3352,15 @@ void WriteFiPermutRes(char *outputfilename,int m,char namelocus[][MAXNOM],int Np
 /*************************************************************************************/
 
 void WritePopPermutRes(char *outputfilename,int n,int ploidy,
-		double *maxc,int m,char namelocus[][MAXNOM],int TypeComp,
+		double *maxc,int m,struct name namelocus[],int TypeComp,
 		int nc,int NS,int Stat[],int Npermut[],int permutalleles,
 		int permutdetails,struct resample_stat_type **r_statFSlr[],
 		struct resample_stat_type **r_statSlc[],long seedinit,int PWstat)
 
 {
-	int c,l=0,S,r;
+	int c,l=0,cinit,S,r,ri,rf;
+	float Pval;
+	char smess[SMAX];
 	char *permutmode[70];
 
 	FILE *fp;
@@ -3310,7 +3395,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 	if(TypeComp==2 && !permutalleles){
 		fprintf(fp,"\nWARNING: Significant tests for spatial structuring (location permutations) in the case of pairwise comparisons among categories cannot be interpreted as a demonstration that gene flow occurs among categories (Hardy and Vekemans 2001)");
 	}
-	fprintf(fp,"\nInitial seed= %i",abs(seedinit));
+	fprintf(fp,"\nInitial seed= %li",labs(seedinit));
 	if(permutdetails==0){
 		if(permutalleles) fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of allele sizes",Npermut[4]);
 		else fprintf(fp,"\nP values of 2-sided tests (obs<>exp) after %i random permutations of locations, %i random permutations of individuals, and %i random permutations of gene copies",Npermut[1],Npermut[2],Npermut[3]);
@@ -3369,7 +3454,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 	
 			if(permutdetails==0 || (permutdetails==1 && l!=0)){
 				if(l==0) fprintf(fp,"\nALL LOCI");
-				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
+				if(l>0) fprintf(fp,"\n%s",namelocus[l].n);
 
 				for(r=1;r<=3;r++){
 					if(r_statFSlr[S][l][r].pbil!=MISSVAL) fprintf(fp,"\t%.4f",r_statFSlr[S][l][r].pbil);
@@ -3391,7 +3476,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 			/*write complete analysis*/
 			if(permutdetails==2 || (permutdetails==1 && l==0)){
 				if(l==0) fprintf(fp,"\n\nALL LOCI");
-				if(l>0) fprintf(fp,"\n%s",namelocus[l]);
+				if(l>0) fprintf(fp,"\n%s",namelocus[l].n);
 
 				if(PWstat){
 					if(Stat[S]==1) fprintf(fp,"\tGlobal F-statistics \t\t\t\t\tPairwise Fst");
@@ -3591,7 +3676,7 @@ void WritePopPermutRes(char *outputfilename,int n,int ploidy,
 }/*end of procedure WritePopPermutRes*/
 
 /*******************************************************************************/
-void WritePermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM],
+void WritePermutResForPopPair(char *outputfilename,int m,struct name namelocus[],
 		int p1,int p2,struct name *namepop,int NS,int Stat[],
 		struct resample_stat_type **r_statSlc[],int permutdetails,int comp)
 
@@ -3660,12 +3745,12 @@ void WritePermutResForPopPair(char *outputfilename,int m,char namelocus[][MAXNOM
 			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 			for(l=linit;l<=m;l++){
 				if(l==0) sprintf(smess,"\tALL LOCI");
-				if(l>0) sprintf(smess,"\t%s",namelocus[l]);
+				if(l>0) sprintf(smess,"\t%s",namelocus[l].n);
 				if(permutdetails==2 || (permutdetails==1 && l==0)) for(k=1;k<=11;k++) fprintf(fp,"%s",smess);
 				if(permutdetails==0 || (permutdetails==1 && l!=0)) fprintf(fp,"%s",smess);
 			}
 		}
-		fprintf(fp,"\nName i\tName j\tNo. i\tNo. j");
+		fprintf(fp,"\nName i\tName j\tNoi\tNoj");
 		for(S=1;S<=NS;S++){
 			if(allelepermuttest) if(Stat[S]!=5 && Stat[S]!=6 && Stat[S]!=8 && Stat[S]!=11 && Stat[S]!=12) continue;
 			for(l=linit;l<=m;l++){
@@ -3821,9 +3906,36 @@ void readsfromfile(FILE *fp, char *s, char *inputfile, int *line)
 
 /***********************************************************************/	
 
+void readsfromfile2(FILE *fp, char *s, char *inputfile, int *line) //to read lines containig up to SMAX2 characters
+{
+	char *flag,smess[SMAX]; 
+
+
+	(*line)++;
+	flag = fgets(s,SMAX2,fp);
+	if(! flag) {
+		if (feof(fp)) {
+			sprintf(smess,"\nEnd of file unexpected on line %d from file %s",*line,inputfile);
+			write(ERRORFILE,smess);
+			printf("\npress any key to stop the program now");
+			wait_a_char();
+			exit(1);
+		} else  {
+			sprintf(smess,"\ncannot read line %d from file %s",*line,inputfile);
+			write(ERRORFILE,smess);
+			printf("\npress any key to stop the program now");
+			wait_a_char();
+			exit(1);
+		}
+	}
+} /*end of readsfromfile2*/
+
+/***********************************************************************/	
+
 void readsfromfile_no_end_of_file_check(FILE *fp, char *s, char *inputfile, int *line)
 {
-	//char *flag; 
+	//char *flag;
+	char smess[SMAX]; 
 
 
 	(*line)++;

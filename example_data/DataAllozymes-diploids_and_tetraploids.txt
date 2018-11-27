@@ -163,4 +163,3 @@ Ind	ploidy	X	Y	LAP	PGD	DIA	PGM1	PGM2
 139	4x	27.6	6.8	5050606	3030303	1020202	1010102	1010202
 140	4x	23.6	6.7	5050606	1020303	1010102	0	2020204
 END
-// the word END is compulsory at the end of the list of individuals data

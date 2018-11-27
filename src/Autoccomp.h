@@ -19,11 +19,17 @@
 #ifndef AUTOCCOMP_H
 #define AUTOCCOMP_H
 
+#ifdef PACKAGE_STRING
+#	define VERSION PACKAGE_STRING
+#else
+#	define  VERSION "SPAGeDi 1.5d (build 02-06-2017)"
+#endif
+
 #define  NMAX 100000	/*max number of individuals*/
 #define  NCOORDMAX 3    /*max number of spatial coordinates*/
-#define  MMAX 10000    /*max number of loci or variables*/
+#define  MMAX 100000    /*max number of loci or variables*/
 #define  NDIGITMAX 3    /*max number of digits per allele*/
-#define  PLOIDYMAX 8    /*max number of alleles per individual*/
+#define  PLOIDYMAX 20    /*max number of alleles per individual*/
 #define  MAXALLID 999 /*max number of alleles per locus*/
 #define  MAXNOM 31  /*max number of characters read for individual names*/
 #define  MAXINTERVALS 102	/*max number of classes of intervals*/
@@ -55,7 +61,7 @@ void mainAnalysisBtwInd(int argc,int n,int ntot,double *xi,double *yi,double *zi
 	int *catskg,int *cati,int Ncat,int *Nik,int nc,double *maxc,float dijmin,float dijmax,
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nallelekl,int **Nvalgenkl,int ***gilc,
 	float ***Pkla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,float givenF,double *H2,
-	struct name namei[],char namelocus[][MAXNOM],struct name namecat[],
+	struct name namei[],struct name namelocus[],struct name namecat[],
 	int TypeComp,int cat1,int cat2,int FreqRef,float **givenPla,int *Ngivenallelel,int JKest,
 	int NS,int Stat[],int printdistmatrix,float sigmaest,float density,float dwidth,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,
@@ -64,7 +70,7 @@ void mainAnalysisBtwPop(int argc,int StatType,int n,double *xp,double *yp,double
 	int *catp,int *cati,int Ncat,int nc,double *maxc,float dijmin,float dijmax,
 	int m,int ndigit,int ploidy,int *ploidyi,int *Nallelel,int **Nvalgenkl,int ***gilc,
 	float ***Pkla,int **allelesizela,float **Masizekl,float **Vasizekl,float ***Mgdlaa,
-	struct name namepop[],char namelocus[][MAXNOM],struct name namecat[],
+	struct name namepop[],struct name namelocus[],struct name namecat[],
 	int PWstat,int TypeComp,int cat1,int cat2,int FreqRef,int JKest,int NS,int Stat[],int printdistmatrix,
 	int Npermut[],int permutalleles,int writeresampdistr,int regdetails,int varcoef,int Rbtwloc,int permutdetails,char outputfile[]);
 
@@ -89,7 +95,8 @@ void checkdist(int n, int *nc, double *maxc, double *xi, double *yi, double *zi,
 void compute_allele_freq(int n,int Ncat,int *cati,int m,
 			int ndigit,int ploidy,int ***gilc,int *ploidyi,int *Nallelel,int **allelesizela,float ***Mgdlaa,
 			int alleledist,float ***Pkla,int **Nallelekl,int **Nmissinggenotkl,int **Nincompletegenotkl,
-			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hekl,float **hTkl,float **uTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl);
+			int **Nvalgenkl,float **Nnielsenkl,float **RA, int *K,float **Hokl,float **Hekl,float **hTkl,float **uTkl,float **Dmkl,float **Dwmkl,float **Masizekl,float **Vasizekl);
+void selfing_estimation(int n,int Npop,int *popi,int m,int ploidy,int ***gilc,int *ploidyi,double *alpha,char *outputfilename,struct name namelocus[],struct name namepop[],int Npermut,long *seed);
 void compute_pairwise_corr_F(int n,int ntot,int Ncat,int *cati,int m,int ndigit,int ploidy,
 			float missdat,int ***gilc,int *Nallelel,int **allelesizela,float ***Distla1a2,
 			float ***corrSlij[],int NS,int Stat[12],int FreqRef,float **givenPla,int *Ngivenallelel,
